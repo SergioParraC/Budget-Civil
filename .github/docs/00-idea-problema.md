@@ -65,7 +65,7 @@ Proveer un backend y frontend desacoplados que automaticen el cálculo de presup
 * **Privacidad y Sanitización de DTOs en Consultas Públicas:** Cuando se consulte un APU en la base de datos compartida, el backend debe omitir/sanitizar en los Data Transfer Objects (DTOs) la información del `CompanyId`, nombres de proyectos específicos, firmas y metadatos sensibles de la empresa creadora.
 * **Seguridad y Control de Accesos:** Aislamiento estricto multitenant (multi-empresa) para evitar fugas de información entre organizaciones cuando los APUs estén marcados como privados.
 
-## 9. Preguntas abiertas (A resolver en `.github/spec/` mediante `speckit.clarify`)
-* **Mecanismo de Firma de Autoría:** ¿Cuál será la especificación técnica para la captura y validación de la firma auditada por usuario (firma digital basada en PKI/JWT, hash HMAC sobre la transacción, o registro de token de sesión)?
-* **Lógica de Filtrado y Mapping DTO en la API:** ¿Qué estrategia de consulta/query (a nivel de repositorio o capa de servicio) se aplicará sobre la tabla unificada de APUs/Insumos para aplicar el filtro `Is_Public = true` y transformar automáticamente la entidad al DTO sanitizado/anonimizado?
-* **Estructura de Importación desde Excel:** ¿Cuáles serán los esquemas JSON/CSV y las reglas de parseo estandarizadas para mapear y validar matrices de presupuestos tradicionales creadas en hojas de cálculo hacia la estructura relacional del sistema?
+## 9. Preguntas abiertas y estado de clarificacion
+* **Mecanismo de Firma de Autoría (Resuelto):** Se implementa firma auditada HMAC-SHA256 generada en backend sobre payload canónico (`project_id`, `user_id`, `approval_stage`, `timestamp_utc`).
+* **Lógica de Filtrado y Mapping DTO en la API (Resuelto):** Se mantiene Query Filter global por `CompanyId` y se habilita un bypass controlado solo para `GET /api/v1/public-apus`, con validación `Project.Is_Public = true AND Apu.Is_Public = true` y salida `PublicApuDTO` por whitelist.
+* **Estructura de Importación desde Excel (Abierto):** Pendiente definir esquemas JSON/CSV y reglas de parseo estandarizadas para mapear matrices de presupuestos tradicionales hacia la estructura relacional del sistema.

@@ -44,7 +44,7 @@ Plataforma web de gestión de presupuestos de obra civil construida bajo Clean A
   * Contiene: Servicios de aplicación, orquestación de casos de uso, mapeo de DTOs (AutoMapper), validación de payloads (FluentValidation).
   * No contiene: Entidades de EF Core expuestas ni código dependiente de la infraestructura de almacenamiento.
 * Domain Layer (Core Business Logic):
-  * Contiene: Entidades de dominio, Enums, interfaces de repositorios, reglas de cálculo inmutables (AIU, APU, cascada de estados).
+  * Contiene: Entidades de dominio, Enums, interfaces de repositorios, reglas de cálculo inmutables (AIU, APU, cascada transaccional de estados, expansión de Matriz a un nivel).
   * No contiene: Dependencias de frameworks web, librerías ORM ni código de base de datos.
 * Infrastructure Layer (Persistence & External Services):
   * Contiene: Implementación de repositorios (EF Core), AppDbContext, ASP.NET Identity, integración con almacenamiento de archivos/logs.
@@ -63,15 +63,17 @@ Nota de arquitectura sobre el Modelo de Dominio: El archivo domain-model.puml si
 ## 4. Integraciones
 
 * Autenticación e Identidad: ASP.NET Core Identity + JWT Token Bearer para el manejo de sesiones de usuario.
+* Firma Auditada: Servicio de firma HMAC-SHA256 en backend para generar y validar tokens de aprobación (`ESTIMATOR_SIGN`, `SECOND_APPROVER_SIGN`) sin exponer secretos al cliente.
 * Servicio de Proxy Inverso (Nginx): Enrutamiento de peticiones HTTPS (Puerto 443), terminación TLS mediante Let's Encrypt / Certbot y despacho de estáticos de Angular.
 * Motor de Pruebas: xUnit / Moq / FluentAssertions en backend y Karma/Jasmine o Jest en frontend para garantizar la cobertura de pruebas requerida en SDD.
 
 ## 5. Seguridad
 
 * Autenticación: Tokens JWT firmados enviados en la cabecera HTTP Authorization: Bearer <token>.
-* Autorización: Control de Acceso Basado en Roles (RBAC) a nivel de endpoints y servicios (SuperAdmin, CompanyAdmin, ProjectManager, Viewer / Auditor).
-* Aislamiento Multitenant: Aislamiento estricto por CompanyId inyectado en las consultas globales de la base de datos (Query Filters de EF Core) para prevenir la fuga de datos entre empresas.
-* Sanitización Pública: Sanitización obligatoria en la capa de servicios para que la consulta de la base pública (Is_Public = true) utilice exclusivamente el DTO anonimizado (PublicApuDTO).
+* Autorización: Control de Acceso Basado en Roles (RBAC) a nivel de endpoints y servicios (`ADMIN`, `ESTIMATOR`, `AUDITOR`) con rol de segundo aprobador parametrizable en `ProjectConfiguration`.
+* Aislamiento Multitenant: Query Filters globales por `CompanyId` en todas las consultas privadas. La única excepción permitida es el servicio de lectura pública de APUs, con bypass controlado y validación estricta de visibilidad.
+* Sanitización Pública: La consulta de la base compartida usa exclusivamente `PublicApuDTO` por whitelist y solo publica registros que cumplan `Project.Is_Public = true` y `Apu.Is_Public = true`.
+* Transición a `FINALIZADO`: Las invariantes de doble aprobación y ausencia de `FALTA_INFORMACION` se validan en Domain/Application Layer (sin dependencia de reglas implícitas en BD).
 
 ## 6. Despliegue
 

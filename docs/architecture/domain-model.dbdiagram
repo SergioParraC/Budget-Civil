@@ -1,159 +1,288 @@
-Table Users {
-  id integer [pk]
-  password varchar
-  username varchar
-  first_name varchar
-  last_name varchar
-  email varchar
-  type_user varchar
-  id_companie varchar [ref: > Companies.id]
-  role integer [ref: > Users_roles.id]
-  id_cities integer [ref: > Cities.id]
+// Unified domain model for Budget Civil Backend.
+// Fusion source: manual dbdiagram + AI model + documented project requirements.
+// Key design choice: UUID keys for consistency in multi-tenant backend.
+
+Table Countries {
+  id uuid [pk]
+  code varchar(10) [not null, unique]
+  name varchar(120) [not null]
 }
 
 Table Cities {
-  id integer [pk]
-  description varchar
-  id_country integer [ref: > Countries.id]
-}
+  id uuid [pk]
+  country_id uuid [not null, ref: > Countries.id]
+  name varchar(120) [not null]
 
-Table Countries {
-  id integer [pk]
-  description integer
-}
-
-Table Users_roles {
-  id integer [pk]
-  type varchar
+  indexes {
+    (country_id, name) [unique]
+  }
 }
 
 Table Companies {
-  id integer [pk]
-  nit varchar [unique, default: 0]
-  name_company varchar
-  legal_rep varchar
-  web_link varchar
-  email varchar
-  cellphone integer
-  //interventoria
-  is_auditor boolean [default: false]
-  id_cities integer [ref: > Cities.id]
+  id uuid [pk]
+  business_name varchar(255) [not null]
+  tax_id varchar(20) [not null, unique]
+  legal_rep varchar(150)
+  website varchar(255)
+  email varchar(150)
+  cellphone varchar(50)
+  city_id uuid [ref: > Cities.id]
+  is_auditor_company boolean [not null, default: false]
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null]
+  updated_at timestamp
 }
 
-Table Proyects {
-  id integer [pk]
-  name varchar
-  cod_obra varchar
-  object varchar
-  id_type_project integer [ref: > Type_project.id]
-  date_create date //Por defecto dia hoy
-  //Fecha de licitación y numero
-  date_bidding date //Por defecto dia hoy
-  n_bidding varchar [default: Null]
-  //Fechas de referencia
-  date_start date //Por defecto dia hoy
-  date_end date [default: Null]
-  addres varchar [default: Null]
-  id_user_create integer [ref: > Users.id]
-  id_companie integer [ref: > Companies.id]
-  //interventoria
-  id_auditor integer [ref: > Companies.id]
-  //Está a costo directo?
-  is_direct_cost bool [default: False]
-  //% administracion
-  administration integer [default: 0]
-  //% imprevistos
-  eventuality integer [default: 0]
-  //% utilidades
-  utility integer [default: 0]
-  id_city integer [ref: > Cities.id]
-  id_money integer [ref: > Type_money.id]
+Table Roles {
+  id uuid [pk]
+  code varchar(30) [not null, unique, note: 'ADMIN|ESTIMATOR|AUDITOR']
+  description varchar(120)
+  is_active boolean [not null, default: true]
 }
 
-Table Users_permission {
-  id integer [pk]
-  id_project integer [ref: > Proyects.id]
-  id_user integer [ref: > Users.id]
+Table Users {
+  id uuid [pk]
+  company_id uuid [not null, ref: > Companies.id]
+  role_id uuid [not null, ref: > Roles.id]
+  email varchar(150) [not null, unique]
+  username varchar(100) [unique]
+  password_hash varchar(255) [not null]
+  first_name varchar(120) [not null]
+  last_name varchar(120) [not null]
+  city_id uuid [ref: > Cities.id]
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null]
+  updated_at timestamp
 }
 
-//Tipo de moneda
-Table Type_money {
-  id integer [pk]
-  money varchar 
-  money_simb varchar
+Table ProjectTypes {
+  id uuid [pk]
+  name varchar(100) [not null, unique]
+  description varchar(255)
 }
 
-Table Type_project {
-  id integer [pk]
-  description varchar
+Table Currencies {
+  id uuid [pk]
+  code varchar(10) [not null, unique]
+  symbol varchar(10) [not null]
+  name varchar(50) [not null]
 }
 
-//Estructurando la EDS
+Table Projects {
+  id uuid [pk]
+  company_id uuid [not null, ref: > Companies.id]
+  project_type_id uuid [ref: > ProjectTypes.id]
+  currency_id uuid [not null, ref: > Currencies.id]
+  created_by_user_id uuid [not null, ref: > Users.id]
+  auditor_company_id uuid [ref: > Companies.id]
+  name varchar(255) [not null]
+  code varchar(50) [note: 'cod_obra']
+  project_object text
+  status varchar(30) [not null, default: 'POR_COTIZAR', note: 'POR_COTIZAR|FALTA_INFORMACION|COTIZADO|FINALIZADO']
+  is_public boolean [not null, default: false]
+  is_direct_cost boolean [not null, default: false]
+  administration_pct decimal(5,2) [not null, default: 0]
+  eventuality_pct decimal(5,2) [not null, default: 0]
+  utility_pct decimal(5,2) [not null, default: 0]
+  bidding_date date
+  bidding_number varchar(50)
+  start_date date
+  end_date date
+  address varchar(255)
+  city_id uuid [ref: > Cities.id]
+  created_at timestamp [not null]
+  updated_at timestamp
 
-Table Work_breakdown_structure {
-  id integer [pk]
-  id_analysis_of_unitary_prices integer [ref: > Analysis_of_unitary_prices.id]
-  id_project integer [ref: > Proyects.id]
-  grade integer //Establece si es actividad o si es capitulo
-  //Siendo el ultimo grado la actividad
-  description varchar
-  cant integer
-  id_user_add integer [ref: > Users.id]
-  date_edit date
-  date_start date //Por defecto hoy
-  date_end date //Por defecto 1 dia
-  key_username_item varchar
+  indexes {
+    (company_id, id) [name: 'idx_project_company']
+    (company_id, status)
+  }
 }
 
-//Tabla de APUs
-
-Table Analysis_of_unitary_prices {
-  id integer [pk]
-  description varchar
-  id_unit integer [ref: > Units.id]
-  id_user_create integer [ref: > Users.id]
-  id_type_project integer [ref: > Type_project.id]
-  id_city integer [ref: > Cities.id]
+Table ProjectConfigurations {
+  id uuid [pk]
+  project_id uuid [not null, unique, ref: > Projects.id]
+  budget_limit decimal(18,2)
+  estimator_signature_token varchar(500)
+  director_signature_token varchar(500)
+  signed_estimator_at timestamp
+  signed_director_at timestamp
+  updated_at timestamp
 }
 
+Table ProjectMembers {
+  id uuid [pk]
+  project_id uuid [not null, ref: > Projects.id]
+  user_id uuid [not null, ref: > Users.id]
+  permission varchar(30) [not null, default: 'EDITOR', note: 'OWNER|EDITOR|READER']
+  assigned_by_user_id uuid [ref: > Users.id]
+  assigned_at timestamp [not null]
 
-Table Supplies {
-  id integer [pk]
-  description varchar
-  id_unit integer [ref: > Units.id]
-  data_aditional varchar
-  date_uplated date //Por defecto fecha de creación
-  price integer
-  id_user_create integer [ref: > Users.id]
-  id_type_supplies integer [ref: > Type_supplies.id]
-  id_city integer [ref: > Cities.id]
-}
-
-table key_supplie_project{
-  id integer [pk]
-  key_user varchar
-  id_supplies integer [ref: > Supplies.id]
-  id_project integer [ref: > Proyects.id]
-}
-
-Table Type_supplies {
-  id integer [pk]
-  description varchar
+  indexes {
+    (project_id, user_id) [unique]
+  }
 }
 
 Table Units {
-  id integer [pk]
-  description varchar
+  id uuid [pk]
+  code varchar(20) [not null, unique]
+  description varchar(100) [not null]
 }
 
-Table Supplies_in_APU {
-  id integer [pk]
-  id_APU integer [ref: > Analysis_of_unitary_prices.id]
-  id_supplies integer [ref: > Supplies.id]
-  price integer
-  cant integer
-  
+Table ResourceTypes {
+  id uuid [pk]
+  name varchar(50) [not null, unique, note: 'Materiales|Mano de obra|Herramienta|Equipos|Auxiliares|Trabajos|Matriz']
+  is_matrix boolean [not null, default: false]
 }
 
+Table Apus {
+  id uuid [pk]
+  company_id uuid [not null, ref: > Companies.id]
+  project_type_id uuid [ref: > ProjectTypes.id]
+  city_id uuid [ref: > Cities.id]
+  unit_id uuid [not null, ref: > Units.id]
+  created_by_user_id uuid [not null, ref: > Users.id]
+  code varchar(50) [not null]
+  description text [not null]
+  yield_value decimal(18,4) [not null, default: 1]
+  status varchar(30) [not null, default: 'COMPLETO', note: 'COMPLETO|FALTA_INFORMACION']
+  is_public boolean [not null, default: false]
+  is_matrix boolean [not null, default: false]
+  created_at timestamp [not null]
+  updated_at timestamp
 
-Ref: "Users_permission"."id_project" < "Users_permission"."id"
+  indexes {
+    (company_id, code) [unique]
+    (is_public, id) [name: 'idx_apu_public_search']
+  }
+}
+
+Table Resources {
+  id uuid [pk]
+  company_id uuid [not null, ref: > Companies.id]
+  resource_type_id uuid [not null, ref: > ResourceTypes.id]
+  unit_id uuid [ref: > Units.id]
+  city_id uuid [ref: > Cities.id]
+  linked_apu_id uuid [ref: > Apus.id, note: 'Required when ResourceType is Matriz']
+  description varchar(255)
+  brand varchar(100)
+  unit_price decimal(18,2) [not null, default: 0]
+  quotation_status varchar(30) [not null, default: 'POR_COTIZAR', note: 'POR_COTIZAR|FALTA_INFORMACION|COTIZADO']
+  distributor varchar(150)
+  location_city_country varchar(150)
+  user_key varchar(50)
+  details text
+  contact_number varchar(50)
+  is_public boolean [not null, default: false]
+  created_by_user_id uuid [not null, ref: > Users.id]
+  updated_by_user_id uuid [ref: > Users.id]
+  created_at timestamp [not null]
+  updated_at timestamp
+
+  indexes {
+    (company_id, resource_type_id, brand, description, unit_price) [name: 'idx_resource_dedup']
+    (company_id, quotation_status)
+  }
+}
+
+Table ApuResources {
+  id uuid [pk]
+  apu_id uuid [not null, ref: > Apus.id]
+  resource_id uuid [not null, ref: > Resources.id]
+  consumption decimal(18,4) [not null]
+  waste_percentage decimal(5,2) [not null, default: 0]
+  unit_price_override decimal(18,2)
+  created_at timestamp [not null]
+  updated_at timestamp
+
+  indexes {
+    (apu_id, resource_id) [unique]
+  }
+}
+
+Table WbsChapters {
+  id uuid [pk]
+  company_id uuid [not null, ref: > Companies.id]
+  project_id uuid [not null, ref: > Projects.id]
+  parent_chapter_id uuid [ref: > WbsChapters.id]
+  code varchar(50)
+  name varchar(255) [not null]
+  sort_order integer [not null, default: 1]
+  created_by_user_id uuid [not null, ref: > Users.id]
+  created_at timestamp [not null]
+  updated_at timestamp
+
+  indexes {
+    (project_id, sort_order)
+  }
+}
+
+Table WbsItems {
+  id uuid [pk]
+  company_id uuid [not null, ref: > Companies.id]
+  project_id uuid [not null, ref: > Projects.id]
+  chapter_id uuid [not null, ref: > WbsChapters.id]
+  apu_id uuid [not null, ref: > Apus.id]
+  description varchar(255)
+  quantity decimal(18,4) [not null, default: 0]
+  user_key varchar(50)
+  start_date date
+  end_date date
+  sort_order integer [not null, default: 1]
+  created_by_user_id uuid [not null, ref: > Users.id]
+  updated_by_user_id uuid [ref: > Users.id]
+  created_at timestamp [not null]
+  updated_at timestamp
+
+  indexes {
+    (chapter_id, sort_order)
+    (project_id, apu_id)
+  }
+}
+
+Table BudgetVersions {
+  id uuid [pk]
+  company_id uuid [not null, ref: > Companies.id]
+  project_id uuid [not null, ref: > Projects.id]
+  version_number integer [not null]
+  snapshot_json text [not null]
+  created_by_user_id uuid [not null, ref: > Users.id]
+  created_at timestamp [not null]
+
+  indexes {
+    (project_id, version_number) [unique]
+    (company_id, project_id, created_at)
+  }
+}
+
+Table AuditLogs {
+  id uuid [pk]
+  company_id uuid [not null, ref: > Companies.id]
+  user_id uuid [not null, ref: > Users.id]
+  project_id uuid [ref: > Projects.id]
+  entity_name varchar(50) [not null, note: 'Project|Apu|Resource|Wbs']
+  entity_id uuid [not null]
+  action_type varchar(20) [not null, note: 'CREATE|UPDATE_VALUE|SIGN']
+  payload_json text
+  created_at timestamp [not null]
+
+  indexes {
+    (entity_name, entity_id, created_at) [name: 'idx_audit_entity']
+    (company_id, created_at)
+  }
+}
+
+Table EntityParticipants {
+  id uuid [pk]
+  company_id uuid [not null, ref: > Companies.id]
+  user_id uuid [not null, ref: > Users.id]
+  entity_name varchar(50) [not null]
+  entity_id uuid [not null]
+  first_participation_at timestamp [not null]
+  last_participation_at timestamp [not null]
+  participation_count integer [not null, default: 1]
+
+  indexes {
+    (entity_name, entity_id, user_id) [unique]
+  }
+}

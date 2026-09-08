@@ -39,7 +39,7 @@ Incluye usuarios responsables, soporte y flujo de trabajo.
   * Modelo de Datos Unificado: Obligatoriedad de mantener Proyectos, APUs e Insumos en la misma estructura de tablas relacionales, manejando la privacidad a nivel de API/DTOs y no por bases de datos separadas.
   * Sin Auto-asignación por IA: La IA no debe decidir los valores ni rendimientos de los presupuestos; su alcance es prescriptivo, de soporte y consulta de referencias.
 * **Dependencias:**
-  * Especificación técnica del formato y hash de la firma registrada de los usuarios.
+  * Especificación técnica del formato y hash de la firma registrada de los usuarios (resuelta en `.github/spec/SPEC.md`: HMAC-SHA256 server-side).
   * Definición de los esquemas de importación (CSV) para migrar matrices desde Excel. 
 
 ## 5. Riesgos y mitigaciones
@@ -55,5 +55,5 @@ Incluye usuarios responsables, soporte y flujo de trabajo.
 
 * Estado Actual: GO CON CONDICIONES
 * Condiciones para pasar a Sprint 1 de Desarrollo:
-  1. Resolver en .github/spec/ (vía speckit.clarify) la especificación del mecanismo de firma auditada (HMAC / Token).  
-  2. Aprobar el diseño de los Data Transfer Objects (DTOs) sanitizados para la exposición de la base compartida sobre la tabla unificada.
+  1. Implementar en código la especificación de firma auditada definida en `.github/spec/SPEC.md` (HMAC-SHA256).  
+  2. Implementar y validar por pruebas el diseño de `PublicApuDTO` por whitelist para exposición de la base compartida sobre la tabla unificada.
