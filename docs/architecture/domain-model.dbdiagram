@@ -1,0 +1,159 @@
+Table Users {
+  id integer [pk]
+  password varchar
+  username varchar
+  first_name varchar
+  last_name varchar
+  email varchar
+  type_user varchar
+  id_companie varchar [ref: > Companies.id]
+  role integer [ref: > Users_roles.id]
+  id_cities integer [ref: > Cities.id]
+}
+
+Table Cities {
+  id integer [pk]
+  description varchar
+  id_country integer [ref: > Countries.id]
+}
+
+Table Countries {
+  id integer [pk]
+  description integer
+}
+
+Table Users_roles {
+  id integer [pk]
+  type varchar
+}
+
+Table Companies {
+  id integer [pk]
+  nit varchar [unique, default: 0]
+  name_company varchar
+  legal_rep varchar
+  web_link varchar
+  email varchar
+  cellphone integer
+  //interventoria
+  is_auditor boolean [default: false]
+  id_cities integer [ref: > Cities.id]
+}
+
+Table Proyects {
+  id integer [pk]
+  name varchar
+  cod_obra varchar
+  object varchar
+  id_type_project integer [ref: > Type_project.id]
+  date_create date //Por defecto dia hoy
+  //Fecha de licitación y numero
+  date_bidding date //Por defecto dia hoy
+  n_bidding varchar [default: Null]
+  //Fechas de referencia
+  date_start date //Por defecto dia hoy
+  date_end date [default: Null]
+  addres varchar [default: Null]
+  id_user_create integer [ref: > Users.id]
+  id_companie integer [ref: > Companies.id]
+  //interventoria
+  id_auditor integer [ref: > Companies.id]
+  //Está a costo directo?
+  is_direct_cost bool [default: False]
+  //% administracion
+  administration integer [default: 0]
+  //% imprevistos
+  eventuality integer [default: 0]
+  //% utilidades
+  utility integer [default: 0]
+  id_city integer [ref: > Cities.id]
+  id_money integer [ref: > Type_money.id]
+}
+
+Table Users_permission {
+  id integer [pk]
+  id_project integer [ref: > Proyects.id]
+  id_user integer [ref: > Users.id]
+}
+
+//Tipo de moneda
+Table Type_money {
+  id integer [pk]
+  money varchar 
+  money_simb varchar
+}
+
+Table Type_project {
+  id integer [pk]
+  description varchar
+}
+
+//Estructurando la EDS
+
+Table Work_breakdown_structure {
+  id integer [pk]
+  id_analysis_of_unitary_prices integer [ref: > Analysis_of_unitary_prices.id]
+  id_project integer [ref: > Proyects.id]
+  grade integer //Establece si es actividad o si es capitulo
+  //Siendo el ultimo grado la actividad
+  description varchar
+  cant integer
+  id_user_add integer [ref: > Users.id]
+  date_edit date
+  date_start date //Por defecto hoy
+  date_end date //Por defecto 1 dia
+  key_username_item varchar
+}
+
+//Tabla de APUs
+
+Table Analysis_of_unitary_prices {
+  id integer [pk]
+  description varchar
+  id_unit integer [ref: > Units.id]
+  id_user_create integer [ref: > Users.id]
+  id_type_project integer [ref: > Type_project.id]
+  id_city integer [ref: > Cities.id]
+}
+
+
+Table Supplies {
+  id integer [pk]
+  description varchar
+  id_unit integer [ref: > Units.id]
+  data_aditional varchar
+  date_uplated date //Por defecto fecha de creación
+  price integer
+  id_user_create integer [ref: > Users.id]
+  id_type_supplies integer [ref: > Type_supplies.id]
+  id_city integer [ref: > Cities.id]
+}
+
+table key_supplie_project{
+  id integer [pk]
+  key_user varchar
+  id_supplies integer [ref: > Supplies.id]
+  id_project integer [ref: > Proyects.id]
+}
+
+Table Type_supplies {
+  id integer [pk]
+  description varchar
+}
+
+Table Units {
+  id integer [pk]
+  description varchar
+}
+
+Table Supplies_in_APU {
+  id integer [pk]
+  id_APU integer [ref: > Analysis_of_unitary_prices.id]
+  id_supplies integer [ref: > Supplies.id]
+  price integer
+  cant integer
+  
+}
+
+
+Ref: "Users_permission"."id_project" < "Users_permission"."id"

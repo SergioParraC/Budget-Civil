@@ -1,0 +1,61 @@
+@startuml Components
+title Arquitectura de la API (Clean Architecture)
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam nodesep 35
+skinparam ranksep 45
+
+package "Presentation Layer" as PresentationLayer {
+  [Angular SPA] as SPA
+}
+
+package "API Layer (ASP.NET Core)" as ApiLayer {
+  [Controllers\nAuth, Usuarios, Companias,\nProyectos, Presupuestos] as Controllers
+  [Middleware JWT] as JwtMw
+  [API Contracts\n(Request/Response DTOs)] as ApiContracts
+  Controllers -down-> JwtMw
+  Controllers -down-> ApiContracts
+}
+
+package "Application Layer" as ApplicationLayer {
+  [Servicios / Casos de uso] as AppServices
+  [Validadores (FluentValidation)] as Validators
+  [AutoMapper Profiles] as Mapper
+  AppServices -down-> Validators
+  AppServices -down-> Mapper
+}
+
+package "Domain Layer" as DomainLayer {
+  [Entidades: Usuario, Compania, Proyecto,\nPresupuesto, Capitulo, Subcapitulo, APU, Material] as Entities
+  [Reglas de negocio / Interfaces de repositorio] as DomainRules
+  DomainRules -down-> Entities
+}
+
+package "Infrastructure Layer" as InfrastructureLayer {
+  [Repositorios (EF Core)] as Repos
+  [AppDbContext] as DbContext
+  [Identity Store] as IdentityStore
+  Repos -down-> DbContext
+  IdentityStore -down-> DbContext
+}
+
+database "SQL Server" as SQLServer
+
+PresentationLayer -[hidden]down-> ApiLayer
+ApiLayer -[hidden]down-> ApplicationLayer
+ApplicationLayer -[hidden]down-> DomainLayer
+DomainLayer -[hidden]down-> InfrastructureLayer
+InfrastructureLayer -[hidden]down-> SQLServer
+
+SPA --> Controllers : HTTPS/JSON
+Controllers --> AppServices
+AppServices --> DomainRules
+AppServices --> Entities
+
+DomainRules ..> Repos : implementado por
+DbContext --> SQLServer
+JwtMw --> IdentityStore
+
+@enduml

@@ -1,0 +1,43 @@
+@startuml Deployment
+title Despliegue - Servidor Ubuntu 24.04 (Docker Compose)
+
+node "Servidor Ubuntu 24.04" {
+  node "Docker Engine" {
+
+    node "Contenedor: web (nginx)" as WEB {
+      component "Angular SPA (build estatico)" as ANGULAR
+      component "Nginx reverse proxy" as NGINX
+    }
+
+    node "Contenedor: api (aspnet)" as API {
+      component "ASP.NET Core Web API\n(.NET 8)" as APINET
+    }
+
+    node "Contenedor: sqlserver" as DB {
+      database "SQL Server 2022 (Linux)" as SQLSERVER
+    }
+
+    node "Volumen: sqlserver-data" as VOL
+  }
+}
+
+actor "Usuario (navegador)" as USER
+
+USER --> NGINX : HTTPS 443
+NGINX --> ANGULAR : sirve archivos estaticos
+NGINX --> APINET : proxy_pass /api/ (HTTP 8080)
+APINET --> SQLSERVER : EF Core / TDS (1433)
+SQLSERVER --> VOL : persistencia de datos
+
+note right of NGINX
+  Termina TLS (Let's Encrypt / certbot)
+  Redirige /api/* al contenedor api
+  Redirige resto a archivos Angular
+end note
+
+note bottom of DB
+  Imagen oficial mcr.microsoft.com/mssql/server:2022-latest
+  Variables: SA_PASSWORD, ACCEPT_EULA
+end note
+
+@enduml
