@@ -28,7 +28,7 @@ Seguimos Spec-Driven Development (SDD): primero se especifica, luego se planific
 
 ```text
 .github/
-	README.md
+	AI-INSTRUCTIONS.md
 	copilot-instructions.md
 	docs/
 		00-idea-problema.md

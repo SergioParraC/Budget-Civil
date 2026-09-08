@@ -7,7 +7,7 @@ Esta carpeta define la base documental del proyecto para trabajar con estrategia
 La meta es mantener alcance concreto del MVP y evitar expansion prematura.
 
 ## Estructura propuesta
-- .github/README.md
+- .github/AI-INSTRUCTIONS.md
   Mapa general, orden de llenado y flujo de trabajo con Spec Kit.
 - .github/copilot-instructions.md
   Reglas operativas para Copilot durante documentacion y desarrollo.
