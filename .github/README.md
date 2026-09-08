@@ -1,4 +1,6 @@
-# Documentacion base del proyecto
+# Instrucciones internas para IA
+
+> Este archivo se mantiene en `.github` como guia de contexto para asistentes de IA y flujo Spec Kit. No es el README publico del repositorio.
 
 ## Proposito
 Esta carpeta define la base documental del proyecto para trabajar con estrategia Spec-Driven Development usando Spec Kit y Copilot.
