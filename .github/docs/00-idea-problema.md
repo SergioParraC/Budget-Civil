@@ -46,7 +46,7 @@ Proveer un backend y frontend desacoplados que automaticen el cálculo de presup
 * **Módulo de Configuración de Privacidad:**
   * Flag/Toggle de privacidad a nivel de APU o Proyecto: `Is_Public` (`true`/`false`) para autorizar su replicación en la base de datos compartida.
 * **Pruebas y Verificación:**
-  * Cobertura de pruebas unitarias sobre el motor de cálculo de APUs y pruebas de integración (caja negra) para las APIs REST.
+  * Cobertura de pruebas unitarias exclusivamente en backend para el motor de cálculo de APUs/presupuestos y reglas de privacidad por empresa.
 
 ## 6. Fuera de alcance
 * **Cálculo Autónomo por IA:** El sistema no debe asignar precios o cantidades de forma automática sin la interacción del usuario. La IA del sistema es puramente prescriptiva y de consulta.
@@ -56,7 +56,7 @@ Proveer un backend y frontend desacoplados que automaticen el cálculo de presup
 
 ## 7. Criterios de exito
 * **Automatización del Motor de Cálculo:** Cálculo en tiempo real de costos directos (APU) e indirectos (AIU) sin inconsistencias de redondeo ni fórmulas rotas.
-* **Trazabilidad Inmutable:** 100 % de las transacciones de modificación registran un evento de auditoría asociado a un `UserId` y un hash/registro de firma.
+* **Trazabilidad Inmutable:** 100 % de las transacciones de modificación registran un evento de auditoría asociado a un `UserId` y al evento de firma capturado desde frontend.
 * **Validación de Integridad:** El sistema debe rechazar la consolidación de un presupuesto si existen insumos en estado `FALTA_INFORMACION` o sin cotización asignada.
 
 ## 8. Supuestos y riesgos de negocio
@@ -66,6 +66,6 @@ Proveer un backend y frontend desacoplados que automaticen el cálculo de presup
 * **Seguridad y Control de Accesos:** Aislamiento estricto multitenant (multi-empresa) para evitar fugas de información entre organizaciones cuando los APUs estén marcados como privados.
 
 ## 9. Preguntas abiertas y estado de clarificacion
-* **Mecanismo de Firma de Autoría (Resuelto):** Se implementa firma auditada HMAC-SHA256 generada en backend sobre payload canónico (`project_id`, `user_id`, `approval_stage`, `timestamp_utc`).
+* **Mecanismo de Firma de Autoría (Resuelto):** Se implementa firma en frontend mediante Signature Pad para el acto de aprobación. La evidencia visual se usa de forma temporal en la solicitud y el backend registra el evento de auditoría (`SIGN`) sin persistir token/hash criptográfico.
 * **Lógica de Filtrado y Mapping DTO en la API (Resuelto):** Se mantiene Query Filter global por `CompanyId` y se habilita un bypass controlado solo para `GET /api/v1/public-apus`, con validación `Project.Is_Public = true AND Apu.Is_Public = true` y salida `PublicApuDTO` por whitelist.
 * **Estructura de Importación desde Excel (Abierto):** Pendiente definir esquemas JSON/CSV y reglas de parseo estandarizadas para mapear matrices de presupuestos tradicionales hacia la estructura relacional del sistema.

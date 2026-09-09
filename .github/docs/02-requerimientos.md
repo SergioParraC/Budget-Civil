@@ -16,8 +16,8 @@ Usa identificadores FR.
 | FR-008 | Cascada de Estados de Cotización / Información | Determina el estado del presupuesto evaluando la integridad de Insumos -> APUs -> Proyecto. | Alta | Un insumo sin Descripción, Valor Unitario, Unidad o Marca pasa a `Falta_informacion`, heredando este estado al APU y al Presupuesto. |
 | FR-009 | Motor de Alertas de Topes Presupuestales | Genera notificaciones/alertas cuando un capítulo o el total del proyecto supere el presupuesto límite configurado. | Media | Se dispara un indicador visual y alerta en tiempo real en la vista del proyecto si `CostoTotal > PresupuestoLimite`. |
 | FR-010 | Exportación e Importación de Presupuestos | Permite importar matrices básicas en formato CSV/JSON y exportar el resumen de cotización estructurado. | Baja | El parser valida el esquema JSON/CSV e ingresa los registros a las tablas unificadas sin romper integridad relacional. |
-| FR-011 | Firmado y Aval de APUs desde Configuración | Permite gestionar la firma del profesional realizador o el aval del profesional a cargo sobre los APUs del proyecto. | Media | La firma/aval no requiere selección uno a uno, sino que se gestiona de forma global o por lote desde el módulo de Configuración del Proyecto. |
-| FR-012 | Aprobación Dual para Estado `Finalizado` | Permite transicionar el presupuesto al estado `Finalizado` mediante un flujo de doble aprobación. | Alta | El sistema valida las aprobaciones digitales del Presupuestador y de un rol aprobador secundario parametrizable en `ProjectConfiguration` antes de marcar como `Finalizado`. |
+| FR-011 | Firma de Presupuesto desde Frontend | Permite gestionar la firma del responsable mediante Signature Pad en frontend para aprobar el cierre del presupuesto. | Media | La firma se captura en interfaz y el backend registra el evento de aprobación con trazabilidad de usuario y timestamp. |
+| FR-012 | Aprobación Única para Estado `Finalizado` | Permite transicionar el presupuesto al estado `Finalizado` mediante una aprobación única del usuario autorizado de la compañía propietaria. | Alta | El sistema valida firma de aprobación, permisos del actor y ausencia de elementos en `Falta_informacion` antes de marcar como `Finalizado`. |
 | FR-013 | (Opcional) Importación Asistida de APUs con IA | Herramienta opcional para analizar e identificar automáticamente elementos de matrices en Excel mediante modelos de IA. | Baja | Módulo considerado como feature futura / no bloqueante para el MVP. |
 
 ## 2. Requerimientos no funcionales
@@ -26,7 +26,7 @@ Usa identificadores NFR.
 
 | ID | Categoria | Requisito | Medicion |
 |---|---|---|---|
-| NFR-001 | Seguridad | API REST protegida mediante JWT, RBAC y aislamiento estricto de multitenancy por `CompanyId`, con excepción controlada del endpoint público de consulta. | 100 % de los endpoints privados requieren token válido y validación de roles; el endpoint público expone solo DTOs sanitizados y visibilidad validada. |
+| NFR-001 | Seguridad | API REST protegida mediante JWT, RBAC y privacidad por empresa basada en `CompanyId` para todos los endpoints privados. | 100 % de los endpoints privados requieren token válido y validación de roles con coincidencia de `CompanyId` entre sesión y registro objetivo. |
 | NFR-002 | Sanitización de Datos (Privacidad) | Garantizar la eliminación de metadatos de autoría (`CompanyId`, proyectos, firmas) en los DTOs de APUs públicos. | 100 % de las respuestas de la base de datos compartida usan el `PublicApuDTO` sin fuga de información. |
 | NFR-003 | Rendimiento | Tiempos de respuesta óptimos en el cálculo en tiempo real de la WBS y búsquedas en la base compartida. | p95 $\le$ 1.5 segundos en la respuesta de endpoints de cálculo y lectura de WBS. |
 | NFR-004 | Auditabilidad / Inmutabilidad | Los eventos de auditoría no pueden ser modificados ni eliminados por ningún usuario (`INSERT` only). | 0 endpoints de edición o borrado expuestos sobre la tabla/log de trazabilidad. |
@@ -44,12 +44,12 @@ Usa identificadores BR.
 | BR-004 | Trazabilidad de Participación: Se debe mantener un registro explícito del personal que ha intervenido en la modificación/creación de Proyectos, APUs y en la actualización del valor de los materiales/insumos. |
 | BR-005 | Un APU o Proyecto con `Is_Public = false` solo es accesible por usuarios autorizados de la empresa propietaria. |
 | BR-006 | La consulta compartida pública solo expondrá rendimientos y consumos de insumos; en ningún caso expondrá precios de compra o datos de proveedores privados. |
-| BR-007 | Un presupuesto no puede cambiar a estado "Aprobado/Finalizado" si contiene ítems o insumos con estado de cotización `FALTA_INFORMACION`. |
+| BR-007 | Un presupuesto no puede cambiar a estado "Finalizado" si contiene ítems o insumos con estado de cotización `FALTA_INFORMACION`. |
 | BR-008 | Estructura de Insumos y Matrices: Los insumos de tipo "Matriz" residen en la tabla unificada de insumos pero funcionan con lógica técnica de APU reusable de un solo nivel. No pueden ser agregados directamente como un ítem de obra final ni anidarse como Matriz dentro de otra Matriz. |
 | BR-009 | Campos Obligatorios de Insumo: Un insumo se considera completo únicamente si posee `Descripción`, `Valor Unitario`, `Unidad` y `Marca`. Si falta alguno de estos 4 campos, el insumo se marca automáticamente como `Falta_informacion`. |
 | BR-010 | Mapeo de Campos Opcionales de Insumo: Los campos `Distribuidor`, `Lugar (Ciudad/Municipio - País)`, `Clave Usuario`, `Detalles` y `Número de Contacto` son de carácter recomendado/opcional y no bloquean el estado del insumo. |
-| BR-011 | Inmutabilidad de Presupuesto Finalizado: Para que un presupuesto pase al estado `Finalizado`, se requiere validar que no existan elementos en `Falta_informacion` y contar con aprobación explícita del Presupuestador y del rol aprobador secundario definido en `ProjectConfiguration`. |
-| BR-012 | Gestión Centralizada de Firmas: La aprobación o firma de responsabilidad se procesa desde la Configuración del Proyecto y no por firma unitaria de APU. Los tokens de firma son generados en backend con HMAC-SHA256 y nunca enviados por el cliente como valor final. |
+| BR-011 | Inmutabilidad de Presupuesto Finalizado: Para que un presupuesto pase al estado `Finalizado`, se requiere validar que no existan elementos en `Falta_informacion` y contar con una única aprobación explícita del usuario autorizado de la compañía propietaria. |
+| BR-012 | Gestión de Firma en Frontend: La aprobación se captura desde Signature Pad en frontend y el backend solo valida autorización, registra trazabilidad (`SIGN`) y confirma transición de estado. |
 | BR-013 | Regla de Exposición Pública: Un APU solo puede ser expuesto en la base compartida si `Project.Is_Public = true` y `Apu.Is_Public = true`. |
 | BR-014 | Cascada de Estados: La propagación y reversión del estado `FALTA_INFORMACION` (Insumo -> APU -> Proyecto) se ejecuta de forma sincrónica y transaccional. |
 
@@ -67,7 +67,7 @@ Define acciones por rol para cada modulo (`ADMIN`, `ESTIMATOR`, `AUDITOR`).
 | **Base Compartida APU** | Buscar / Consultar DTO |  Permitido |  Permitido |  Permitido |
 | **Log de Auditoria** | Consultar Bitacora/Firmas |  Permitido |  Denegado |  Permitido |
 
-* **Regla adicional FR-012:** El segundo aprobador es parametrizable en `ProjectConfiguration.second_approver_role_id`; solo usuarios con ese rol pueden registrar la segunda firma.
+* **Regla adicional FR-012:** La aprobación única a `FINALIZADO` requiere que el actor tenga permisos sobre el proyecto de su misma compañía.
 
 ## 5. Reglas de validacion
 
@@ -82,7 +82,7 @@ Documenta validaciones de datos por formulario y endpoint. **NOTA:** No se va a 
   * `description`: Cadena no vacía.
   * `unit`: Cadena no vacía (ej. m2, m3, kg, und).
   * `is_public`: Booleano obligatorio (`true` / `false`).
-  * `signature_token`: No se recibe en este endpoint. La autoría se registra en `AuditLog` con el `UserId` del JWT.
+  * `signature_token`: No aplica para este endpoint. La autoría se registra en `AuditLog` con el `UserId` del JWT.
   * `yield` (Rendimiento): Número flotante estricto $> 0$.
 * **Formulario / Endpoint: Detalle APU (`POST / PUT /api/v1/apu-resources`)**
   * `apu_id`: UUID requerido.
@@ -106,24 +106,24 @@ Documenta validaciones de datos por formulario y endpoint. **NOTA:** No se va a 
   * **Discriminador de Tipo (`tipo_insumo_id`):**
     * FK obligatorio correspondiente a: `Materiales`, `Mano de obra`, `Herramienta`, `Equipos`, `Auxiliares`, `Trabajos`, `Matriz`.
   * **Estado de Cotización (`quotation_status`):** Calculado por backend según completitud y flujo de cotización; no editable manualmente al crear el recurso.
-* **Endpoint: Aprobaciones (`POST /api/v1/projects/{id}/approvals`)**
-  * `approval_stage`: Enum (`ESTIMATOR_SIGN`, `SECOND_APPROVER_SIGN`).
+* **Endpoint: Aprobación de Cierre (`POST /api/v1/projects/{id}/approve`)**
+  * `signature_pad_data`: Evidencia temporal de firma capturada en frontend (no persistida como token/hash en base de datos).
   * `confirmation_phrase`: Cadena no vacía para consentimiento explícito.
-  * `signature_token`: Generado por backend con HMAC-SHA256 usando payload canónico (`project_id`, `user_id`, `approval_stage`, `timestamp_utc`).
+  * Validación backend: actor autorizado, coincidencia de `CompanyId`, ausencia de `FALTA_INFORMACION`.
 
 ## 6. Matriz de trazabilidad
 
 Relaciona FR con casos de uso y pruebas. **NOTA:** Estos son algunos de los elementos a requerir, ya que durante la ejecución del proyecto puede aumentar, por lo cual se debe actualizar a medida del desarrollo del proyecto.
 
-| Requerimiento (FR) | Caso de Uso (UC) | Tipo de Prueba (Unit / Integration) | Archivo de Prueba / Spec |
+| Requerimiento (FR) | Caso de Uso (UC) | Tipo de Prueba (Backend) | Archivo de Prueba / Spec |
 |---|---|---|---|
-| **FR-001** (Gestión Usuarios) | UC-01: Administrar Usuarios | Prueba de Integración API REST | `test/integration/user_management.spec.ts` |
-| **FR-002** (Gestión Empresa) | UC-02: Registrar / Configurar Empresa | Prueba de Integración DB Multitenant | `test/integration/company_tenant.spec.ts` |
-| **FR-003** (Estructura WBS) | UC-03: Construir WBS del Proyecto | Prueba Unitaria (Motor WBS) | `test/unit/wbs_calculation.spec.ts` |
-| **FR-004** (Gestión APUs) | UC-04: Estructurar APU e Insumos | Prueba Unitaria (Cálculo APU) | `test/unit/apu_calculation.spec.ts` |
-| **FR-005** (Config. Visibilidad) | UC-05: Cambiar Estado `Is_Public` | Prueba de Integración Repositorio | `test/integration/apu_visibility.spec.ts` |
-| **FR-006** (Trazabilidad / Firma) | UC-06: Registrar Log y Firma Auditada | Prueba Unitaria (Middleware Audit) | `test/unit/audit_signature.spec.ts` |
-| **FR-007** (Base Compartida) | UC-07: Consultar APU Público Anonimizado | Prueba de Integración DTO Sanitizado | `test/integration/public_dto_sanitization.spec.ts` |
-| **FR-008** (Estados Cotización) | UC-08: Actualizar Estado Insumo | Prueba Unitaria (Reglas de Validación) | `test/unit/quotation_status.spec.ts` |
-| **FR-009** (Alertas Presupuesto) | UC-09: Evaluar Topes Presupuestales | Prueba Unitaria (Alert Engine) | `test/unit/budget_alerts.spec.ts` |
-| **FR-010** (Import/Export Excel) | UC-10: Importar Matriz CSV/JSON | Prueba de Integración Parser | `test/integration/excel_parser.spec.ts` |
+| **FR-001** (Gestión Usuarios) | UC-01: Administrar Usuarios | Prueba Unitaria Backend (Autorización) | `tests/backend/unit/user_authorization_tests.cs` |
+| **FR-002** (Gestión Empresa) | UC-02: Registrar / Configurar Empresa | Prueba Unitaria Backend (Privacidad por compañía) | `tests/backend/unit/company_privacy_tests.cs` |
+| **FR-003** (Estructura WBS) | UC-03: Construir WBS del Proyecto | Prueba Unitaria Backend (Motor WBS) | `tests/backend/unit/wbs_calculation_tests.cs` |
+| **FR-004** (Gestión APUs) | UC-04: Estructurar APU e Insumos | Prueba Unitaria Backend (Cálculo APU) | `tests/backend/unit/apu_calculation_tests.cs` |
+| **FR-005** (Config. Visibilidad) | UC-05: Cambiar Estado `Is_Public` | Prueba Unitaria Backend (Reglas de visibilidad) | `tests/backend/unit/visibility_rules_tests.cs` |
+| **FR-006** (Trazabilidad / Firma) | UC-06: Registrar Log y Firma | Prueba Unitaria Backend (Registro `SIGN`) | `tests/backend/unit/audit_sign_event_tests.cs` |
+| **FR-007** (Base Compartida) | UC-07: Consultar APU Público Anonimizado | Prueba Unitaria Backend (DTO Sanitizado) | `tests/backend/unit/public_dto_sanitization_tests.cs` |
+| **FR-008** (Estados Cotización) | UC-08: Actualizar Estado Insumo | Prueba Unitaria Backend (Reglas de validación) | `tests/backend/unit/quotation_status_tests.cs` |
+| **FR-009** (Alertas Presupuesto) | UC-09: Evaluar Topes Presupuestales | Prueba Unitaria Backend (Alert Engine) | `tests/backend/unit/budget_alerts_tests.cs` |
+| **FR-010** (Import/Export Excel) | UC-10: Importar Matriz CSV/JSON | Prueba Unitaria Backend (Validación parser) | `tests/backend/unit/import_parser_tests.cs` |

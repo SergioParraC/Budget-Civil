@@ -8,7 +8,7 @@
   * Persistencia: Base de datos relacional (SQL Server) con esquema unificado multitenant para Proyectos, APUs e Insumos.  
   H* Seguridad y Auditoría: Autenticación por JWT/OAuth2 con RBAC (Control de Acceso Basado en Roles).
 * **Infraestructura:** Servicios local de servidor en Linux, con despliegue de contenedores (Docker) y base de datos administrada.
-* **Metodología de Desarrollo:** Spec-Driven Development (SDD) con enfoque Spec-anchored. Uso de GitHub Copilot y Spec Kit (.github/spec/) para acelerar la codificación, generación de contratos API y cobertura de pruebas unitarias/integración
+* **Metodología de Desarrollo:** Spec-Driven Development (SDD) con enfoque Spec-anchored. Uso de GitHub Copilot y Spec Kit (.github/spec/) para acelerar la codificación, generación de contratos API y cobertura de pruebas unitarias en backend.
 
 ## 2. Viabilidad operativa
 
@@ -30,8 +30,8 @@ Incluye usuarios responsables, soporte y flujo de trabajo.
 * **Costos de Infraestructura (Nube - Fase MVP):**
   * Servidor de aplicaciones / Contenedores (Instancia básica / Serverless): USD 20 - 50 / mes.
   * Base de datos relacional administrada (vCPU y almacenamiento básico): USD 25 - 60 / mes.
-  * Dominio, certificados SSL y almacenamiento de firmas/logs: USD 10 - 20 / mes.
-  * Costo mensual estimado MVP: USD 55 - 130 / mes.
+  * Dominio y almacenamiento de logs: USD 5 - 15 / mes.
+  * Costo mensual estimado MVP: USD 50 - 125 / mes.
 
 ## 4. Restricciones y dependencias
 
@@ -39,13 +39,13 @@ Incluye usuarios responsables, soporte y flujo de trabajo.
   * Modelo de Datos Unificado: Obligatoriedad de mantener Proyectos, APUs e Insumos en la misma estructura de tablas relacionales, manejando la privacidad a nivel de API/DTOs y no por bases de datos separadas.
   * Sin Auto-asignación por IA: La IA no debe decidir los valores ni rendimientos de los presupuestos; su alcance es prescriptivo, de soporte y consulta de referencias.
 * **Dependencias:**
-  * Especificación técnica del formato y hash de la firma registrada de los usuarios (resuelta en `.github/spec/SPEC.md`: HMAC-SHA256 server-side).
+  * Definición técnica del flujo de firma en frontend (Signature Pad) y validación de aprobación en backend.
   * Definición de los esquemas de importación (CSV) para migrar matrices desde Excel. 
 
 ## 5. Riesgos y mitigaciones
 
 * Riesgo 1: Fuga de información corporativa al consultar APUs públicos.
-  * Mitigación: Implementar pruebas unitarias y de integración sobre la capa de DTOs sanitizados para garantizar que el CompanyId y los nombres de proyectos nunca se envíen en la respuesta JSON de la API compartida.
+  * Mitigación: Implementar pruebas unitarias en backend sobre la capa de DTOs sanitizados para garantizar que el CompanyId y los nombres de proyectos nunca se envíen en la respuesta JSON de la API compartida.
 * Riesgo 2: Drift/desalineación de la API frente a las especificaciones escritas (Deuda técnica por IA).
   * Mitigación: Adoptar el enfoque Spec-anchored de SDD, donde las especificaciones OpenAPI/Markdown en .github/spec/ se validan mediante pipelines automatizados de CI/CD antes de permitir merges al código fuente.  
 * Riesgo 3: Bajo desempeño en consultas complejas sobre la tabla unificada de APUs.
@@ -55,5 +55,5 @@ Incluye usuarios responsables, soporte y flujo de trabajo.
 
 * Estado Actual: GO CON CONDICIONES
 * Condiciones para pasar a Sprint 1 de Desarrollo:
-  1. Implementar en código la especificación de firma auditada definida en `.github/spec/SPEC.md` (HMAC-SHA256).  
-  2. Implementar y validar por pruebas el diseño de `PublicApuDTO` por whitelist para exposición de la base compartida sobre la tabla unificada.
+  1. Implementar en código la aprobación con firma única desde Signature Pad en frontend y validación de autorización en backend.  
+  2. Implementar y validar por pruebas unitarias backend el diseño de `PublicApuDTO` por whitelist para exposición de la base compartida sobre la tabla unificada.

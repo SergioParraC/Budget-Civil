@@ -15,12 +15,11 @@ Incluye:
 - Modelo unificado Resource/Insumo con catalogo ResourceType.
 - Cascada de estado FALTA_INFORMACION (Resource -> Apu -> Project).
 - Regla de Matriz reusable con expansion de un solo nivel.
-- Flujo de doble aprobacion para FINALIZADO.
+- Flujo de aprobacion unica para FINALIZADO.
 - Consulta publica sanitizada de APUs.
 
 Excluye:
 - Multi-moneda por item.
-- Firma PKI asimetrica (se usa HMAC en MVP).
 - Expansion recursiva de matrices en multiples niveles.
 
 ## 4. Lenguaje canonico
@@ -52,7 +51,7 @@ Regla de evaluacion:
 1. Si existe Apu en FALTA_INFORMACION -> Project = FALTA_INFORMACION.
 2. Si no hay faltantes y existen pendientes de cotizacion -> Project = POR_COTIZAR.
 3. Si todo esta completo y cotizado -> Project = COTIZADO.
-4. FINALIZADO solo por doble aprobacion valida.
+4. FINALIZADO solo por aprobacion unica valida.
 
 ### 5.3 Cascada transaccional
 La propagacion y reversion de estado debe ejecutarse de forma sincrona en una sola transaccion de dominio:
@@ -68,17 +67,16 @@ La propagacion y reversion de estado debe ejecutarse de forma sincrona en una so
 Regla AND obligatoria:
 - Solo se publica un APU si Project.is_public = true AND Apu.is_public = true.
 
-### 5.6 Doble aprobacion y cierre
+### 5.6 Aprobacion unica y cierre
 Para pasar a FINALIZADO:
 1. No debe existir FALTA_INFORMACION en el proyecto.
-2. Debe existir estimator_signature_token.
-3. Debe existir director_signature_token (segunda firma).
-4. El segundo firmante debe tener el rol configurado en ProjectConfiguration.second_approver_role_id.
+2. Debe existir captura de firma en frontend mediante Signature Pad para el acto de aprobacion.
+3. El actor debe estar autorizado por rol y pertenecer a la misma compania del proyecto.
 
 ### 5.7 Mecanismo de firma
-- Algoritmo: HMAC-SHA256.
-- Payload canonico: project_id, user_id, approval_stage, timestamp_utc.
-- El cliente no envia el hash final; backend lo genera y persiste.
+- La firma se captura en frontend con Signature Pad como evidencia temporal.
+- El backend valida autorizacion, registra evento SIGN en AuditLog y ejecuta la transicion de estado.
+- En esta fase no se persiste token/hash criptografico de firma.
 
 ### 5.8 Politica de moneda
 - Unica moneda activa por proyecto.
@@ -88,8 +86,9 @@ Para pasar a FINALIZADO:
 ## 6. Arquitectura y seguridad
 - Clean Architecture obligatoria.
 - Invariantes de FINALIZADO y cascada en Domain/Application.
-- Query Filters globales por CompanyId en consultas privadas.
-- Unica excepcion: consulta publica de APUs con bypass controlado y DTO sanitizado.
+- Privacidad por empresa obligatoria mediante CompanyId en consultas privadas.
+- Consulta publica de APUs condicionada por regla AND de is_public y salida DTO sanitizada.
+- Transporte HTTP sin TLS en esta fase; operacion recomendada en red interna confiable.
 
 ## 7. Contrato API base (canonico)
 - POST /api/v1/users
@@ -97,11 +96,11 @@ Para pasar a FINALIZADO:
 - POST|PUT /api/v1/apu-resources
 - POST|PUT /api/v1/resources
 - GET /api/v1/public-apus
-- POST /api/v1/projects/{id}/approvals
+- POST /api/v1/projects/{id}/approve
 
 Reglas clave:
 - company_id no viaja en payload de users; se inyecta desde JWT.
-- signature_token no se recibe para crear/editar APU.
+- signature_token no aplica para crear/editar APU.
 - quotation_status de Resource no se asigna libremente al crear/editar.
 
 ## 8. PublicApuDTO (whitelist)
@@ -127,8 +126,8 @@ Campos prohibidos:
 Cambios minimos en modelo:
 - Agregar tabla/definicion completa de WbsChapter.
 - Agregar tabla/definicion completa de WbsItem.
-- Agregar ProjectConfiguration.second_approver_role_id (FK Role).
 - Ajustar Project.currency a politica ISO 4217 (3).
+- Eliminar campos de token de firma en ProjectConfiguration.
 
 Seed minimo de roles:
 - ADMIN
@@ -136,11 +135,11 @@ Seed minimo de roles:
 - AUDITOR
 
 ## 10. Pruebas minimas obligatorias
-- test_matrix_single_level_expansion
-- test_public_apu_visibility_and_rule
-- test_public_apu_dto_sanitization
-- test_missing_info_cascade_transactional
-- test_dual_approval_freeze
+- tests/backend/unit/matrix_single_level_expansion_tests.cs
+- tests/backend/unit/public_apu_visibility_and_rule_tests.cs
+- tests/backend/unit/public_dto_sanitization_tests.cs
+- tests/backend/unit/missing_info_cascade_transactional_tests.cs
+- tests/backend/unit/single_approval_freeze_tests.cs
 
 ## 11. Criterio de inicio de implementacion
 Se puede iniciar codigo cuando:

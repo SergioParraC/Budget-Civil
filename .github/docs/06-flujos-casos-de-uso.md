@@ -3,7 +3,7 @@
 ## 1. Actores
 * **`ADMIN` (Administrador):** Responsable de la parametrización de la empresa (tenant), gestión de accesos, creación de usuarios y configuración global del proyecto.
 * **`ESTIMATOR` (Presupuestador / Compras):** Encargado de la estructuración de la WBS (Capítulos/Ítems), creación de Análisis de Precios Unitarios (APUs), actualización del valor de los materiales e insumos, y primera firma técnica del presupuesto.
-* **`AUDITOR` (Interventor / Director):** Usuario con permisos de lectura sobre presupuestos, encargado de auditar la trazabilidad de cambios y consultar APUs compartidos. Puede actuar como segundo firmante cuando el proyecto lo configure como rol aprobador secundario.
+* **`AUDITOR` (Interventor / Director):** Usuario con permisos de lectura sobre presupuestos, encargado de auditar la trazabilidad de cambios y consultar APUs compartidos.
 
 ## 2. Lista de casos de uso
 
@@ -12,7 +12,7 @@
 * **UC-003:** Crear y estructurar APU con vinculación de Insumos/Matrices.
 * **UC-004:** Consultar base compartida pública de APUs.
 * **UC-005:** Evaluar reglas de integridad y cascada de estado `Falta_informacion`.
-* **UC-006:** Aprobación dual y congelamiento de presupuesto a estado `Finalizado`.
+* **UC-006:** Aprobación única y congelamiento de presupuesto a estado `Finalizado`.
 
 ## 3. Plantilla por caso de uso
 
@@ -106,21 +106,21 @@
 
 ---
 
-### UC-006 Aprobación dual y congelamiento de presupuesto a estado `Finalizado`
-* **Objetivo:** Otorgar aprobación digital dual (Presupuestador + rol aprobador secundario parametrizable) para congelar el presupuesto y transicionar al estado `FINALIZADO`.
-* **Actor principal:** `ESTIMATOR` y usuario con rol configurado en `ProjectConfiguration.second_approver_role_id`.
+### UC-006 Aprobación única y congelamiento de presupuesto a estado `Finalizado`
+* **Objetivo:** Otorgar aprobación digital única con firma capturada en frontend para congelar el presupuesto y transicionar al estado `FINALIZADO`.
+* **Actor principal:** Usuario autorizado (`ADMIN` o `ESTIMATOR`) de la compañía propietaria del proyecto.
 * **Precondiciones:** El proyecto no debe contener ningún APU o insumo en estado `FALTA_INFORMACION`.
 * **Postcondiciones:** Generación de un snapshot inmutable en `BudgetVersion` y cambio del estado del proyecto a `FINALIZADO`.
 * **Flujo principal:**
-  1. El `ESTIMATOR` registra la firma técnica desde Configuración del Proyecto y el backend genera `estimator_signature_token` (HMAC-SHA256).
-  2. El segundo aprobador definido por `ProjectConfiguration.second_approver_role_id` revisa el presupuesto y presiona "Aprobar y Finalizar".
-  3. El sistema valida que el proyecto no posea `FALTA_INFORMACION`, que exista firma del estimador y que el usuario actual tenga el rol configurado.
-  4. El backend genera y almacena `director_signature_token` (HMAC-SHA256) como segunda firma.
+  1. El usuario autorizado accede al cierre de presupuesto y registra su firma en frontend mediante Signature Pad.
+  2. El usuario presiona "Aprobar y Finalizar".
+  3. El sistema valida que el proyecto no posea `FALTA_INFORMACION` y que el actor pertenezca a la misma compañía propietaria del proyecto.
+  4. El backend registra evento `SIGN` en `AuditLog` y confirma la aprobación.
   5. Se serializa la WBS y APUs en un JSON inmutable grabado en la tabla `BudgetVersion` y el proyecto pasa a `FINALIZADO`.
 * **Flujos alternos:**
   * *Bloqueo por Incompleto:* Si existe al menos un elemento en `Falta_informacion`, el sistema rechaza la transición y despliega la lista de tareas/insumos pendientes.
-* **Reglas de validación:** Ambos tokens de firma son requeridos y se generan exclusivamente en backend. Un proyecto en estado `FINALIZADO` queda congelado en modo lectura (`BR-011`).
-* **Errores esperados:** `IncompleteBudgetException` si se intenta finalizar con datos faltantes. `MissingSignatureException` si falta alguna de las dos firmas. `InvalidApproverRoleException` si el segundo firmante no coincide con el rol configurado.
+* **Reglas de validación:** Se requiere una firma capturada desde Signature Pad y autorización por compañía. Un proyecto en estado `FINALIZADO` queda congelado en modo lectura (`BR-011`).
+* **Errores esperados:** `IncompleteBudgetException` si se intenta finalizar con datos faltantes. `MissingSignatureException` si no se captura firma. `UnauthorizedAccessException` si el actor no pertenece a la compañía propietaria.
 
 ## 4. Mapeo a requerimientos
 
@@ -131,18 +131,18 @@
 | **UC-003** (Estructurar APU/Matriz) | FR-004, FR-006, FR-007 | BR-003, BR-004, BR-008 |
 | **UC-004** (Consultar base APU) | FR-005, FR-007 | BR-005, BR-006, BR-013 |
 | **UC-005** (Cascada `Falta_informacion`) | FR-008 | BR-007, BR-009, BR-010, BR-014 |
-| **UC-006** (Aprobación dual) | FR-011, FR-012 | BR-011, BR-012 |
+| **UC-006** (Aprobación única) | FR-011, FR-012 | BR-011, BR-012 |
 
 ## 5. Mapeo a pruebas
 
 | Caso de Uso (UC) | Nombre / Archivo de Prueba | Tipo de Prueba | Criterio a Evaluar |
 |---|---|---|---|
-| **UC-001** | `test_admin_creates_tenant_users` | Integración API | Creación de rol `ESTIMATOR` restringida al tenant actual. |
-| **UC-002** | `test_wbs_auto_recalculation` | Unitaria (Domain) | Agregar un `WbsItem` recalcula el total del `WbsChapter`. |
-| **UC-003** | `test_apu_direct_cost_calculation` | Unitaria (Domain) | El costo directo coincide con consumos, precios unitarios y desperdicio, dividido por rendimiento. |
-| **UC-003** | `test_matrix_single_level_expansion` | Unitaria (Domain) | Una Matriz se expande solo un nivel y rechaza anidamiento Matriz -> Matriz. |
-| **UC-003** | `test_audit_log_participation` | Unitaria (App Layer) | Se genera un registro de participante al guardar un APU. |
-| **UC-004** | `test_public_apu_dto_sanitization` | Integración API | El response HTTP cumple whitelist de `PublicApuDTO` y no contiene campos sensibles. |
-| **UC-004** | `test_public_apu_visibility_and_rule` | Integración API | Solo se exponen APUs con `Project.Is_Public = true` y `Apu.Is_Public = true`. |
-| **UC-005** | `test_missing_info_cascade_transactional` | Unitaria (Domain) | La propagación y reversión de estado se ejecutan en una sola transacción. |
-| **UC-006** | `test_dual_approval_freeze` | Unitaria (Domain) | Lanza excepción si falta una firma, hay datos incompletos o el segundo rol no coincide con configuración. |
+| **UC-001** | `tests/backend/unit/user_authorization_tests.cs` | Unitaria Backend | Creación de usuarios restringida a la misma compañía del actor autenticado. |
+| **UC-002** | `tests/backend/unit/wbs_calculation_tests.cs` | Unitaria Backend | Agregar un `WbsItem` recalcula el total del `WbsChapter`. |
+| **UC-003** | `tests/backend/unit/apu_calculation_tests.cs` | Unitaria Backend | El costo directo coincide con consumos, precios unitarios y desperdicio, dividido por rendimiento. |
+| **UC-003** | `tests/backend/unit/matrix_single_level_expansion_tests.cs` | Unitaria Backend | Una Matriz se expande solo un nivel y rechaza anidamiento Matriz -> Matriz. |
+| **UC-003** | `tests/backend/unit/audit_sign_event_tests.cs` | Unitaria Backend | Se genera un registro `SIGN` al aprobar un cierre con firma capturada en frontend. |
+| **UC-004** | `tests/backend/unit/public_dto_sanitization_tests.cs` | Unitaria Backend | El resultado cumple whitelist de `PublicApuDTO` y no contiene campos sensibles. |
+| **UC-004** | `tests/backend/unit/public_apu_visibility_and_rule_tests.cs` | Unitaria Backend | Solo se exponen APUs con `Project.Is_Public = true` y `Apu.Is_Public = true`. |
+| **UC-005** | `tests/backend/unit/missing_info_cascade_transactional_tests.cs` | Unitaria Backend | La propagación y reversión de estado se ejecutan en una sola transacción. |
+| **UC-006** | `tests/backend/unit/single_approval_freeze_tests.cs` | Unitaria Backend | Lanza excepción si falta firma, hay datos incompletos o el actor no pertenece a la compañía propietaria. |

@@ -5,8 +5,8 @@
 * **Company (`Compania`):** Representa la organización/empresa constructora dentro del esquema multitenant.
 * **Role (`Rol`):** Catálogo editable de roles del sistema. Cada rol tiene identificador GUID propio y metadatos de activación.
 * **User (`Usuario`):** Usuario del sistema autenticado via JWT, asociado a un rol por `role_id`.
-* **Project (`Proyecto`):** Objeto contenedor principal del presupuesto, con divisa única por proyecto (ISO 4217), topes y estados de aprobación.
-* **ProjectConfiguration (`ConfiguracionProyecto`):** Almacena parámetros de control, tope presupuestal, rol aprobador secundario y firmas digitales generadas en backend.
+* **Project (`Proyecto`):** Objeto contenedor principal del presupuesto, con divisa única por proyecto (ISO 4217), topes y estado de aprobación.
+* **ProjectConfiguration (`ConfiguracionProyecto`):** Almacena parámetros de control y tope presupuestal del proyecto.
 * **WbsChapter (`Capitulo`):** Agrupador jerárquico de nivel superior dentro del presupuesto (Estructura de Desglose del Trabajo).
 * **WbsItem (`Item` / `Actividad`):** Unidad de obra/actividad presupuestable dentro de un capítulo, vinculada a un APU.
 * **Apu (`Análisis de Precio Unitario`):** Estructura técnica de composición de costos directos (materiales, equipos, mano de obra, matrices, etc.). Posee la propiedad `Is_Public`.
@@ -26,7 +26,7 @@
 * **Company `1` ──── `N` Project:** Una empresa posee $N$ proyectos aislados lógicamente por tenant.
 * **Company `1` ──── `N` Apu:** Una empresa administra múltiples APUs propios.
 * **Company `1` ──── `N` Resource:** Una empresa administra múltiples insumos propios.
-* **Project `1` ──── `1` ProjectConfiguration:** Un proyecto posee una única configuración de límites, aprobaciones y firmas.
+* **Project `1` ──── `1` ProjectConfiguration:** Un proyecto posee una única configuración de límites y parámetros operativos.
 * **Project `1` ──── `N` WbsChapter:** Un proyecto se compone de $N$ capítulos.
 * **WbsChapter `1` ──── `N` WbsItem:** Un capítulo contiene $N$ ítems o actividades de obra.
 * **WbsItem `1` ──── `1` Apu:** Un ítem de obra referencia un APU para su cálculo de costo unitario.
@@ -95,9 +95,6 @@
 | `id` | UUID | No | Clave Primaria. |
 | `project_id` | UUID | No | FK `Project(id)`, Único. |
 | `budget_limit` | DECIMAL(18,2) | Sí | Tope presupuestal máximo configurado. |
-| `second_approver_role_id` | UUID | Sí | FK `Role(id)`. Rol que puede registrar la segunda aprobación. |
-| `estimator_signature_token` | VARCHAR(500) | Sí | Token HMAC-SHA256 generado por backend para la firma del presupuestador. |
-| `director_signature_token` | VARCHAR(500) | Sí | Token HMAC-SHA256 generado por backend para la segunda firma según `second_approver_role_id`. |
 
 ### `WbsChapter`
 | Campo | Tipo | Nulo | Descripción / Validaciones |
@@ -195,7 +192,7 @@
     1. `FALTA_INFORMACION` si existe al menos un `Apu` en `FALTA_INFORMACION`.
     2. `POR_COTIZAR` si no hay faltantes, pero existe al menos un insumo/actividad pendiente de cotización.
     3. `COTIZADO` si todo está completo y cotizado.
-    4. `FINALIZADO` solo por flujo de doble aprobación.
+    4. `FINALIZADO` solo por flujo de aprobación única válida.
 * **Ejecución de Cascada Sincrónica y Transaccional:**
   * Cualquier cambio en un `Resource` que afecte completitud/cotización dispara en la misma transacción la reevaluación de `Apu.status` y `Project.status`.
   * En subsanación (completar campos faltantes), el sistema revierte `FALTA_INFORMACION` en cascada cuando ya no existan bloqueantes.
@@ -205,17 +202,16 @@
   * No se permite anidamiento Matriz -> Matriz ni autorreferencia.
 * **Regla de Visibilidad Pública (AND):**
   * Un APU se expone en la base compartida solo si `Project.is_public = true` y `Apu.is_public = true`.
-  * La consulta pública aplica bypass controlado del filtro multitenant únicamente en ese caso y siempre retorna DTO sanitizado.
-* **Aprobación Dual para Estado `Finalizado`:**
+  * La consulta pública aplica validación de visibilidad en ese caso y siempre retorna DTO sanitizado.
+* **Aprobación Única para Estado `Finalizado`:**
   * Para cambiar `Project.status` a `FINALIZADO`, el backend valida obligatoriamente que:
     1. Ningún APU o Insumo del proyecto esté en `FALTA_INFORMACION`.
-    2. `ProjectConfiguration.estimator_signature_token` NO sea nulo.
-    3. `ProjectConfiguration.director_signature_token` NO sea nulo.
-    4. El usuario que registra la segunda firma pertenezca al rol configurado en `ProjectConfiguration.second_approver_role_id`.
-  * Esta validación se resuelve en Domain/Application Layer; no depende de constraint condicional en base de datos.
-* **Mecanismo de Firma Auditada (HMAC):**
-  * Los tokens de firma se generan en backend mediante HMAC-SHA256 con payload canónico (`project_id`, `user_id`, `approval_stage`, `timestamp_utc`).
-  * El cliente no envía el hash final; solo dispara la acción de aprobación.
+    2. El usuario que aprueba tenga permisos sobre el proyecto de su misma compañía.
+    3. Exista captura temporal de firma desde Signature Pad en frontend para el acto de aprobación.
+  * Esta validación se resuelve en Domain/Application Layer y el backend registra un evento `SIGN` en `AuditLog`.
+* **Mecanismo de Firma de Aprobación:**
+  * La firma se captura en frontend mediante Signature Pad como evidencia temporal de la acción.
+  * El backend no persiste token/hash de firma.
 * **Política de Divisa por Proyecto:**
   * `Project.currency` usa código ISO 4217 en mayúsculas y longitud fija de 3 caracteres.
   * Cada proyecto maneja una sola moneda activa.
@@ -251,6 +247,8 @@ $$PT_{Proyecto} = CD_{Proyecto} \times (1 + \%A + \%I + \%U)$$
   * Una versión congelada es estrictamente de **solo lectura**.
 * **Recálculo por Modificación:**
   * Si un usuario modifica el costo de un `Resource` o el rendimiento de un `Apu`, el motor de cálculo marca el presupuesto activo como "Desactualizado" y ejecuta una recálculo en cascada desde el insumo hasta el subtotal del proyecto en tiempo real (`BR-003`).
+* **Cierre por Aprobación:**
+  * Al aprobar un proyecto, el backend registra en `AuditLog` la acción `SIGN` con `user_id`, `company_id`, `entity_name`, `entity_id` y `created_at`.
 
 ## 7. Indices y rendimiento
 

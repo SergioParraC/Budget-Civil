@@ -2,14 +2,14 @@
 
 ## 1. Resumen arquitectonico
 
-Plataforma web de gestión de presupuestos de obra civil construida bajo Clean Architecture (Arquitectura Limpia) con desacoplamiento total entre frontend y backend. El cliente es una aplicación SPA en Angular que interactúa mediante APIs HTTPS/JSON con un servidor backend en ASP.NET Core Web API (.NET 8). La persistencia se gestiona en SQL Server 2022 utilizando Entity Framework Core con un esquema relacional unificado multitenant. El despliegue de producción se realiza mediante Docker Compose sobre Ubuntu 24.04 LTS, utilizando Nginx como proxy inverso y terminador SSL.
+Plataforma web de gestión de presupuestos de obra civil construida bajo Clean Architecture (Arquitectura Limpia) con desacoplamiento total entre frontend y backend. El cliente es una aplicación SPA en Angular que interactúa mediante APIs HTTP/JSON con un servidor backend en ASP.NET Core Web API (.NET 10). La persistencia se gestiona en SQL Server 2022 utilizando Entity Framework Core con un esquema relacional unificado y privacidad por empresa (`CompanyId`). El despliegue de producción se realiza mediante Docker Compose sobre Ubuntu 24.04 LTS, utilizando Nginx como proxy inverso.
 
 ## 2. Capas y responsabilidades
 
 ┌─────────────────────────────────────────────────────────┐
 │              Presentation Layer (Angular SPA)            │
 └────────────────────────────┬────────────────────────────┘
-                             │ HTTPS / JSON
+                             │ HTTP / JSON
 ┌────────────────────────────▼────────────────────────────┐
 │              API Layer (ASP.NET Core Web API)           │
 │  Controllers | JWT Middleware | Request/Response DTOs   │
@@ -63,24 +63,24 @@ Nota de arquitectura sobre el Modelo de Dominio: El archivo domain-model.puml si
 ## 4. Integraciones
 
 * Autenticación e Identidad: ASP.NET Core Identity + JWT Token Bearer para el manejo de sesiones de usuario.
-* Firma Auditada: Servicio de firma HMAC-SHA256 en backend para generar y validar tokens de aprobación (`ESTIMATOR_SIGN`, `SECOND_APPROVER_SIGN`) sin exponer secretos al cliente.
-* Servicio de Proxy Inverso (Nginx): Enrutamiento de peticiones HTTPS (Puerto 443), terminación TLS mediante Let's Encrypt / Certbot y despacho de estáticos de Angular.
-* Motor de Pruebas: xUnit / Moq / FluentAssertions en backend y Karma/Jasmine o Jest en frontend para garantizar la cobertura de pruebas requerida en SDD.
+* Firma en Frontend: Captura de firma manuscrita mediante Signature Pad para acciones de aprobación. El backend registra el evento `SIGN`.
+* Servicio de Proxy Inverso (Nginx): Enrutamiento de peticiones HTTP (Puerto 80) y despacho de estáticos de Angular.
+* Motor de Pruebas: xUnit / Moq / FluentAssertions en backend para garantizar cobertura de reglas de cálculo y privacidad por empresa.
 
 ## 5. Seguridad
 
 * Autenticación: Tokens JWT firmados enviados en la cabecera HTTP Authorization: Bearer <token>.
-* Autorización: Control de Acceso Basado en Roles (RBAC) a nivel de endpoints y servicios (`ADMIN`, `ESTIMATOR`, `AUDITOR`) con rol de segundo aprobador parametrizable en `ProjectConfiguration`.
-* Aislamiento Multitenant: Query Filters globales por `CompanyId` en todas las consultas privadas. La única excepción permitida es el servicio de lectura pública de APUs, con bypass controlado y validación estricta de visibilidad.
+* Autorización: Control de Acceso Basado en Roles (RBAC) a nivel de endpoints y servicios (`ADMIN`, `ESTIMATOR`, `AUDITOR`) con aprobación única de cierre.
+* Privacidad por Empresa: El acceso a registros privados exige coincidencia de `CompanyId` entre el usuario autenticado y la entidad objetivo.
 * Sanitización Pública: La consulta de la base compartida usa exclusivamente `PublicApuDTO` por whitelist y solo publica registros que cumplan `Project.Is_Public = true` y `Apu.Is_Public = true`.
-* Transición a `FINALIZADO`: Las invariantes de doble aprobación y ausencia de `FALTA_INFORMACION` se validan en Domain/Application Layer (sin dependencia de reglas implícitas en BD).
+* Transición a `FINALIZADO`: Las invariantes de aprobación única y ausencia de `FALTA_INFORMACION` se validan en Domain/Application Layer.
 
 ## 6. Despliegue
 
 * Entorno Target: Servidor dedicado / VPS con Ubuntu 24.04 LTS.
 * Orquestación: Docker Compose ejecutando tres contenedores principales:
   1. `web`: Contenedor Nginx que sirve la SPA compilada de Angular y actúa como reverse proxy.
-  2. `api`: Contenedor `.NET 8 Web API` expuesto en el puerto interno 8080.
+  2. `api`: Contenedor `.NET 10 Web API` expuesto en el puerto interno 8080.
   3. `sqlserver`: Contenedor de `SQL Server 2022 (Linux)` mapeado a un volumen persistente `sqlserver-data`.
 
 ## 7. Observabilidad
