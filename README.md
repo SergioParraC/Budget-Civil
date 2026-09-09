@@ -1,4 +1,4 @@
-# Budget Civil Backend 🏗️💰
+# Budget Civil 🏗️💰
 
 Bienvenido al repositorio del backend de Budget Civil.
 
@@ -20,7 +20,7 @@ Seguimos Spec-Driven Development (SDD): primero se especifica, luego se planific
 - ASP.NET Core Web API (.NET 10)
 - Entity Framework Core (8.x)
 - SQL Server 2022
-- Angular 18.x
+- Angular 20.x
 - Nginx
 - Docker Compose v2
 
