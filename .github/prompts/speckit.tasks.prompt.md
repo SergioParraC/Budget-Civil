@@ -1,4 +1,6 @@
-# Prompt base para speckit.tasks
+---
+agent: speckit.tasks
+---
 
 Objetivo:
 Generar tareas ejecutables, pequenas y trazables desde el plan y contratos.

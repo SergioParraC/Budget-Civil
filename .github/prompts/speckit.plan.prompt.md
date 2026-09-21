@@ -1,4 +1,6 @@
-# Prompt base para speckit.plan
+---
+agent: speckit.plan
+---
 
 Objetivo:
 Traducir la especificacion aprobada a un plan tecnico consistente con la arquitectura del proyecto.

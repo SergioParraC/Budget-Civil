@@ -1,5 +1,6 @@
-# Prompt base para speckit.converge
-
+---
+agent: speckit.converge
+---
 Objetivo:
 Validar implementacion real contra especificacion, plan y tareas para cerrar brechas.
 

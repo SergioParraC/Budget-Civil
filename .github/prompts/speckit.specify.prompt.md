@@ -1,5 +1,6 @@
-# Prompt base para speckit.specify
-
+---
+agent: speckit.specify
+---
 Objetivo:
 Generar una especificacion de feature enfocada en que y por que, sin entrar en implementacion.
 
