@@ -1,0 +1,43 @@
+using BudgetCivil.Application.Common.Auditing;
+using BudgetCivil.Application.Common.Security;
+using BudgetCivil.Application.Companies.UseCases;
+using BudgetCivil.Application.Profile.UseCases;
+using BudgetCivil.Application.Users.Administration.Guards;
+using BudgetCivil.Application.Users.Administration.UseCases;
+using BudgetCivil.Application.Users.Auth.UseCases;
+using BudgetCivil.Application.Users.Bootstrap.UseCases;
+using BudgetCivil.Application.Users.Search.UseCases;
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace BudgetCivil.Application;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    {
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+        services.AddScoped<ISecurityAuditService, SecurityAuditService>();
+        services.AddScoped<ICompanyContextAccessor, CompanyContextAccessor>();
+        services.AddScoped<RejectProjectAssignmentGuard>();
+        services.AddScoped<RegisterUserUseCase>();
+        services.AddScoped<LoginUseCase>();
+        services.AddScoped<BootstrapFirstAdministratorUseCase>();
+        services.AddScoped<GetBootstrapAuditUseCase>();
+        services.AddScoped<CreateUserUseCase>();
+        services.AddScoped<UpdateUserUseCase>();
+        services.AddScoped<DeactivateUserUseCase>();
+        services.AddScoped<ChangeUserRoleUseCase>();
+        services.AddScoped<ChangeUserCompanyUseCase>();
+        services.AddScoped<CreateCompanyUseCase>();
+        services.AddScoped<UpdateCompanyUseCase>();
+        services.AddScoped<DeactivateCompanyUseCase>();
+        services.AddScoped<GetMyProfileUseCase>();
+        services.AddScoped<UpdateMyProfileUseCase>();
+        services.AddScoped<ChangeMyPasswordUseCase>();
+        services.AddScoped<EnableUserPasswordRecoveryUseCase>();
+        services.AddScoped<SearchUsersUseCase>();
+
+        return services;
+    }
+}

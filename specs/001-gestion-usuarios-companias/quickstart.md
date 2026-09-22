@@ -203,3 +203,20 @@ La validacion del feature se considera completa cuando:
 - Lockout al quinto intento confirmado.
 - No existe borrado fisico de usuarios/companias.
 - Baseline seed de seguridad validado como idempotente.
+
+## 7. Observed Outcomes (2026-09-22)
+
+Ejecucion de validacion para el feature completo con evidencia en la suite `BlackBoxTests`.
+
+| Scenario | Outcome | Evidence |
+|----------|---------|----------|
+| A | PASS - baseline de seguridad inicializa de forma repetible en arranques sucesivos de test host | Logs de inicializacion + ejecucion estable de toda la suite |
+| B | PASS - bootstrap inicial idempotente (`201/409`) | `Features/Security/BootstrapFirstAdministratorTests.cs` |
+| C | PASS - login por email/username y lockout al quinto intento | `Features/Authentication/LoginContractTests.cs`, `Features/Authentication/LockoutFlowTests.cs` |
+| D | PASS - creacion administrativa solo para Administrador y self-registration validado | `Features/Users/AdminCreateUserAuthorizationTests.cs`, `Features/Authentication/RegisterContractTests.cs` |
+| E | PASS - fail-closed por rol inactivo y permiso inactivo con auditoria de denegacion | `Features/Security/FailClosedAuthorizationTests.cs` |
+| F | PASS - aislamiento por CompanyId en busqueda de usuarios | `Features/Security/CompanyIsolationTests.cs` |
+| G | PASS - gestion de companias por rol y limite de gerente | `Features/Companies/CompanyAdministrationContractTests.cs`, `Features/Companies/ManagerOwnCompanyLimitTests.cs` |
+| H | PASS - autoservicio de perfil, politica de password y recuperacion asistida | `Features/Profile/ProfileSelfServiceTests.cs`, `Features/Profile/ChangePasswordPolicyTests.cs`, `Features/Profile/AdminPasswordRecoveryTests.cs` |
+| I | PASS - auditoria de bootstrap visible solo para Administrador | `Features/Security/BootstrapAuditVisibilityTests.cs` |
+| J | PASS - consulta de APU publica restringida por rol segun matriz | `Features/Security/PublicApuAccessTests.cs` |

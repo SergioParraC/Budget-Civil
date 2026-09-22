@@ -241,11 +241,32 @@ Auth required: Yes
 Permission key: USERS_READ
 Allowed roles reference: Administrador, Gerente de proyectos, Auditor (solo lectura)
 
+Role scope notes:
+- Administrador: visibilidad global segun alcance autorizado.
+- Gerente de proyectos: lectura restringida a usuarios de su propia compania.
+- Auditor: solo lectura sobre terceros dentro de su propia compania; sin permisos de mutacion administrativa.
+
 Query params:
 - email, username, nombre_apellidos, numero_documento, estado_cuenta
 
 Response 200:
-- Lista de usuarios filtrada por alcance autorizado
+- Lista de usuarios filtrada por alcance autorizado:
+	- user_id: uuid
+	- company_id: uuid/null
+	- email: string
+	- username: string
+	- role_code: string
+	- estado_cuenta: bool
+	- primer_nombre: string
+	- segundo_nombre: string/null
+	- primer_apellido: string
+	- segundo_apellido: string/null
+	- numero_documento: string
+
+Validations:
+- Filtros combinables por email, username, nombre_apellidos y numero_documento.
+- Aislamiento por CompanyId obligatorio para actores no Administrador.
+- Si un filtro apunta a datos fuera de alcance, la respuesta retorna lista vacia.
 
 Errors:
 - 403 sin permiso

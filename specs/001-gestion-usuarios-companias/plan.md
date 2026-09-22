@@ -217,6 +217,35 @@ Resultados clave:
 | FR-016..FR-020 | Endpoints `/api/v1/profile/me*` y recovery admin | Autoservicio + politica password + recuperacion asistida |
 | FR-034..FR-037 | Todos los endpoints privados | Fail-closed, baseline seed y roles/permisos desde BD |
 
+## Implementation Kickoff Traceability (Phase 1-2)
+
+| Task ID | Artifact Target | Requirement Mapping |
+|---------|------------------|---------------------|
+| T001-T002 | `backend/BudgetCivil.Backend.sln` + proyectos Api/Application/Domain/Infrastructure/BlackBoxTests | FR-008, FR-014, FR-015 |
+| T003-T004 | `*.csproj` + `backend/src/BudgetCivil.Api/appsettings*.json` | NFR-001, NFR-003, NFR-006 |
+| T005 | `backend/tests/BudgetCivil.Backend.BlackBoxTests/Features/*` | C7 |
+| T007-T008 | Entidades de dominio de usuarios, companias, permisos, membresias y auditoria | FR-015, FR-019, FR-020, FR-028, FR-034 |
+| T009-T010 | DbContext, configuraciones y migracion inicial | FR-008, FR-014, FR-037 |
+| T011-T012 | Seed baseline + JWT + Argon2id adapters | FR-017, FR-035, FR-037, BR-025 |
+| T013-T015 | Authorization fail-closed + contexto CompanyId + exception middleware | FR-002, FR-022, FR-031, FR-034, FR-036, BR-007, BR-024 |
+| T016-T018 | Auditoria persistente + DI/pipeline + test host reusable | NFR-001, NFR-002, NFR-003, C7 |
+
+## Final Traceability Update (Phase 8-9)
+
+| Task ID | Evidence Artifact | Requirement Mapping |
+|---------|-------------------|---------------------|
+| T062 | `backend/tests/BudgetCivil.Backend.BlackBoxTests/Features/Users/UserSearchFiltersTests.cs` | FR-027, AC-US6-1, AC-US6-2 |
+| T063 | `backend/tests/BudgetCivil.Backend.BlackBoxTests/Features/Security/CompanyIsolationTests.cs` | FR-022, NFR-002, AC-US6-3 |
+| T064 | `backend/tests/BudgetCivil.Backend.BlackBoxTests/Features/Security/FailClosedAuthorizationTests.cs` | FR-034, FR-036, BR-024 |
+| T065 | `backend/tests/BudgetCivil.Backend.BlackBoxTests/Features/Users/AuditorReadScopeTests.cs` | FR-032, BR-019 |
+| T066 | `backend/src/BudgetCivil.Application/Users/Search/UserSearchQuery.cs`, `backend/src/BudgetCivil.Application/Users/Search/UserSearchResult.cs` | FR-027 |
+| T067 | `backend/src/BudgetCivil.Infrastructure/Persistence/Repositories/UserSearchRepository.cs` | FR-022, FR-027 |
+| T068 | `backend/src/BudgetCivil.Api/Controllers/UsersController.cs` | FR-027, FR-032 |
+| T069 | `backend/src/BudgetCivil.Api/Auth/PermissionAuthorizationHandler.cs`, `backend/src/BudgetCivil.Application/Common/Auditing/SecurityAuditService.cs` | FR-036, NFR-003 |
+| T073 | `backend/tests/BudgetCivil.Backend.BlackBoxTests/TestResults/feature-001-results.trx` | NFR-003, NFR-005 |
+| T074 | `specs/001-gestion-usuarios-companias/checklists/requirements.md` (16/16 complete) | C1, C2, C3, C5 |
+| T076 | `backend/src/BudgetCivil.Api/Program.cs`, `backend/src/BudgetCivil.Api/Middleware/CompanyContextMiddleware.cs` | NFR-001, NFR-002 |
+
 ## Complexity Tracking
 
 Sin violaciones de constitucion en esta fase.
