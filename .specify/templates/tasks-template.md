@@ -9,7 +9,7 @@ description: "Task list template for feature implementation"
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: Tests are REQUIRED by constitution. Use backend unit tests for APU value calculations and black-box tests for remaining backend/frontend behavior.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -25,6 +25,18 @@ description: "Task list template for feature implementation"
 - **Web app**: `backend/src/`, `frontend/src/`
 - **Mobile**: `api/src/`, `ios/src/` or `android/src/`
 - Paths shown below assume single project - adjust based on plan.md structure
+
+## Constitution Compliance Gates *(mandatory)*
+
+All gates below MUST be represented in the generated task list before implementation.
+
+- [ ] G1 Source-of-truth references included in feature artifacts.
+- [ ] G2 Scope boundary validated; out-of-scope work has explicit user authorization.
+- [ ] G3 Structural data change gate (if applicable): FR/UC driver, migration-impact proposal, and explicit authorization captured.
+- [ ] G4 API contract gate (if endpoints change): frontend-ready contract tasks included and completed.
+- [ ] G5 Security gate: JWT/RBAC/CompanyId privacy verification tasks included.
+- [ ] G6 Traceability gate: tasks map to requirements, use cases, endpoints, and tests.
+- [ ] G7 Test strategy gate: backend unit tests for APU calculations + black-box tests for all other functionality.
 
 <!--
   ============================================================================
@@ -50,8 +62,11 @@ description: "Task list template for feature implementation"
 **Purpose**: Project initialization and basic structure
 
 - [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies
-- [ ] T003 [P] Configure linting and formatting tools
+- [ ] T002 Capture governing sources and scope boundary in feature docs
+- [ ] T003 [P] Initialize [language] project with [framework] dependencies
+- [ ] T004 [P] Configure linting and formatting tools
+- [ ] T005 Create/refresh endpoint contract skeletons in specs/[###-feature-name]/contracts/ (if API impacted)
+- [ ] T006 Prepare traceability matrix entries linking FR/UC/endpoints/tests/tasks
 
 ---
 
@@ -63,12 +78,13 @@ description: "Task list template for feature implementation"
 
 Examples of foundational tasks (adjust based on your project):
 
-- [ ] T004 Setup database schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization framework
-- [ ] T006 [P] Setup API routing and middleware structure
-- [ ] T007 Create base models/entities that all stories depend on
-- [ ] T008 Configure error handling and logging infrastructure
-- [ ] T009 Setup environment configuration management
+- [ ] T007 Setup database schema and migrations framework
+- [ ] T008 [P] Implement authentication/authorization framework
+- [ ] T009 [P] Setup API routing and middleware structure
+- [ ] T010 Create base models/entities that all stories depend on
+- [ ] T011 Configure error handling and logging infrastructure
+- [ ] T012 Setup environment configuration management
+- [ ] T013 (Conditional) Document structural data change proposal and explicit authorization evidence before schema implementation
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -80,21 +96,23 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 1 (REQUIRED) ⚠️
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T014 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T015 [P] [US1] Black-box test for [user journey] in tests/integration/test_[name].py
+- [ ] T016 [P] [US1] Backend unit test for APU value calculation change (only if APU calculations are impacted)
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
-- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
-- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T016 [US1] Add validation and error handling
-- [ ] T017 [US1] Add logging for user story 1 operations
+- [ ] T017 [P] [US1] Create [Entity1] model in src/models/[entity1].py
+- [ ] T018 [P] [US1] Create [Entity2] model in src/models/[entity2].py
+- [ ] T019 [US1] Implement [Service] in src/services/[service].py (depends on T017, T018)
+- [ ] T020 [US1] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T021 [US1] Add validation and error handling
+- [ ] T022 [US1] Add logging for user story 1 operations
+- [ ] T023 [US1] Update frontend-consumable endpoint contract docs with final schemas/examples
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -106,17 +124,19 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 2 (REQUIRED) ⚠️
 
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T024 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T025 [P] [US2] Black-box test for [user journey] in tests/integration/test_[name].py
+- [ ] T026 [P] [US2] Backend unit test for APU value calculation change (only if APU calculations are impacted)
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
-- [ ] T021 [US2] Implement [Service] in src/services/[service].py
-- [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T023 [US2] Integrate with User Story 1 components (if needed)
+- [ ] T027 [P] [US2] Create [Entity] model in src/models/[entity].py
+- [ ] T028 [US2] Implement [Service] in src/services/[service].py
+- [ ] T029 [US2] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T030 [US2] Integrate with User Story 1 components (if needed)
+- [ ] T031 [US2] Update frontend-consumable endpoint contract docs with final schemas/examples
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -128,16 +148,18 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 3 (REQUIRED) ⚠️
 
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T032 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T033 [P] [US3] Black-box test for [user journey] in tests/integration/test_[name].py
+- [ ] T034 [P] [US3] Backend unit test for APU value calculation change (only if APU calculations are impacted)
 
 ### Implementation for User Story 3
 
-- [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
-- [ ] T027 [US3] Implement [Service] in src/services/[service].py
-- [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T035 [P] [US3] Create [Entity] model in src/models/[entity].py
+- [ ] T036 [US3] Implement [Service] in src/services/[service].py
+- [ ] T037 [US3] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T038 [US3] Update frontend-consumable endpoint contract docs with final schemas/examples
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -154,9 +176,11 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Documentation updates in docs/
 - [ ] TXXX Code cleanup and refactoring
 - [ ] TXXX Performance optimization across all stories
-- [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
+- [ ] TXXX [P] Additional backend unit tests for APU calculations (if impacted) in tests/unit/
+- [ ] TXXX [P] Black-box regression tests for backend/frontend behavior
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
+- [ ] TXXX Verify traceability matrix completeness and contract documentation completeness
 
 ---
 
@@ -199,9 +223,10 @@ Examples of foundational tasks (adjust based on your project):
 ## Parallel Example: User Story 1
 
 ```bash
-# Launch all tests for User Story 1 together (if tests requested):
+# Launch all required tests for User Story 1 together:
 Task: "Contract test for [endpoint] in tests/contract/test_[name].py"
-Task: "Integration test for [user journey] in tests/integration/test_[name].py"
+Task: "Black-box test for [user journey] in tests/integration/test_[name].py"
+Task: "Backend unit test for APU value calculation change (only if impacted)"
 
 # Launch all models for User Story 1 together:
 Task: "Create [Entity1] model in src/models/[entity1].py"
@@ -246,7 +271,7 @@ With multiple developers:
 - [P] tasks = different files, no dependencies
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
-- Verify tests fail before implementing
+- Define required test evidence before implementing
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

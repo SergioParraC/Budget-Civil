@@ -10,9 +10,9 @@ Sync Impact Report
 - Removed sections:
   - Template placeholders no operativos
 - Templates requiring updates:
-  - .specify/templates/plan-template.md: ⚠ pending (usa placeholder de Constitution Check)
-  - .specify/templates/spec-template.md: ⚠ pending (sin referencia explicita a trazabilidad obligatoria)
-  - .specify/templates/tasks-template.md: ⚠ pending (sin gate explicito de contratos API)
+	- .specify/templates/plan-template.md: ✅ updated
+	- .specify/templates/spec-template.md: ✅ updated
+	- .specify/templates/tasks-template.md: ✅ updated
 -->
 
 # Budget Civil Constitution

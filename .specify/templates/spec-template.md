@@ -8,6 +8,27 @@
 
 **Input**: User description: "$ARGUMENTS"
 
+## Source Of Truth & Scope *(mandatory)*
+
+<!--
+  ACTION REQUIRED: Declare the governing artifacts used for this feature and the
+  explicit scope boundary.
+-->
+
+### Governing Sources
+
+List all sources used, in priority order defined by the project constitution.
+
+1. [Highest-priority source used]
+2. [Next source used]
+3. [Additional source used]
+
+### Scope Boundary
+
+- **In Scope**: [What is included in this feature]
+- **Out Of Scope**: [What is explicitly excluded]
+- **Out-of-Scope Authorization**: [None | Link to explicit approval if needed]
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -78,6 +99,27 @@
 - What happens when [boundary condition]?
 - How does system handle [error scenario]?
 
+## Endpoint Contracts *(mandatory when API is added or changed)*
+
+<!--
+  ACTION REQUIRED: For each endpoint added or changed, document a frontend-ready
+  contract with all required fields.
+-->
+
+### Endpoint: [METHOD] [ROUTE]
+
+- **Auth Required**: [Yes/No]
+- **Allowed Roles**: [Role list]
+- **Company Ownership Rule**: [How CompanyId is derived/validated]
+- **Request Schema**: [Fields + types + required/optional]
+- **Response Schema**: [Fields + types]
+- **Validations**: [Business and data validation rules]
+- **Errors**: [HTTP code + business code + trigger condition]
+- **Request Example**: [JSON example]
+- **Response Example**: [JSON example]
+
+[Repeat per endpoint as needed]
+
 ## Requirements *(mandatory)*
 
 <!--
@@ -98,6 +140,16 @@
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
+### Non-Functional Requirements
+
+- **NFR-001**: [Security, performance, privacy, observability, maintainability requirement]
+- **NFR-002**: [Additional measurable non-functional requirement]
+
+### Business Rules
+
+- **BR-001**: [Rule statement]
+- **BR-002**: [Rule statement]
+
 ### Key Entities *(include if feature involves data)*
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
@@ -116,6 +168,41 @@
 - **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
 - **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
 - **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+
+## Testing Strategy *(mandatory)*
+
+<!--
+  ACTION REQUIRED: Define test evidence aligned with constitution.
+-->
+
+- Backend unit tests MUST cover APU value calculations when impacted.
+- Remaining backend and frontend behavior MUST be validated with black-box tests.
+- Every user story MUST specify at least one verifiable test evidence artifact.
+
+### Planned Test Evidence
+
+- **US1**: [Test type + file/path or execution evidence]
+- **US2**: [Test type + file/path or execution evidence]
+- **US3**: [Test type + file/path or execution evidence]
+
+## Data Schema Change Control *(mandatory when structural data change exists)*
+
+<!--
+  ACTION REQUIRED: Fill only if this feature changes schema structure.
+-->
+
+- **Driver Requirement (FR/UC/BR)**: [Reference]
+- **Change Type**: [Alter / Split / Merge / Replace / Other]
+- **Migration Plan**: [Forward steps]
+- **Impact Analysis**: [Backend/API/frontend/test impact]
+- **Rollback Plan**: [Rollback strategy]
+- **Explicit User Authorization Evidence**: [Link or record]
+
+## Traceability Matrix *(mandatory)*
+
+| Requirement | Use Case | Endpoint/Contract | Test Evidence | Planned Task IDs |
+|-------------|----------|-------------------|---------------|------------------|
+| FR-XXX | UC-XXX | [METHOD route] | [test file/evidence] | [TXXX, TYYY] |
 
 ## Assumptions
 

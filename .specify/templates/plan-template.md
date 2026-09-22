@@ -38,9 +38,19 @@
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+*GATE: MUST pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] C1 - Source-of-truth alignment: Plan references governing artifacts in project-defined priority order.
+- [ ] C2 - Scope alignment: Work is inside active feature scope, or explicit user authorization exists for out-of-scope work.
+- [ ] C3 - Architecture alignment: Backend keeps business rules in Domain/Application; frontend separates UI/state/data-access and consumes API contracts.
+- [ ] C4 - Security alignment: JWT + RBAC + CompanyId privacy enforced; sensitive company ownership is derived from authenticated context.
+- [ ] C5 - Data schema governance (if structural data change exists): approved FR/UC mapping, migration-impact proposal, and explicit user authorization are documented.
+- [ ] C6 - API contract readiness (if endpoint is added/changed): method, route, auth, roles, request/response schemas, validations, errors, and examples are documented for frontend.
+- [ ] C7 - Test strategy alignment: backend unit tests cover APU value calculations; all remaining backend/frontend functionality defines black-box tests.
+- [ ] C8 - Traceability completeness: links requirements -> use cases -> endpoints -> tests -> tasks are present.
+- [ ] C9 - Documentation sync: architecture/model/flow docs are updated in the same change set when impacted.
+
+If any gate is unchecked, set plan status to BLOCKED and resolve before implementation.
 
 ## Project Structure
 
