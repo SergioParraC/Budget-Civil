@@ -11,10 +11,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+const string LocalDevelopmentCorsPolicy = "LocalDevelopmentCorsPolicy";
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(LocalDevelopmentCorsPolicy, policy =>
+    {
+        policy.WithOrigins("http://localhost:5239", "https://localhost:7098")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -154,6 +164,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseCors(LocalDevelopmentCorsPolicy);
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
