@@ -1,0 +1,33 @@
+# Git metadata
+.git/
+.gitignore
+
+# IDE artifacts
+.vs/
+.vscode/
+.idea/
+
+# .NET build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# Test artifacts
+**/TestResults/
+coverage/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Local environment files
+.env
+.env.*
+
+# Docker files
+Dockerfile*
+.dockerignore
+
+# Node artifacts (if present)
+node_modules/

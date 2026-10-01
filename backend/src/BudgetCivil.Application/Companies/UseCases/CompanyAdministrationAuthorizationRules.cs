@@ -49,6 +49,22 @@ internal static class CompanyAdministrationAuthorizationRules
         return resolvedActor;
     }
 
+    public static UserAccount EnsureActorCanReactivateCompany(UserAccount? actor)
+    {
+        return EnsureActorCanDeactivateCompany(actor);
+    }
+
+    public static UserAccount EnsureActorCanReadCompanies(UserAccount? actor)
+    {
+        var resolvedActor = EnsureActorIsOperational(actor);
+        if (resolvedActor.Role.Code != AdministratorRoleCode)
+        {
+            throw new ForbiddenAppException("Only Administrador can read companies list.", "COMPANY_READ_FORBIDDEN");
+        }
+
+        return resolvedActor;
+    }
+
     private static UserAccount EnsureActorIsOperational(UserAccount? actor)
     {
         var resolvedActor = actor ?? throw new ForbiddenAppException("Authenticated actor was not found.", "AUTH_USER_NOT_FOUND");

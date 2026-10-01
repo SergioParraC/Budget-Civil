@@ -1,6 +1,9 @@
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Security;
 using BudgetCivil.Application.Companies.Repositories;
+using BudgetCivil.Application.Listings.Repositories;
+using BudgetCivil.Application.Memberships.Repositories;
+using BudgetCivil.Application.Projects.Repositories;
 using BudgetCivil.Application.Profile.Repositories;
 using BudgetCivil.Application.Users.Administration.Repositories;
 using BudgetCivil.Application.Users.Auth.Repositories;
@@ -35,6 +38,11 @@ public static class DependencyInjection
         services.AddScoped<IBootstrapRepository, BootstrapRepository>();
         services.AddScoped<IUserAdministrationRepository, UserAdministrationRepository>();
         services.AddScoped<ICompanyRepository, CompanyRepository>();
+        services.AddScoped<IListingRepository, ListingRepository>();
+        services.AddScoped<ICompanyMembershipRepository, CompanyMembershipRepository>();
+        services.AddScoped<IProjectRepository, ProjectRepository>();
+        services.AddScoped<IProjectMembershipRepository, ProjectMembershipRepository>();
+        services.AddScoped<IProjectTransitionRepository, ProjectTransitionRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IUserSearchRepository, UserSearchRepository>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();

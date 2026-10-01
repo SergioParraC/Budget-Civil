@@ -1,0 +1,49 @@
+using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Companies.Repositories;
+using BudgetCivil.Application.Companies.UseCases;
+using BudgetCivil.Application.Listings.Queries;
+
+namespace BudgetCivil.Application.Companies.ListCompanies;
+
+public sealed class GetCompaniesQueryHandler(
+    ICompanyRepository companyRepository,
+    ListingQueryPipeline listingQueryPipeline)
+{
+    public async Task<GetCompaniesResponse> ExecuteAsync(
+        Guid actorUserId,
+        GetCompaniesQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var actor = await companyRepository.GetActorByIdAsync(actorUserId, cancellationToken);
+        CompanyAdministrationAuthorizationRules.EnsureActorCanReadCompanies(actor);
+
+        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(
+            query.PageNumber,
+            query.PageSize,
+            cancellationToken);
+
+        var totalItems = await companyRepository.CountCompaniesAsync(query.Search, query.IsActive, cancellationToken);
+        var items = await companyRepository.GetCompaniesAsync(
+            query.Search,
+            query.IsActive,
+            pagination.PageNumber,
+            pagination.PageSize,
+            cancellationToken);
+
+        return new GetCompaniesResponse
+        {
+            Items = items
+                .Select(company => new CompanyListItem
+                {
+                    CompanyId = company.Id,
+                    BusinessName = company.BusinessName,
+                    TaxId = company.TaxId,
+                    IsActive = company.IsActive
+                })
+                .ToArray(),
+            PageNumber = pagination.PageNumber,
+            PageSize = pagination.PageSize,
+            TotalItems = totalItems
+        };
+    }
+}

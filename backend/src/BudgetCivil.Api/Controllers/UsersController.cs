@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using BudgetCivil.Api.Auth;
 using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Listings.Queries;
 using BudgetCivil.Application.Profile.Dtos;
 using BudgetCivil.Application.Profile.UseCases;
 using BudgetCivil.Application.Users.Administration.Dtos;
@@ -23,7 +24,8 @@ public sealed class UsersController(
     ChangeUserCompanyUseCase changeUserCompanyUseCase,
     EnableUserPasswordRecoveryUseCase enableUserPasswordRecoveryUseCase,
     SearchUsersUseCase searchUsersUseCase,
-    RejectProjectAssignmentGuard rejectProjectAssignmentGuard) : ControllerBase
+    RejectProjectAssignmentGuard rejectProjectAssignmentGuard,
+    GetScopedUsersQueryHandler getScopedUsersQueryHandler) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = AuthorizationPolicies.UsersRead)]
@@ -48,6 +50,62 @@ public sealed class UsersController(
         };
 
         var response = await searchUsersUseCase.ExecuteAsync(actorUserId, query, cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpGet("company/me")]
+    [Authorize(Policy = AuthorizationPolicies.UsersRead)]
+    [ProducesResponseType(typeof(GetScopedUsersResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<GetScopedUsersResponse>> GetMyCompanyUsers(
+        [FromQuery] string? search,
+        [FromQuery] string? roleCode,
+        [FromQuery] bool? isActive,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var actorUserId = GetActorUserId();
+
+        var response = await getScopedUsersQueryHandler.ExecuteAsync(
+            actorUserId,
+            new GetScopedUsersQuery
+            {
+                Scope = ScopedUsersListingScope.MyCompany,
+                Search = search,
+                RoleCode = roleCode,
+                IsActive = isActive,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            },
+            cancellationToken);
+
+        return Ok(response);
+    }
+
+    [HttpGet("company/me/estimators-auditors")]
+    [Authorize(Policy = AuthorizationPolicies.UsersRead)]
+    [ProducesResponseType(typeof(GetScopedUsersResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<GetScopedUsersResponse>> GetMyCompanyEstimatorsAndAuditors(
+        [FromQuery] string? search,
+        [FromQuery] bool? isActive,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var actorUserId = GetActorUserId();
+
+        var response = await getScopedUsersQueryHandler.ExecuteAsync(
+            actorUserId,
+            new GetScopedUsersQuery
+            {
+                Scope = ScopedUsersListingScope.MyCompanyEstimatorsAuditors,
+                Search = search,
+                IsActive = isActive,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            },
+            cancellationToken);
+
         return Ok(response);
     }
 

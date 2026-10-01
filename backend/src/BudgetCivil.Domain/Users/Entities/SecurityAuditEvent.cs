@@ -8,7 +8,8 @@ public enum SecurityAuditEventType
     Bootstrap = 4,
     UserAdministration = 5,
     CompanyAdministration = 6,
-    PasswordRecovery = 7
+    PasswordRecovery = 7,
+    ProjectAdministration = 8
 }
 
 public enum SecurityAuditResult

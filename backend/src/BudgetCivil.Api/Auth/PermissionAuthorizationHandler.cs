@@ -17,10 +17,11 @@ public sealed class PermissionAuthorizationHandler(
     {
         var httpContext = ResolveHttpContext(context);
         var actorUserId = TryGetUserId(context.User);
+        var requiredPermissionLabel = string.Join("|", requirement.PermissionKeys);
 
         if (context.User.Identity?.IsAuthenticated != true || actorUserId is null)
         {
-            await AuditDeniedAsync(actorUserId, null, requirement.PermissionKey, "UNAUTHENTICATED_OR_INVALID_SUBJECT", httpContext, context);
+            await AuditDeniedAsync(actorUserId, null, requiredPermissionLabel, "UNAUTHENTICATED_OR_INVALID_SUBJECT", httpContext, context);
             context.Fail();
             return;
         }
@@ -33,14 +34,11 @@ public sealed class PermissionAuthorizationHandler(
                 .Select(user => new
                 {
                     user.CompanyId,
+                    user.RoleId,
                     RoleCode = user.Role.Code,
                     user.AccountEnabled,
                     user.AccountLocked,
-                    RoleIsActive = user.Role.IsActive,
-                    HasPermission = user.Role.RolePermissions.Any(rolePermission =>
-                        rolePermission.IsActive &&
-                        rolePermission.Permission.IsActive &&
-                        rolePermission.Permission.PermissionKey == requirement.PermissionKey)
+                    RoleIsActive = user.Role.IsActive
                 })
                 .SingleOrDefaultAsync();
 
@@ -50,23 +48,41 @@ public sealed class PermissionAuthorizationHandler(
                 ["account_enabled"] = authorizationSnapshot?.AccountEnabled.ToString() ?? "unknown",
                 ["account_locked"] = authorizationSnapshot?.AccountLocked.ToString() ?? "unknown",
                 ["role_is_active"] = authorizationSnapshot?.RoleIsActive.ToString() ?? "unknown",
-                ["has_required_permission"] = authorizationSnapshot?.HasPermission.ToString() ?? "unknown",
-                ["permission_key_checked"] = requirement.PermissionKey
+                ["has_required_permission"] = "unknown",
+                ["permission_key_checked"] = requiredPermissionLabel,
+                ["permission_match_mode"] = requirement.MatchMode.ToString(),
+                ["required_permission_keys"] = requiredPermissionLabel
             };
 
             if (authorizationSnapshot is null)
             {
-                await AuditDeniedAsync(actorUserId, null, requirement.PermissionKey, "USER_NOT_FOUND", httpContext, context);
+                await AuditDeniedAsync(actorUserId, null, requiredPermissionLabel, "USER_NOT_FOUND", httpContext, context);
                 context.Fail();
                 return;
             }
+
+            var grantedPermissionKeys = await dbContext.RolePermissions
+                .AsNoTracking()
+                .Where(rolePermission =>
+                    rolePermission.RoleId == authorizationSnapshot.RoleId &&
+                    rolePermission.IsActive &&
+                    rolePermission.Permission.IsActive)
+                .Select(rolePermission => rolePermission.Permission.PermissionKey)
+                .ToListAsync();
+
+            var grantedPermissions = grantedPermissionKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var hasRequiredPermission = requirement.MatchMode == PermissionMatchMode.All
+                ? requirement.PermissionKeys.All(requiredPermissionKey => grantedPermissions.Contains(requiredPermissionKey))
+                : requirement.PermissionKeys.Any(requiredPermissionKey => grantedPermissions.Contains(requiredPermissionKey));
+
+            authorizationMetadata["has_required_permission"] = hasRequiredPermission.ToString();
 
             if (!authorizationSnapshot.AccountEnabled || authorizationSnapshot.AccountLocked)
             {
                 await AuditDeniedAsync(
                     actorUserId,
                     authorizationSnapshot.CompanyId,
-                    requirement.PermissionKey,
+                    requiredPermissionLabel,
                     "ACCOUNT_DISABLED_OR_LOCKED",
                     httpContext,
                     context,
@@ -81,7 +97,7 @@ public sealed class PermissionAuthorizationHandler(
                 await AuditDeniedAsync(
                     actorUserId,
                     authorizationSnapshot.CompanyId,
-                    requirement.PermissionKey,
+                    requiredPermissionLabel,
                     "ROLE_INACTIVE",
                     httpContext,
                     context,
@@ -90,12 +106,12 @@ public sealed class PermissionAuthorizationHandler(
                 return;
             }
 
-            if (!authorizationSnapshot.HasPermission)
+            if (!hasRequiredPermission)
             {
                 await AuditDeniedAsync(
                     actorUserId,
                     authorizationSnapshot.CompanyId,
-                    requirement.PermissionKey,
+                    requiredPermissionLabel,
                     "PERMISSION_INACTIVE_OR_MISSING",
                     httpContext,
                     context,
@@ -108,8 +124,8 @@ public sealed class PermissionAuthorizationHandler(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "Permission authorization failed for key {PermissionKey}", requirement.PermissionKey);
-            await AuditDeniedAsync(actorUserId, null, requirement.PermissionKey, "AUTHORIZATION_HANDLER_ERROR", httpContext, context);
+            logger.LogWarning(exception, "Permission authorization failed for key {PermissionKey}", requiredPermissionLabel);
+            await AuditDeniedAsync(actorUserId, null, requiredPermissionLabel, "AUTHORIZATION_HANDLER_ERROR", httpContext, context);
             context.Fail();
         }
     }

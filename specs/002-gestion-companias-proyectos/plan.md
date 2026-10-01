@@ -246,14 +246,14 @@ Cadena unica de migraciones:
 
 | Requirement Group | Contracts/Endpoints | Validation Evidence |
 |-------------------|---------------------|---------------------|
-| FR-003..FR-011, FR-042 | `/api/v1/companies*` | lifecycle compania + acceso restringido + paginacion |
-| FR-012..FR-022, FR-044..FR-047 | `/api/v1/projects*`, `/api/v1/projects/{id}/status*` | flujo de estados, excepciones, rechazos por rol/precondicion |
-| FR-018..FR-020 | `/api/v1/projects/{id}/status`, `/api/v1/projects/{id}/visibility` | auditoria separada de estado y visibilidad |
-| FR-023..FR-030 | endpoints de memberships de compania/proyecto | matriz de asignaciones por rol |
-| FR-034..FR-035 | `/api/v1/catalogs/*` | listados filtrables de catalogos |
-| FR-036..FR-041, FR-043 | listados de usuarios/companias/proyectos | visibilidad por rol/compania + pageSize valido |
-| FR-048..FR-050 | migraciones y mapeos EF Core | esquema por entidad + direccion de FK + naming/orden de migracion |
-| SC-001..SC-013 | endpoints privados del feature | evidencia black-box de autenticacion, autorizacion y trazabilidad |
+| FR-003..FR-011, FR-042 | `/api/v1/companies*` | `Features/Companies/CompanyLifecycleContractTests.cs`, `Features/Companies/CompanyInactiveAccessTests.cs` |
+| FR-012..FR-022, FR-044..FR-047 | `/api/v1/projects*`, `/api/v1/projects/{id}/status*` | `Features/Projects/ProjectLifecycleContractTests.cs`, `Features/Projects/ProjectStatusAuthorizationTests.cs`, `Features/Projects/ProjectStatusReactivationTests.cs` |
+| FR-018..FR-020 | `/api/v1/projects/{id}/status`, `/api/v1/projects/{id}/visibility` | `Features/Projects/ProjectLifecycleContractTests.cs` (transiciones) + `Features/Projects/ProjectStatusReactivationTests.cs` |
+| FR-023..FR-030 | `/api/v1/companies/{companyId}/memberships*`, `/api/v1/projects/{projectId}/memberships*` | `Features/Memberships/CompanyMembershipAuthorizationTests.cs`, `Features/Memberships/ProjectMembershipAuthorizationTests.cs`, `Features/Memberships/UserCompanyConstraintTests.cs` |
+| FR-034..FR-035 | `/api/v1/catalogs/*` | `Features/Listings/CatalogListingsContractTests.cs` |
+| FR-036..FR-041, FR-043 | `/api/v1/users`, `/api/v1/companies/{companyId}/users`, `/api/v1/users/company/me*`, `/api/v1/projects` | `Features/Listings/RoleScopedListingsContractTests.cs`, `Features/Listings/PaginationValidationTests.cs` |
+| FR-048..FR-050 | migraciones, mapeos EF Core y reglas de FK | `Features/SchemaGovernance/SchemaAllocationSmokeTests.cs`, `Features/SchemaGovernance/ForeignKeyDirectionRulesTests.cs`, `Features/SchemaGovernance/MigrationNamingConventionTests.cs` |
+| SC-001..SC-013 | endpoints privados del feature | `backend/tests/BudgetCivil.Backend.BlackBoxTests/TestResults/feature-002-results.md` |
 
 ## Post-Phase 1 Constitution Check
 

@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
+using BudgetCivil.Backend.BlackBoxTests.Infrastructure.Authentication;
 using Microsoft.IdentityModel.Tokens;
 
 namespace BudgetCivil.Backend.BlackBoxTests.Infrastructure;
@@ -12,6 +13,7 @@ public sealed class AuthenticatedClientBuilder(TestWebApplicationFactory factory
     private string _roleCode = "ADMINISTRADOR";
     private Guid? _companyId;
     private List<string> _permissions = [];
+    private bool _useTestAuthHeaders;
 
     public AuthenticatedClientBuilder WithUser(Guid userId, string roleCode, Guid? companyId = null)
     {
@@ -27,9 +29,39 @@ public sealed class AuthenticatedClientBuilder(TestWebApplicationFactory factory
         return this;
     }
 
+    public AuthenticatedClientBuilder UseTestAuthHeaders(bool enabled = true)
+    {
+        _useTestAuthHeaders = enabled;
+        return this;
+    }
+
     public HttpClient Build()
     {
         var client = factory.CreateClient();
+
+        if (_useTestAuthHeaders)
+        {
+            client.DefaultRequestHeaders.Remove(TestAuthHandler.UserIdHeaderName);
+            client.DefaultRequestHeaders.Remove(TestAuthHandler.RoleCodeHeaderName);
+            client.DefaultRequestHeaders.Remove(TestAuthHandler.CompanyIdHeaderName);
+            client.DefaultRequestHeaders.Remove(TestAuthHandler.PermissionKeysHeaderName);
+
+            client.DefaultRequestHeaders.Add(TestAuthHandler.UserIdHeaderName, _userId.ToString());
+            client.DefaultRequestHeaders.Add(TestAuthHandler.RoleCodeHeaderName, _roleCode);
+
+            if (_companyId.HasValue)
+            {
+                client.DefaultRequestHeaders.Add(TestAuthHandler.CompanyIdHeaderName, _companyId.Value.ToString());
+            }
+
+            if (_permissions.Count > 0)
+            {
+                client.DefaultRequestHeaders.Add(TestAuthHandler.PermissionKeysHeaderName, string.Join(',', _permissions));
+            }
+
+            return client;
+        }
+
         var token = BuildJwtToken();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;

@@ -1,5 +1,8 @@
+using BudgetCivil.Backend.BlackBoxTests.Infrastructure.Authentication;
 using BudgetCivil.Infrastructure.Persistence;
 using BudgetCivil.Infrastructure.Security;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +45,28 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
             {
                 options.UseInMemoryDatabase(_databaseName);
             });
+
+            services
+                .AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = "TestOrBearer";
+                    options.DefaultChallengeScheme = "TestOrBearer";
+                })
+                .AddPolicyScheme("TestOrBearer", "Test headers or JWT bearer", options =>
+                {
+                    options.ForwardDefaultSelector = context =>
+                    {
+                        var hasRoleHeader = context.Request.Headers.ContainsKey(TestAuthHandler.RoleCodeHeaderName);
+                        var hasUserHeader = context.Request.Headers.ContainsKey(TestAuthHandler.UserIdHeaderName);
+
+                        return hasRoleHeader || hasUserHeader
+                            ? TestAuthHandler.SchemeName
+                            : JwtBearerDefaults.AuthenticationScheme;
+                    };
+                })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
+                    TestAuthHandler.SchemeName,
+                    _ => { });
 
             using var serviceProvider = services.BuildServiceProvider();
             using var scope = serviceProvider.CreateScope();

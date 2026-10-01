@@ -78,6 +78,12 @@ builder.Services.AddAuthorization(options =>
             .RequirePermission("AUDIT_BOOTSTRAP_READ"));
 
     options.AddPolicy(
+        AuthorizationPolicies.CatalogsRead,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("CATALOGS_READ"));
+
+    options.AddPolicy(
         AuthorizationPolicies.UsersCreate,
         policy => policy
             .RequireAuthenticatedUser()
@@ -130,6 +136,72 @@ builder.Services.AddAuthorization(options =>
         policy => policy
             .RequireAuthenticatedUser()
             .RequirePermission("COMPANIES_DEACTIVATE"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.CompaniesReactivate,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("COMPANIES_REACTIVATE"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.CompaniesRead,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("COMPANIES_READ"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.CompanyMembersAssign,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("COMPANY_MEMBERS_ASSIGN"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.CompanyMembersDeactivate,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("COMPANY_MEMBERS_DEACTIVATE"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.ProjectsCreate,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("PROJECTS_CREATE"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.ProjectsUpdate,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("PROJECTS_UPDATE"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.ProjectsStatusChange,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("PROJECTS_STATUS_CHANGE"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.ProjectsVisibilityChange,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("PROJECTS_VISIBILITY_CHANGE"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.ProjectsRead,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("PROJECTS_READ"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.ProjectMembersAssign,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("PROJECT_MEMBERS_ASSIGN"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.ProjectMembersDeactivate,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("PROJECT_MEMBERS_DEACTIVATE"));
 
     options.AddPolicy(
         AuthorizationPolicies.ProfileReadSelf,

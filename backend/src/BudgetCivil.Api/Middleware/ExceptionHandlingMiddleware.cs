@@ -33,6 +33,8 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
 
     private static Task WriteProblemDetailsAsync(HttpContext httpContext, int statusCode, string detail, string? code)
     {
+        var normalizedCode = NormalizeErrorCode(statusCode, code);
+
         var problemDetails = new ProblemDetails
         {
             Status = statusCode,
@@ -42,13 +44,42 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
             Instance = httpContext.Request.Path
         };
 
-        if (!string.IsNullOrWhiteSpace(code))
-        {
-            problemDetails.Extensions["code"] = code;
-        }
+        problemDetails.Extensions["code"] = normalizedCode;
+        problemDetails.Extensions["trace_id"] = httpContext.TraceIdentifier;
 
         httpContext.Response.StatusCode = statusCode;
         return httpContext.Response.WriteAsJsonAsync(problemDetails);
+    }
+
+    private static string NormalizeErrorCode(int statusCode, string? code)
+    {
+        var sourceCode = string.IsNullOrWhiteSpace(code)
+            ? GetDefaultCode(statusCode)
+            : code;
+
+        var normalized = sourceCode.Trim().ToUpperInvariant();
+        normalized = normalized.Replace('-', '_').Replace(' ', '_').Replace('.', '_');
+
+        while (normalized.Contains("__", StringComparison.Ordinal))
+        {
+            normalized = normalized.Replace("__", "_", StringComparison.Ordinal);
+        }
+
+        return string.IsNullOrWhiteSpace(normalized) ? GetDefaultCode(statusCode) : normalized;
+    }
+
+    private static string GetDefaultCode(int statusCode)
+    {
+        return statusCode switch
+        {
+            400 => "VALIDATION_ERROR",
+            401 => "UNAUTHORIZED",
+            403 => "FORBIDDEN",
+            404 => "NOT_FOUND",
+            409 => "CONFLICT",
+            423 => "LOCKED",
+            _ => "UNHANDLED_ERROR"
+        };
     }
 
     private static string GetTitle(int statusCode)
@@ -57,6 +88,7 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         {
             400 => "Bad Request",
             401 => "Unauthorized",
+            404 => "Not Found",
             403 => "Forbidden",
             409 => "Conflict",
             423 => "Locked",

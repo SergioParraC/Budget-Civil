@@ -1,0 +1,133 @@
+using BudgetCivil.Application.Common.Auditing;
+using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Companies.Dtos;
+using BudgetCivil.Application.Companies.Repositories;
+using BudgetCivil.Application.Companies.UseCases;
+using BudgetCivil.Domain.Users.Entities;
+using FluentValidation;
+using CompanyEntity = BudgetCivil.Domain.Users.Entities.Company;
+using CompanyDomainRules = BudgetCivil.Domain.Companies.Company;
+
+namespace BudgetCivil.Application.Companies.CreateCompany;
+
+public sealed class CreateCompanyCommandHandler(
+    ICompanyRepository companyRepository,
+    ISecurityAuditService securityAuditService,
+    IValidator<CreateCompanyCommand> validator)
+{
+    public async Task<CreateCompanyResponse> ExecuteAsync(
+        Guid actorUserId,
+        CreateCompanyCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        await ValidateAsync(command, cancellationToken);
+
+        var actor = await companyRepository.GetActorByIdAsync(actorUserId, cancellationToken);
+        actor = CompanyAdministrationAuthorizationRules.EnsureActorCanCreateCompany(actor);
+
+        if (await companyRepository.TaxIdExistsAsync(command.TaxId, cancellationToken: cancellationToken))
+        {
+            throw new ConflictAppException("Company tax id already exists.", "COMPANY_TAX_ID_ALREADY_EXISTS");
+        }
+
+        var isManager = actor.Role.Code == CompanyAdministrationAuthorizationRules.ProjectManagerRoleCode;
+        if (isManager)
+        {
+            var managerActiveMembership = await companyRepository.GetActiveMembershipByUserIdAsync(actor.Id, cancellationToken);
+            if (actor.CompanyId.HasValue || managerActiveMembership is not null)
+            {
+                throw new ConflictAppException(
+                    "Gerente de proyectos can only create one own company.",
+                    "MANAGER_COMPANY_LIMIT_REACHED");
+            }
+        }
+
+        var normalizedBusinessName = CompanyDomainRules.NormalizeBusinessName(command.BusinessName);
+        var normalizedTaxId = CompanyDomainRules.NormalizeTaxId(command.TaxId);
+        CompanyDomainRules.ValidateTerritorialLevel(command.CompanyType, command.TerritorialLevel);
+        CompanyDomainRules.ValidateRepresentative(MapRepresentative(command.Representative));
+
+        var utcNow = DateTime.UtcNow;
+        var createdCompany = new CompanyEntity
+        {
+            Id = Guid.NewGuid(),
+            BusinessName = normalizedBusinessName,
+            TaxId = normalizedTaxId,
+            IsActive = isManager ? true : command.IsActive ?? true,
+            CreatedAtUtc = utcNow,
+            UpdatedAtUtc = utcNow
+        };
+
+        await companyRepository.AddCompanyAsync(createdCompany, cancellationToken);
+
+        if (isManager)
+        {
+            actor.CompanyId = createdCompany.Id;
+            actor.UpdatedAtUtc = utcNow;
+
+            await companyRepository.AddMembershipAsync(
+                new UserCompanyMembership
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = actor.Id,
+                    CompanyId = createdCompany.Id,
+                    IsActive = true,
+                    AssignedByUserId = actor.Id,
+                    AssignedAtUtc = utcNow
+                },
+                cancellationToken);
+        }
+
+        await companyRepository.SaveChangesAsync(cancellationToken);
+
+        await securityAuditService.WriteAsync(
+            new SecurityAuditWriteRequest(
+                actor.Id,
+                actor.CompanyId,
+                SecurityAuditEventType.CompanyAdministration,
+                SecurityAuditResult.Success,
+                PermissionKey: "COMPANIES_CREATE",
+                TargetType: nameof(CompanyEntity),
+                TargetId: createdCompany.Id,
+                ReasonCode: "COMPANY_CREATED",
+                Metadata: new Dictionary<string, string>
+                {
+                    ["actor_role_code"] = actor.Role.Code
+                }),
+            cancellationToken);
+
+        return new CreateCompanyResponse
+        {
+            CompanyId = createdCompany.Id,
+            CreatedAtUtc = createdCompany.CreatedAtUtc
+        };
+    }
+
+    private static BudgetCivil.Domain.Companies.LegalRepresentativeInput? MapRepresentative(LegalRepresentativePayload? representative)
+    {
+        if (representative is null)
+        {
+            return null;
+        }
+
+        return new BudgetCivil.Domain.Companies.LegalRepresentativeInput
+        {
+            Mode = representative.Mode,
+            UserId = representative.UserId,
+            FullName = representative.FullName,
+            DocumentNumber = representative.DocumentNumber
+        };
+    }
+
+    private async Task ValidateAsync(CreateCompanyCommand command, CancellationToken cancellationToken)
+    {
+        var validationResult = await validator.ValidateAsync(command, cancellationToken);
+        if (validationResult.IsValid)
+        {
+            return;
+        }
+
+        var message = string.Join(" | ", validationResult.Errors.Select(error => error.ErrorMessage));
+        throw new ValidationAppException(message, "VALIDATION_ERROR");
+    }
+}

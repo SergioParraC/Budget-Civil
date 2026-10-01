@@ -231,25 +231,34 @@ Resultado esperado:
 - Con permiso inactivo: denegacion.
 - Con permiso activo: operacion normal.
 
-## 5. Suggested BlackBox Test Organization
+## 5. Implemented BlackBox Test Inventory
 
-- `Features/Companies`
-  - `CompanyLifecycleTests`
-  - `CompanyAccessRestrictionTests`
-- `Features/Projects`
-  - `ProjectStatusTransitionTests`
-  - `ProjectVisibilityAndAuditTests`
-- `Features/Memberships`
-  - `CompanyMembershipRulesTests`
-  - `ProjectMembershipRulesTests`
-- `Features/Listings`
-  - `PaginationValidationTests`
-  - `RoleScopeListingTests`
-- `Features/Security`
-  - `FailClosedPermissionTests`
-- `Features/SchemaGovernance`
-  - `SchemaAllocationSmokeTests`
-  - `ForeignKeyDirectionRulesTests`
+Rutas reales en `backend/tests/BudgetCivil.Backend.BlackBoxTests/Features`:
+
+- `Features/Companies/CompanyLifecycleContractTests.cs`
+- `Features/Companies/CompanyInactiveAccessTests.cs`
+- `Features/Projects/ProjectLifecycleContractTests.cs`
+- `Features/Projects/ProjectStatusAuthorizationTests.cs`
+- `Features/Projects/ProjectStatusReactivationTests.cs`
+- `Features/Memberships/CompanyMembershipAuthorizationTests.cs`
+- `Features/Memberships/ProjectMembershipAuthorizationTests.cs`
+- `Features/Memberships/UserCompanyConstraintTests.cs`
+- `Features/Listings/CatalogListingsContractTests.cs`
+- `Features/Listings/RoleScopedListingsContractTests.cs`
+- `Features/Listings/PaginationValidationTests.cs`
+- `Features/SchemaGovernance/SchemaAllocationSmokeTests.cs`
+- `Features/SchemaGovernance/ForeignKeyDirectionRulesTests.cs`
+- `Features/SchemaGovernance/MigrationNamingConventionTests.cs`
+- `Features/Security/FailClosedAuthorizationTests.cs`
+- `Features/Security/CompanyIsolationTests.cs`
+
+Comandos utiles:
+
+```bash
+dotnet test backend/tests/BudgetCivil.Backend.BlackBoxTests/BudgetCivil.Backend.BlackBoxTests.csproj --filter "FullyQualifiedName~Listings"
+dotnet test backend/tests/BudgetCivil.Backend.BlackBoxTests/BudgetCivil.Backend.BlackBoxTests.csproj --filter "FullyQualifiedName~SchemaGovernance"
+dotnet test backend/tests/BudgetCivil.Backend.BlackBoxTests/BudgetCivil.Backend.BlackBoxTests.csproj
+```
 
 ## 6. Exit Criteria
 

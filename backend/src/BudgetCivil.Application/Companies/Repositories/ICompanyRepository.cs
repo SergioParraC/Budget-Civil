@@ -16,5 +16,14 @@ public interface ICompanyRepository
 
     Task AddMembershipAsync(UserCompanyMembership membership, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Company>> GetCompaniesAsync(
+        string? search,
+        bool? isActive,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountCompaniesAsync(string? search, bool? isActive, CancellationToken cancellationToken = default);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

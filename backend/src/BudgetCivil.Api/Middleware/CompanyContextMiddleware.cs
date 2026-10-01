@@ -39,6 +39,28 @@ public sealed class CompanyContextMiddleware(RequestDelegate next)
             throw new ForbiddenAppException("Authenticated user does not exist.", "AUTH_USER_NOT_FOUND");
         }
 
+        if (identitySnapshot.RoleCode != "ADMINISTRADOR" && identitySnapshot.CompanyId.HasValue)
+        {
+            var companySnapshot = await dbContext.Companies
+                .AsNoTracking()
+                .Where(company => company.Id == identitySnapshot.CompanyId.Value)
+                .Select(company => new
+                {
+                    company.IsActive
+                })
+                .SingleOrDefaultAsync();
+
+            if (companySnapshot is null)
+            {
+                throw new ForbiddenAppException("Company context does not exist.", "COMPANY_NOT_FOUND");
+            }
+
+            if (!companySnapshot.IsActive)
+            {
+                throw new ForbiddenAppException("Company is inactive.", "COMPANY_INACTIVE");
+            }
+        }
+
         var companyClaim = httpContext.User.FindFirstValue("company_id");
 
         if (!string.IsNullOrWhiteSpace(companyClaim) && !Guid.TryParse(companyClaim, out _))
