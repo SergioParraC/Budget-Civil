@@ -17,10 +17,489 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("dbo")
+                .HasAnnotation("Feature002:SchemaMap", "param,iam,dbo,audit,log")
                 .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("BudgetCivil.Domain.Catalogs.BaseCurrency", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("IsoCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasColumnName("iso_code");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("PK_param_base_currencies");
+
+                    b.HasIndex("IsoCode")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_param_base_currencies_iso_code");
+
+                    b.ToTable("base_currencies", "param");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Catalogs.Country", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasColumnName("code");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("PK_param_countries");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_param_countries_code");
+
+                    b.ToTable("countries", "param");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Catalogs.Department", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CountryId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("country_id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("PK_param_departments");
+
+                    b.HasIndex("CountryId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_param_departments_country_id_code");
+
+                    b.ToTable("departments", "param");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Catalogs.DocumentType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("code");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("PK_param_document_types");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_param_document_types_code");
+
+                    b.ToTable("document_types", "param");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Catalogs.Municipality", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("department_id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("PK_param_municipalities");
+
+                    b.HasIndex("DepartmentId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_param_municipalities_department_id_code");
+
+                    b.ToTable("municipalities", "param");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Memberships.ProjectUserMembership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("assigned_at_utc");
+
+                    b.Property<Guid>("AssignedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("assigned_by_user_id");
+
+                    b.Property<DateTime?>("EndedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ended_at_utc");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_active");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("project_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_project_user_memberships");
+
+                    b.HasIndex("AssignedByUserId")
+                        .HasDatabaseName("IX_dbo_project_user_memberships_assigned_by_user_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_dbo_project_user_memberships_user_id");
+
+                    b.HasIndex("ProjectId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_dbo_project_user_memberships_project_id_user_id")
+                        .HasFilter("[is_active] = 1");
+
+                    b.ToTable("project_user_memberships", "dbo");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Projects.Project", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<decimal?>("AiuAdminPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("aiu_admin_percent");
+
+                    b.Property<decimal?>("AiuProfitPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("aiu_profit_percent");
+
+                    b.Property<decimal?>("AiuUnforeseenPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("aiu_unforeseen_percent");
+
+                    b.Property<Guid>("BaseCurrencyId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("base_currency_id");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid>("CountryId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("country_id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("department_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<Guid>("DirectorOwnerUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("director_owner_user_id");
+
+                    b.Property<bool>("IsPublic")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_public");
+
+                    b.Property<DateTime?>("LastModifiedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("last_modified_at_utc");
+
+                    b.Property<Guid?>("LastModifiedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("last_modified_by_user_id");
+
+                    b.Property<Guid>("MunicipalityId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("municipality_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Objective")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("objective");
+
+                    b.Property<Guid?>("SignerUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("signer_user_id");
+
+                    b.Property<string>("SigningMode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("signing_mode");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_projects");
+
+                    b.HasIndex("BaseCurrencyId")
+                        .HasDatabaseName("IX_dbo_projects_base_currency_id");
+
+                    b.HasIndex("CountryId")
+                        .HasDatabaseName("IX_dbo_projects_country_id");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("IX_dbo_projects_created_by_user_id");
+
+                    b.HasIndex("DepartmentId")
+                        .HasDatabaseName("IX_dbo_projects_department_id");
+
+                    b.HasIndex("DirectorOwnerUserId")
+                        .HasDatabaseName("IX_dbo_projects_director_owner_user_id");
+
+                    b.HasIndex("LastModifiedByUserId")
+                        .HasDatabaseName("IX_dbo_projects_last_modified_by_user_id");
+
+                    b.HasIndex("MunicipalityId")
+                        .HasDatabaseName("IX_dbo_projects_municipality_id");
+
+                    b.HasIndex("SignerUserId")
+                        .HasDatabaseName("IX_dbo_projects_signer_user_id");
+
+                    b.HasIndex("CompanyId", "Name")
+                        .HasDatabaseName("IX_dbo_projects_company_id_name");
+
+                    b.HasIndex("CompanyId", "Status")
+                        .HasDatabaseName("IX_dbo_projects_company_id_status");
+
+                    b.HasIndex("Status", "IsPublic")
+                        .HasDatabaseName("IX_dbo_projects_status_is_public");
+
+                    b.ToTable("projects", "dbo");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Projects.ProjectStatusTransition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("changed_at_utc");
+
+                    b.Property<Guid>("ChangedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("changed_by_user_id");
+
+                    b.Property<string>("NewStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("new_status");
+
+                    b.Property<string>("PreviousStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("previous_status");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("TransitionKind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("transition_kind");
+
+                    b.HasKey("Id")
+                        .HasName("PK_audit_project_status_transitions");
+
+                    b.HasIndex("ChangedByUserId")
+                        .HasDatabaseName("IX_audit_project_status_transitions_changed_by_user_id");
+
+                    b.HasIndex("ProjectId", "ChangedAtUtc")
+                        .HasDatabaseName("IX_audit_project_status_transitions_project_id_changed_at_utc");
+
+                    b.ToTable("project_status_transitions", "audit");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Projects.ProjectVisibilityTransition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("changed_at_utc");
+
+                    b.Property<Guid>("ChangedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("changed_by_user_id");
+
+                    b.Property<bool>("NewIsPublic")
+                        .HasColumnType("bit")
+                        .HasColumnName("new_is_public");
+
+                    b.Property<bool>("PreviousIsPublic")
+                        .HasColumnType("bit")
+                        .HasColumnName("previous_is_public");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("reason");
+
+                    b.HasKey("Id")
+                        .HasName("PK_audit_project_visibility_transitions");
+
+                    b.HasIndex("ChangedByUserId")
+                        .HasDatabaseName("IX_audit_project_visibility_transitions_changed_by_user_id");
+
+                    b.HasIndex("ProjectId", "ChangedAtUtc")
+                        .HasDatabaseName("IX_audit_project_visibility_transitions_project_id_changed_at_utc");
+
+                    b.ToTable("project_visibility_transitions", "audit");
+                });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.Company", b =>
                 {
@@ -55,12 +534,17 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("updated_at_utc");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_companies");
 
                     b.HasIndex("TaxId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_dbo_companies_tax_id");
 
-                    b.ToTable("companies", (string)null);
+                    b.HasIndex("IsActive", "BusinessName")
+                        .HasDatabaseName("IX_dbo_companies_is_active_business_name");
+
+                    b.ToTable("companies", "dbo");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.PasswordRecoveryGrant", b =>
@@ -102,13 +586,16 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_password_recovery_grants");
 
-                    b.HasIndex("EnabledByUserId");
+                    b.HasIndex("EnabledByUserId")
+                        .HasDatabaseName("IX_dbo_password_recovery_grants_enabled_by_user_id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_dbo_password_recovery_grants_user_id");
 
-                    b.ToTable("password_recovery_grants", (string)null);
+                    b.ToTable("password_recovery_grants", "dbo");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.Permission", b =>
@@ -150,12 +637,14 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("updated_at_utc");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("PK_iam_permissions");
 
                     b.HasIndex("PermissionKey")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_iam_permissions_permission_key");
 
-                    b.ToTable("permissions", (string)null);
+                    b.ToTable("permissions", "iam");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.Role", b =>
@@ -197,12 +686,14 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("updated_at_utc");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("PK_iam_roles");
 
                     b.HasIndex("Code")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_iam_roles_code");
 
-                    b.ToTable("roles", (string)null);
+                    b.ToTable("roles", "iam");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.RolePermission", b =>
@@ -239,14 +730,17 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("seed_version");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("PK_iam_role_permissions");
 
-                    b.HasIndex("PermissionId");
+                    b.HasIndex("PermissionId")
+                        .HasDatabaseName("IX_iam_role_permissions_permission_id");
 
                     b.HasIndex("RoleId", "PermissionId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_iam_role_permissions_role_id_permission_id");
 
-                    b.ToTable("role_permissions", (string)null);
+                    b.ToTable("role_permissions", "iam");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.SecurityAuditEvent", b =>
@@ -303,13 +797,16 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("target_type");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("PK_audit_security_audit_events");
 
-                    b.HasIndex("ActorUserId");
+                    b.HasIndex("ActorUserId")
+                        .HasDatabaseName("IX_audit_security_audit_events_actor_user_id");
 
-                    b.HasIndex("OccurredAtUtc");
+                    b.HasIndex("OccurredAtUtc")
+                        .HasDatabaseName("IX_audit_security_audit_events_occurred_at_utc");
 
-                    b.ToTable("security_audit_events", (string)null);
+                    b.ToTable("security_audit_events", "audit");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.UserAccount", b =>
@@ -375,19 +872,24 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("username");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanyId");
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_user_accounts");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_dbo_user_accounts_email");
 
-                    b.HasIndex("RoleId");
+                    b.HasIndex("RoleId")
+                        .HasDatabaseName("IX_dbo_user_accounts_role_id");
 
                     b.HasIndex("Username")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_dbo_user_accounts_username");
 
-                    b.ToTable("user_accounts", (string)null);
+                    b.HasIndex("CompanyId", "RoleId", "AccountEnabled")
+                        .HasDatabaseName("IX_dbo_user_accounts_company_id_role_id_account_enabled");
+
+                    b.ToTable("user_accounts", "dbo");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.UserCompanyMembership", b =>
@@ -421,17 +923,21 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_user_company_memberships");
 
-                    b.HasIndex("AssignedByUserId");
+                    b.HasIndex("AssignedByUserId")
+                        .HasDatabaseName("IX_dbo_user_company_memberships_assigned_by_user_id");
 
-                    b.HasIndex("CompanyId");
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("IX_dbo_user_company_memberships_company_id");
 
                     b.HasIndex("UserId")
                         .IsUnique()
+                        .HasDatabaseName("UQ_dbo_user_company_memberships_user_id")
                         .HasFilter("[is_active] = 1");
 
-                    b.ToTable("user_company_memberships", (string)null);
+                    b.ToTable("user_company_memberships", "dbo");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.UserProfile", b =>
@@ -510,11 +1016,197 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("second_last_name");
 
-                    b.HasKey("UserId");
+                    b.HasKey("UserId")
+                        .HasName("PK_dbo_user_profiles");
 
-                    b.HasIndex("DocumentNumber");
+                    b.HasIndex("DocumentNumber")
+                        .HasDatabaseName("IX_dbo_user_profiles_document_number");
 
-                    b.ToTable("user_profiles", (string)null);
+                    b.ToTable("user_profiles", "dbo");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.UserSignature", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("SignatureImageBase64")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("signature_image_base64");
+
+                    b.Property<string>("SignatureName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("signature_name");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("PK_iam_user_signatures");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_iam_user_signatures_user_id");
+
+                    b.ToTable("user_signatures", "iam");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Catalogs.Department", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Country", null)
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_param_departments_countries_country_id");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Catalogs.Municipality", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Department", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_param_municipalities_departments_department_id");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Memberships.ProjectUserMembership", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("AssignedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_project_user_memberships_user_accounts_assigned_by_user_id");
+
+                    b.HasOne("BudgetCivil.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_project_user_memberships_projects_project_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_project_user_memberships_user_accounts_user_id");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Projects.Project", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Catalogs.BaseCurrency", null)
+                        .WithMany()
+                        .HasForeignKey("BaseCurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_projects_base_currencies_base_currency_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_projects_companies_company_id");
+
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Country", null)
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_projects_countries_country_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_projects_user_accounts_created_by_user_id");
+
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Department", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_projects_departments_department_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("DirectorOwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_projects_user_accounts_director_owner_user_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("LastModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_projects_user_accounts_last_modified_by_user_id");
+
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Municipality", null)
+                        .WithMany()
+                        .HasForeignKey("MunicipalityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_projects_municipalities_municipality_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("SignerUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_dbo_projects_user_accounts_signer_user_id");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Projects.ProjectStatusTransition", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_audit_project_status_transitions_user_accounts_changed_by_user_id");
+
+                    b.HasOne("BudgetCivil.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_audit_project_status_transitions_projects_project_id");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Projects.ProjectVisibilityTransition", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_audit_project_visibility_transitions_user_accounts_changed_by_user_id");
+
+                    b.HasOne("BudgetCivil.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_audit_project_visibility_transitions_projects_project_id");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.PasswordRecoveryGrant", b =>
@@ -523,13 +1215,15 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .WithMany("EnabledRecoveryGrants")
                         .HasForeignKey("EnabledByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_password_recovery_grants_user_accounts_enabled_by_user_id");
 
                     b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", "UserAccount")
                         .WithMany("RecoveryGrants")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_password_recovery_grants_user_accounts_user_id");
 
                     b.Navigation("EnabledByUser");
 
@@ -542,13 +1236,15 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .WithMany("RolePermissions")
                         .HasForeignKey("PermissionId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_iam_role_permissions_permissions_permission_id");
 
                     b.HasOne("BudgetCivil.Domain.Users.Entities.Role", "Role")
                         .WithMany("RolePermissions")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_iam_role_permissions_roles_role_id");
 
                     b.Navigation("Permission");
 
@@ -560,7 +1256,8 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", "ActorUser")
                         .WithMany("SecurityAuditEvents")
                         .HasForeignKey("ActorUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_audit_security_audit_events_user_accounts_actor_user_id");
 
                     b.Navigation("ActorUser");
                 });
@@ -570,13 +1267,15 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.HasOne("BudgetCivil.Domain.Users.Entities.Company", "Company")
                         .WithMany("UserAccounts")
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_dbo_user_accounts_companies_company_id");
 
                     b.HasOne("BudgetCivil.Domain.Users.Entities.Role", "Role")
                         .WithMany("UserAccounts")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_user_accounts_roles_role_id");
 
                     b.Navigation("Company");
 
@@ -589,19 +1288,22 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("AssignedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_user_company_memberships_user_accounts_assigned_by_user_id");
 
                     b.HasOne("BudgetCivil.Domain.Users.Entities.Company", "Company")
                         .WithMany("Memberships")
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_user_company_memberships_companies_company_id");
 
                     b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", "UserAccount")
                         .WithMany("Memberships")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_user_company_memberships_user_accounts_user_id");
 
                     b.Navigation("AssignedByUser");
 
@@ -616,7 +1318,8 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .WithOne("Profile")
                         .HasForeignKey("BudgetCivil.Domain.Users.Entities.UserProfile", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_user_profiles_user_accounts_user_id");
 
                     b.Navigation("UserAccount");
                 });

@@ -16,11 +16,35 @@ public sealed class CreateProjectCommand
     [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 
+    [JsonPropertyName("code")]
+    public string? Code { get; init; }
+
     [JsonPropertyName("description")]
     public string? Description { get; init; }
 
     [JsonPropertyName("objective")]
     public string? Objective { get; init; }
+
+    [JsonPropertyName("country_id")]
+    public Guid? CountryId { get; init; }
+
+    [JsonPropertyName("department_id")]
+    public Guid? DepartmentId { get; init; }
+
+    [JsonPropertyName("municipality_id")]
+    public Guid? MunicipalityId { get; init; }
+
+    [JsonPropertyName("base_currency_id")]
+    public Guid? BaseCurrencyId { get; init; }
+
+    [JsonPropertyName("aiu_admin_percent")]
+    public decimal? AiuAdminPercent { get; init; }
+
+    [JsonPropertyName("aiu_unforeseen_percent")]
+    public decimal? AiuUnforeseenPercent { get; init; }
+
+    [JsonPropertyName("aiu_profit_percent")]
+    public decimal? AiuProfitPercent { get; init; }
 
     [JsonPropertyName("signing_mode")]
     public string? SigningMode { get; init; }
@@ -40,6 +64,18 @@ public sealed class CreateProjectResponse
     [JsonPropertyName("status")]
     public string Status { get; init; } = string.Empty;
 
+    [JsonPropertyName("country_id")]
+    public Guid CountryId { get; init; }
+
+    [JsonPropertyName("department_id")]
+    public Guid DepartmentId { get; init; }
+
+    [JsonPropertyName("municipality_id")]
+    public Guid MunicipalityId { get; init; }
+
+    [JsonPropertyName("base_currency_id")]
+    public Guid BaseCurrencyId { get; init; }
+
     [JsonPropertyName("created_at_utc")]
     public DateTime CreatedAtUtc { get; init; }
 }
@@ -56,9 +92,41 @@ public sealed class CreateProjectCommandValidator : AbstractValidator<CreateProj
             .MaximumLength(Project.DescriptionMaxLength)
             .When(command => !string.IsNullOrWhiteSpace(command.Description));
 
+        RuleFor(command => command.Code)
+            .MaximumLength(Project.CodeMaxLength)
+            .When(command => !string.IsNullOrWhiteSpace(command.Code));
+
         RuleFor(command => command.Objective)
             .MaximumLength(Project.ObjectiveMaxLength)
             .When(command => !string.IsNullOrWhiteSpace(command.Objective));
+
+        RuleFor(command => command.CountryId)
+            .NotNull()
+            .NotEqual(Guid.Empty);
+
+        RuleFor(command => command.DepartmentId)
+            .NotNull()
+            .NotEqual(Guid.Empty);
+
+        RuleFor(command => command.MunicipalityId)
+            .NotNull()
+            .NotEqual(Guid.Empty);
+
+        RuleFor(command => command.BaseCurrencyId)
+            .NotNull()
+            .NotEqual(Guid.Empty);
+
+        RuleFor(command => command.AiuAdminPercent)
+            .InclusiveBetween(0m, 100m)
+            .When(command => command.AiuAdminPercent.HasValue);
+
+        RuleFor(command => command.AiuUnforeseenPercent)
+            .InclusiveBetween(0m, 100m)
+            .When(command => command.AiuUnforeseenPercent.HasValue);
+
+        RuleFor(command => command.AiuProfitPercent)
+            .InclusiveBetween(0m, 100m)
+            .When(command => command.AiuProfitPercent.HasValue);
 
         RuleFor(command => command.SigningMode)
             .Must(signingMode =>
@@ -96,6 +164,25 @@ public sealed class CreateProjectCommandHandler(
             throw new ConflictAppException("Company is inactive.", "COMPANY_INACTIVE");
         }
 
+        var countryId = command.CountryId!.Value;
+        var departmentId = command.DepartmentId!.Value;
+        var municipalityId = command.MunicipalityId!.Value;
+        var baseCurrencyId = command.BaseCurrencyId!.Value;
+
+        var referencesValid = await projectRepository.AreProjectCatalogReferencesValidAsync(
+            countryId,
+            departmentId,
+            municipalityId,
+            baseCurrencyId,
+            cancellationToken);
+
+        if (!referencesValid)
+        {
+            throw new ConflictAppException(
+                "Project location or currency references are invalid.",
+                "PROJECT_REFERENCE_INVALID");
+        }
+
         var hasActiveDirector = await projectRepository.HasActiveDirectorInCompanyAsync(companyId, cancellationToken);
         if (!hasActiveDirector)
         {
@@ -117,15 +204,25 @@ public sealed class CreateProjectCommandHandler(
             {
                 Id = Guid.NewGuid(),
                 CompanyId = companyId,
+                Code = Project.NormalizeCode(command.Code),
                 Name = Project.NormalizeName(command.Name),
                 Description = Project.NormalizeDescription(command.Description),
                 Objective = Project.NormalizeObjective(command.Objective),
+                CountryId = countryId,
+                DepartmentId = departmentId,
+                MunicipalityId = municipalityId,
+                BaseCurrencyId = baseCurrencyId,
+                AiuAdminPercent = Project.NormalizeAiuPercent(command.AiuAdminPercent, "aiu_admin_percent"),
+                AiuUnforeseenPercent = Project.NormalizeAiuPercent(command.AiuUnforeseenPercent, "aiu_unforeseen_percent"),
+                AiuProfitPercent = Project.NormalizeAiuPercent(command.AiuProfitPercent, "aiu_profit_percent"),
                 Status = ProjectStatus.PorCotizar,
                 IsPublic = false,
                 SigningMode = Project.NormalizeSigningModeOrDefault(command.SigningMode),
                 SignerUserId = command.SignerUserId,
                 DirectorOwnerUserId = directorOwnerUserId,
                 CreatedByUserId = actor.Id,
+                LastModifiedByUserId = null,
+                LastModifiedAtUtc = null,
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now
             };
@@ -159,6 +256,10 @@ public sealed class CreateProjectCommandHandler(
             ProjectId = project.Id,
             CompanyId = project.CompanyId,
             Status = ProjectStatusTransitionPolicy.ToStatusCode(project.Status),
+            CountryId = project.CountryId,
+            DepartmentId = project.DepartmentId,
+            MunicipalityId = project.MunicipalityId,
+            BaseCurrencyId = project.BaseCurrencyId,
             CreatedAtUtc = project.CreatedAtUtc
         };
     }

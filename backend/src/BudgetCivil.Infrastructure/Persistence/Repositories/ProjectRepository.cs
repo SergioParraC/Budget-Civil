@@ -51,6 +51,51 @@ public sealed class ProjectRepository(BudgetCivilDbContext dbContext)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<bool> AreProjectCatalogReferencesValidAsync(
+        Guid countryId,
+        Guid departmentId,
+        Guid municipalityId,
+        Guid baseCurrencyId,
+        CancellationToken cancellationToken = default)
+    {
+        var countryExists = await DbContext.Countries.AnyAsync(
+            country => country.Id == countryId && country.IsActive,
+            cancellationToken);
+
+        if (!countryExists)
+        {
+            return false;
+        }
+
+        var departmentExists = await DbContext.Departments.AnyAsync(
+            department =>
+                department.Id == departmentId &&
+                department.CountryId == countryId &&
+                department.IsActive,
+            cancellationToken);
+
+        if (!departmentExists)
+        {
+            return false;
+        }
+
+        var municipalityExists = await DbContext.Municipalities.AnyAsync(
+            municipality =>
+                municipality.Id == municipalityId &&
+                municipality.DepartmentId == departmentId &&
+                municipality.IsActive,
+            cancellationToken);
+
+        if (!municipalityExists)
+        {
+            return false;
+        }
+
+        return await DbContext.BaseCurrencies.AnyAsync(
+            baseCurrency => baseCurrency.Id == baseCurrencyId && baseCurrency.IsActive,
+            cancellationToken);
+    }
+
     public Task<bool> HasActiveSignatureAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return DbContext.UserProfiles.AnyAsync(

@@ -3,6 +3,7 @@ namespace BudgetCivil.Domain.Projects;
 public sealed class Project
 {
     public const int NameMaxLength = 255;
+    public const int CodeMaxLength = 50;
     public const int DescriptionMaxLength = 1000;
     public const int ObjectiveMaxLength = 1000;
 
@@ -13,11 +14,27 @@ public sealed class Project
 
     public Guid CompanyId { get; set; }
 
+    public string? Code { get; set; }
+
     public string Name { get; set; } = string.Empty;
 
     public string? Description { get; set; }
 
     public string? Objective { get; set; }
+
+    public Guid CountryId { get; set; }
+
+    public Guid DepartmentId { get; set; }
+
+    public Guid MunicipalityId { get; set; }
+
+    public Guid BaseCurrencyId { get; set; }
+
+    public decimal? AiuAdminPercent { get; set; }
+
+    public decimal? AiuUnforeseenPercent { get; set; }
+
+    public decimal? AiuProfitPercent { get; set; }
 
     public ProjectStatus Status { get; set; } = ProjectStatus.PorCotizar;
 
@@ -30,6 +47,10 @@ public sealed class Project
     public Guid DirectorOwnerUserId { get; set; }
 
     public Guid CreatedByUserId { get; set; }
+
+    public Guid? LastModifiedByUserId { get; set; }
+
+    public DateTime? LastModifiedAtUtc { get; set; }
 
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
@@ -44,6 +65,11 @@ public sealed class Project
         }
 
         return normalized;
+    }
+
+    public static string? NormalizeCode(string? code)
+    {
+        return NormalizeOptionalText(code, CodeMaxLength, "code");
     }
 
     public static string? NormalizeDescription(string? description)
@@ -65,6 +91,21 @@ public sealed class Project
 
         var normalized = signingMode.Trim().ToUpperInvariant();
         return normalized is UniqueSignerByAssignedEstimator or IndependentSignerByResponsibleProfessional;
+    }
+
+    public static decimal? NormalizeAiuPercent(decimal? aiuPercent, string fieldName)
+    {
+        if (!aiuPercent.HasValue)
+        {
+            return null;
+        }
+
+        if (aiuPercent.Value is < 0m or > 100m)
+        {
+            throw new InvalidOperationException($"Project {fieldName} is invalid.");
+        }
+
+        return decimal.Round(aiuPercent.Value, 2, MidpointRounding.AwayFromZero);
     }
 
     public static string NormalizeSigningModeOrDefault(string? signingMode)

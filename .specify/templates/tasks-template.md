@@ -19,6 +19,13 @@ description: "Task list template for feature implementation"
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
 
+## Mandatory Governance Gates *(no omitir)*
+
+- Every implementation task MUST reference at least one row in the Implementation Coverage Matrix from spec.md.
+- No task for a persistent entity can be marked done if runtime still uses hardcoded in-memory source of truth.
+- For schema changes, include tasks for migration, DB apply, and SQL verification evidence.
+- Add explicit convergence tasks to reconcile spec/plan/tasks vs delivered code before closure.
+
 ## Path Conventions
 
 - **Single project**: `src/`, `tests/` at repository root
@@ -157,6 +164,10 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
+- [ ] TXXX Build final implementation coverage report (map COV-* rows from spec.md to code/contracts/tests evidence)
+- [ ] TXXX [P] Validate no persistent entity remains backed by in-memory hardcoded runtime source
+- [ ] TXXX [P] If schema changed, execute SQL verification checklist (tables, columns nullability, FK + delete actions) and store evidence
+- [ ] TXXX Run convergence pass: compare delivered code against spec.md, plan.md and tasks.md; append missing work before closure
 
 ---
 
@@ -250,3 +261,4 @@ With multiple developers:
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
+- Mandatory closure condition: no uncovered COV-* rows, no unresolved NEEDS CLARIFICATION, and no spec-deliverable drift accepted without explicit authorization.

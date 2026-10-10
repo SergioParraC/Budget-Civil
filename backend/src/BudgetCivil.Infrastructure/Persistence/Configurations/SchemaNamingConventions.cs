@@ -41,7 +41,20 @@ public static class SchemaNamingConventions
                     continue;
                 }
 
-                foreignKey.SetConstraintName(Shorten($"FK_{schema}_{tableName}_{principalTable}"));
+                var columnSuffix = string.Join(
+                    "_",
+                    foreignKey.Properties.Select(property =>
+                    {
+                        var columnName = property.GetColumnName(storeObject) ?? property.Name;
+                        return NormalizeSegment(columnName);
+                    }));
+
+                if (string.IsNullOrWhiteSpace(columnSuffix))
+                {
+                    columnSuffix = "Columns";
+                }
+
+                foreignKey.SetConstraintName(Shorten($"FK_{schema}_{tableName}_{principalTable}_{columnSuffix}"));
             }
 
             foreach (var index in entityType.GetIndexes())

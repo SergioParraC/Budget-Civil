@@ -1,6 +1,7 @@
 using BudgetCivil.Domain.Users.Entities;
 using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Projects;
+using BudgetCivil.Domain.Catalogs;
 using BudgetCivil.Infrastructure.Persistence.Configurations;
 using BudgetCivil.Infrastructure.Persistence.SchemaRules;
 using Microsoft.EntityFrameworkCore;
@@ -15,9 +16,21 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
 
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
+    public DbSet<DocumentType> DocumentTypes => Set<DocumentType>();
+
+    public DbSet<Country> Countries => Set<Country>();
+
+    public DbSet<Department> Departments => Set<Department>();
+
+    public DbSet<Municipality> Municipalities => Set<Municipality>();
+
+    public DbSet<BaseCurrency> BaseCurrencies => Set<BaseCurrency>();
+
     public DbSet<Company> Companies => Set<Company>();
 
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
+
+    public DbSet<UserSignature> UserSignatures => Set<UserSignature>();
 
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
@@ -54,6 +67,13 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
         modelBuilder.Entity<Permission>().ToTable("permissions", DatabaseSchemas.Iam);
         modelBuilder.Entity<Role>().ToTable("roles", DatabaseSchemas.Iam);
         modelBuilder.Entity<RolePermission>().ToTable("role_permissions", DatabaseSchemas.Iam);
+        modelBuilder.Entity<UserSignature>().ToTable("user_signatures", DatabaseSchemas.Iam);
+
+        modelBuilder.Entity<DocumentType>().ToTable("document_types", DatabaseSchemas.Param);
+        modelBuilder.Entity<Country>().ToTable("countries", DatabaseSchemas.Param);
+        modelBuilder.Entity<Department>().ToTable("departments", DatabaseSchemas.Param);
+        modelBuilder.Entity<Municipality>().ToTable("municipalities", DatabaseSchemas.Param);
+        modelBuilder.Entity<BaseCurrency>().ToTable("base_currencies", DatabaseSchemas.Param);
 
         modelBuilder.Entity<Company>().ToTable("companies", DatabaseSchemas.Dbo);
         modelBuilder.Entity<UserAccount>().ToTable("user_accounts", DatabaseSchemas.Dbo);

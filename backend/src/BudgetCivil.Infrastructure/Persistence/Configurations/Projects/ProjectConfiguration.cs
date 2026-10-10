@@ -1,3 +1,4 @@
+using BudgetCivil.Domain.Catalogs;
 using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Users.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,10 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasColumnName("company_id")
             .IsRequired();
 
+        builder.Property(project => project.Code)
+            .HasColumnName("code")
+            .HasMaxLength(50);
+
         builder.Property(project => project.Name)
             .HasColumnName("name")
             .HasMaxLength(255)
@@ -32,6 +37,34 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(project => project.Objective)
             .HasColumnName("objective")
             .HasMaxLength(1000);
+
+        builder.Property(project => project.CountryId)
+            .HasColumnName("country_id")
+            .IsRequired();
+
+        builder.Property(project => project.DepartmentId)
+            .HasColumnName("department_id")
+            .IsRequired();
+
+        builder.Property(project => project.MunicipalityId)
+            .HasColumnName("municipality_id")
+            .IsRequired();
+
+        builder.Property(project => project.BaseCurrencyId)
+            .HasColumnName("base_currency_id")
+            .IsRequired();
+
+        builder.Property(project => project.AiuAdminPercent)
+            .HasColumnName("aiu_admin_percent")
+            .HasPrecision(5, 2);
+
+        builder.Property(project => project.AiuUnforeseenPercent)
+            .HasColumnName("aiu_unforeseen_percent")
+            .HasPrecision(5, 2);
+
+        builder.Property(project => project.AiuProfitPercent)
+            .HasColumnName("aiu_profit_percent")
+            .HasPrecision(5, 2);
 
         builder.Property(project => project.Status)
             .HasColumnName("status")
@@ -60,6 +93,12 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasColumnName("created_by_user_id")
             .IsRequired();
 
+        builder.Property(project => project.LastModifiedByUserId)
+            .HasColumnName("last_modified_by_user_id");
+
+        builder.Property(project => project.LastModifiedAtUtc)
+            .HasColumnName("last_modified_at_utc");
+
         builder.Property(project => project.CreatedAtUtc)
             .HasColumnName("created_at_utc")
             .IsRequired();
@@ -75,6 +114,26 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasForeignKey(project => project.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne<Country>()
+            .WithMany()
+            .HasForeignKey(project => project.CountryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<Department>()
+            .WithMany()
+            .HasForeignKey(project => project.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<Municipality>()
+            .WithMany()
+            .HasForeignKey(project => project.MunicipalityId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<BaseCurrency>()
+            .WithMany()
+            .HasForeignKey(project => project.BaseCurrencyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne<UserAccount>()
             .WithMany()
             .HasForeignKey(project => project.DirectorOwnerUserId)
@@ -83,6 +142,11 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.HasOne<UserAccount>()
             .WithMany()
             .HasForeignKey(project => project.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<UserAccount>()
+            .WithMany()
+            .HasForeignKey(project => project.LastModifiedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<UserAccount>()

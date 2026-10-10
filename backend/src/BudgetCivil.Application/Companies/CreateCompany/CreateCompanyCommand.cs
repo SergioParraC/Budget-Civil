@@ -1,3 +1,4 @@
+using BudgetCivil.Application.Companies.Dtos;
 using System.Text.Json.Serialization;
 
 namespace BudgetCivil.Application.Companies.CreateCompany;
@@ -21,19 +22,4 @@ public sealed class CreateCompanyCommand
 
     [JsonPropertyName("representative")]
     public LegalRepresentativePayload? Representative { get; init; }
-}
-
-public sealed class LegalRepresentativePayload
-{
-    [JsonPropertyName("mode")]
-    public string? Mode { get; init; }
-
-    [JsonPropertyName("user_id")]
-    public Guid? UserId { get; init; }
-
-    [JsonPropertyName("full_name")]
-    public string? FullName { get; init; }
-
-    [JsonPropertyName("document_number")]
-    public string? DocumentNumber { get; init; }
 }

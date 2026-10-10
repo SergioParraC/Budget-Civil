@@ -15,7 +15,10 @@ const string LocalDevelopmentCorsPolicy = "LocalDevelopmentCorsPolicy";
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(LocalDevelopmentCorsPolicy, policy =>

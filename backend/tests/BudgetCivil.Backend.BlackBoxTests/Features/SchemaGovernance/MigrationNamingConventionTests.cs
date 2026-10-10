@@ -6,7 +6,7 @@ namespace BudgetCivil.Backend.BlackBoxTests.Features.SchemaGovernance;
 public sealed class MigrationNamingConventionTests
 {
     private static readonly Regex Feature002MigrationNameRegex = new(
-        @"^\d{12}_[a-z0-9]+_[a-z0-9_]+$",
+        @"^\d{12,14}_[a-z0-9]+_[a-z0-9_]+$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private static readonly Regex GenericMigrationPrefixRegex = new(
@@ -34,7 +34,7 @@ public sealed class MigrationNamingConventionTests
     }
 
     [Fact]
-    public void Migrations_Are_Chronological_And_Latest_Is_Feature002_Baseline()
+    public void Migrations_Are_Chronological_And_Latest_Is_Feature002_Migration()
     {
         var migrationsDirectory = ResolveMigrationsDirectory();
 
@@ -57,7 +57,10 @@ public sealed class MigrationNamingConventionTests
             .ToArray();
 
         var lastMigration = orderedByTimestamp[^1];
-        lastMigration.Name.Should().Be("202610010900_feature002_schema_baseline");
+        lastMigration.Name.Should().Contain("_feature002_");
+
+        var baselineTimestamp = ParseTimestamp("202610010900_feature002_schema_baseline");
+        lastMigration.Timestamp.Should().BeOnOrAfter(baselineTimestamp);
     }
 
     private static DateTime ParseTimestamp(string migrationName)

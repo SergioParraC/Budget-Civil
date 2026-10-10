@@ -15,6 +15,13 @@ public interface IProjectRepository
 
     Task<Guid?> GetOldestActiveDirectorUserIdAsync(Guid companyId, CancellationToken cancellationToken = default);
 
+    Task<bool> AreProjectCatalogReferencesValidAsync(
+        Guid countryId,
+        Guid departmentId,
+        Guid municipalityId,
+        Guid baseCurrencyId,
+        CancellationToken cancellationToken = default);
+
     Task<bool> HasActiveSignatureAsync(Guid userId, CancellationToken cancellationToken = default);
 
     Task AddProjectAsync(Project project, CancellationToken cancellationToken = default);

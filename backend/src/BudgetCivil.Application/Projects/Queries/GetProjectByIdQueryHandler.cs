@@ -17,11 +17,35 @@ public sealed class GetProjectByIdResponse
     [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 
+    [JsonPropertyName("code")]
+    public string? Code { get; init; }
+
     [JsonPropertyName("description")]
     public string? Description { get; init; }
 
     [JsonPropertyName("objective")]
     public string? Objective { get; init; }
+
+    [JsonPropertyName("country_id")]
+    public Guid CountryId { get; init; }
+
+    [JsonPropertyName("department_id")]
+    public Guid DepartmentId { get; init; }
+
+    [JsonPropertyName("municipality_id")]
+    public Guid MunicipalityId { get; init; }
+
+    [JsonPropertyName("base_currency_id")]
+    public Guid BaseCurrencyId { get; init; }
+
+    [JsonPropertyName("aiu_admin_percent")]
+    public decimal? AiuAdminPercent { get; init; }
+
+    [JsonPropertyName("aiu_unforeseen_percent")]
+    public decimal? AiuUnforeseenPercent { get; init; }
+
+    [JsonPropertyName("aiu_profit_percent")]
+    public decimal? AiuProfitPercent { get; init; }
 
     [JsonPropertyName("status")]
     public string Status { get; init; } = string.Empty;
@@ -59,8 +83,16 @@ public sealed class GetProjectByIdQueryHandler(IProjectRepository projectReposit
             ProjectId = project.Id,
             CompanyId = project.CompanyId,
             Name = project.Name,
+            Code = project.Code,
             Description = project.Description,
             Objective = project.Objective,
+            CountryId = project.CountryId,
+            DepartmentId = project.DepartmentId,
+            MunicipalityId = project.MunicipalityId,
+            BaseCurrencyId = project.BaseCurrencyId,
+            AiuAdminPercent = project.AiuAdminPercent,
+            AiuUnforeseenPercent = project.AiuUnforeseenPercent,
+            AiuProfitPercent = project.AiuProfitPercent,
             Status = ProjectStatusTransitionPolicy.ToStatusCode(project.Status),
             IsPublic = project.IsPublic
         };

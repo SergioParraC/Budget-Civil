@@ -1,6 +1,6 @@
 <!--
 Sync Impact Report
-- Version change: N/A (template) -> 1.0.0
+- Version change: 1.1.0 -> 1.2.0
 - Added sections:
   - Articulos Normativos
   - Gobernanza de Cambios de Esquema de Datos
@@ -10,9 +10,9 @@ Sync Impact Report
 - Removed sections:
   - Template placeholders no operativos
 - Templates requiring updates:
-  - .specify/templates/plan-template.md: ⚠ pending (usa placeholder de Constitution Check)
-  - .specify/templates/spec-template.md: ⚠ pending (sin referencia explicita a trazabilidad obligatoria)
-  - .specify/templates/tasks-template.md: ⚠ pending (sin gate explicito de contratos API)
+	- .specify/templates/plan-template.md: ✅ updated (incluye gates operativos y tabla de evidencia obligatoria para Constitution Check)
+	- .specify/templates/spec-template.md: ✅ updated (incluye matriz de cobertura de implementacion y prohibicion de source in-memory para alcance persistente)
+	- .specify/templates/tasks-template.md: ✅ updated (incluye gates de convergencia y evidencia SQL obligatoria)
 -->
 
 # Budget Civil Constitution
@@ -131,14 +131,21 @@ Criterio medible de revision tecnica:
 
 ### Articulo 9. Estrategia de pruebas de esta fase
 En esta fase, la estrategia de pruebas se define asi:
-- Unitarias solo en backend para calculo de valores de APU.
-- Para el resto de funcionalidades backend y frontend: pruebas de caja negra.
+- La validacion funcional oficial se realiza mediante pruebas manuales de caja negra ejecutadas por QA sobre entorno de prueba.
+- No se exige como criterio de cierre crear o ejecutar pruebas automatizadas en codigo (unitarias, integracion, contrato o E2E), salvo excepcion aprobada explicitamente por el usuario responsable del proyecto.
+- Si se decide automatizar alguna prueba, se considera apoyo interno y no reemplaza la evidencia QA manual de caja negra.
 
 Regla de aplicacion:
-- Ningun cambio funcional se cierra sin evidencia de pruebas segun esta estrategia.
+- Ningun cambio funcional se cierra sin evidencia de ejecucion QA manual de caja negra, incluyendo al menos:
+	- casos probados,
+	- resultado por caso,
+	- version/commit evaluado,
+	- fecha, ambiente y responsable QA.
+- Toda excepcion que habilite pruebas automatizadas como criterio de cierre MUST tener autorizacion explicita y quedar registrada en el feature.
 
 Criterio medible de revision tecnica:
-- 100% de PRs funcionales incluyen evidencia de pruebas alineadas a su tipo.
+- 100% de PRs funcionales incluyen evidencia QA manual de caja negra.
+- 0 cierres de feature basados solo en pruebas automatizadas sin evidencia QA manual, salvo excepcion aprobada.
 
 ### Articulo 10. Trazabilidad extrema obligatoria
 Cada feature MUST mantener trazabilidad bidireccional entre:
@@ -151,9 +158,17 @@ Cada feature MUST mantener trazabilidad bidireccional entre:
 Regla de aplicacion:
 - Toda tarea tecnica debe poder rastrearse hasta un requerimiento y un caso de uso.
 - Toda prueba debe indicar que requerimiento y endpoint valida.
+- Toda entidad con datos persistentes MUST incluir una matriz de cobertura campo-a-implementacion con evidencia por cada campo obligatorio en:
+	- modelo de dominio/aplicacion,
+	- mapeo de persistencia,
+	- migracion/columna/FK,
+	- contrato API,
+	- evidencia QA manual de caja negra o criterio de aceptacion verificable aprobado.
+- Ninguna tarea de implementacion puede cerrarse si existe al menos un campo obligatorio sin evidencia de cobertura completa.
 
 Criterio medible de revision tecnica:
 - 100% de tareas y pruebas en el feature tienen referencia de trazabilidad valida.
+- 100% de campos obligatorios definidos en spec/data-model tienen evidencia de implementacion y validacion asociada.
 
 ### Articulo 11. Enmiendas de constitucion
 La constitucion SI puede modificarse siguiendo control de cambios formal.
@@ -169,6 +184,17 @@ Regla de aplicacion:
 
 Criterio medible de revision tecnica:
 - 100% de enmiendas incluyen registro completo y versionado correcto.
+
+### Articulo 12. Paridad obligatoria entre spec y entregable
+Cuando el spec/data-model define una entidad persistente, el runtime productivo MUST usar persistencia real como fuente de verdad.
+
+Regla de aplicacion:
+- Se prohibe marcar como "Done" una entidad persistente si su source of truth en runtime es un arreglo estatico/in-memory hardcodeado.
+- Los endpoints de catalogos o entidades persistentes MUST leer desde repositorio/persistencia o proyecciones derivadas de ella.
+- Excepciones temporales solo se permiten con autorizacion explicita del usuario responsable y fecha de retiro definida.
+
+Criterio medible de revision tecnica:
+- 0 endpoints productivos usan source in-memory para entidades declaradas como persistentes en el feature activo.
 
 ## Gobernanza de Cambios de Esquema de Datos
 
@@ -190,11 +216,13 @@ de tablas):
 	- `.github/docs/05-modelo-datos.md`
 	- `.github/docs/06-flujos-casos-de-uso.md` (si cambia comportamiento)
 6. Ejecutar revalidacion de consistencia (analyze/converge) si afecta features activos.
+7. Adjuntar evidencia de verificacion del esquema final en la BD objetivo (tablas, columnas NOT NULL/NULL, FK y acciones de borrado).
 
 Criterios de rechazo automatico:
 - Falta de autorizacion explicita.
 - Falta de propuesta tecnica de migracion/impacto.
 - Falta de actualizacion documental.
+- Falta de evidencia SQL de esquema final alineado con spec/data-model.
 
 ## Politica de Documentacion de Endpoints para Frontend
 
@@ -233,7 +261,7 @@ Definicion de terminado para endpoints:
 - Codigo implementado.
 - Contrato documentado.
 - Validaciones implementadas.
-- Evidencia de pruebas segun Articulo 9.
+- Evidencia QA manual de caja negra segun Articulo 9.
 - Revisado por backend y frontend.
 
 ## Checklist de Cumplimiento por Feature
@@ -251,10 +279,12 @@ Este checklist MUST completarse y adjuntarse en cada PR de feature.
 		`CompanyId` en operaciones sensibles (Articulo 7).
 - [ ] C6 - Todos los endpoints nuevos/modificados tienen contrato completo para
 		frontend (Articulo 8).
-- [ ] C7 - La evidencia de pruebas respeta la estrategia de esta fase (Articulo 9).
+- [ ] C7 - La evidencia QA manual de caja negra respeta la estrategia de esta fase (Articulo 9).
 - [ ] C8 - Existe trazabilidad FR/UC/endpoint/pruebas/tareas (Articulo 10).
 - [ ] C9 - Si hubo enmienda de constitucion, se registro motivo, impacto y versionado;
 		si aplica, se corrio analyze/converge y se actualizo plan/tasks (Articulo 11).
+- [ ] C10 - Existe matriz de cobertura campo-a-implementacion para todas las entidades persistentes del feature (Articulo 10).
+- [ ] C11 - No hay source in-memory en runtime productivo para entidades persistentes del spec y se adjunta evidencia SQL de paridad (Articulo 12).
 
 ## Governance
 
@@ -264,4 +294,4 @@ Este checklist MUST completarse y adjuntarse en cada PR de feature.
 3. Toda excepcion aprobada debe documentar fecha, alcance, riesgo y plazo.
 4. El incumplimiento de articulos bloquea aprobacion tecnica hasta su correccion.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-09-20
+**Version**: 1.2.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-01
