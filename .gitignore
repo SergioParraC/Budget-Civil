@@ -1,0 +1,42 @@
+# .NET build artifacts
+bin/
+obj/
+out/
+
+# Visual Studio artifacts
+.vs/
+*.sln.docstates
+*.userosscache
+
+# NuGet and packages
+packages/
+*.nupkg
+*.snupkg
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+*.rsuser
+*.DotSettings.user
+
+# Test and coverage artifacts
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+# Logs and local environment
+*.log
+.env
+.env.*
+appsettings.*.local.json
+
+# IDE and OS artifacts
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp

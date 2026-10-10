@@ -38,19 +38,51 @@
 
 ## Constitution Check
 
-*GATE: MUST pass before Phase 0 research. Re-check after Phase 1 design.*
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design and before `/speckit.tasks`.*
 
-- [ ] C1 - Source-of-truth alignment: Plan references governing artifacts in project-defined priority order.
-- [ ] C2 - Scope alignment: Work is inside active feature scope, or explicit user authorization exists for out-of-scope work.
-- [ ] C3 - Architecture alignment: Backend keeps business rules in Domain/Application; frontend separates UI/state/data-access and consumes API contracts.
-- [ ] C4 - Security alignment: JWT + RBAC + CompanyId privacy enforced; sensitive company ownership is derived from authenticated context.
-- [ ] C5 - Data schema governance (if structural data change exists): approved FR/UC mapping, migration-impact proposal, and explicit user authorization are documented.
-- [ ] C6 - API contract readiness (if endpoint is added/changed): method, route, auth, roles, request/response schemas, validations, errors, and examples are documented for frontend.
-- [ ] C7 - Test strategy alignment: backend unit tests cover APU value calculations; all remaining backend/frontend functionality defines black-box tests.
-- [ ] C8 - Traceability completeness: links requirements -> use cases -> endpoints -> tests -> tasks are present.
-- [ ] C9 - Documentation sync: architecture/model/flow docs are updated in the same change set when impacted.
+### Mandatory Gates
 
-If any gate is unchecked, set plan status to BLOCKED and resolve before implementation.
+- **GC-01 Source Priority & Scope (Articles 1-2)**
+  - Plan cites source artifacts in priority order and confirms active feature scope boundaries.
+  - Out-of-scope items are flagged and blocked until explicit authorization exists.
+
+- **GC-02 Architecture & Security (Articles 6-7)**
+  - Design preserves required backend/frontend separation of responsibilities.
+  - Security model includes authn/authz and tenant isolation rules for sensitive operations.
+
+- **GC-03 Contract Readiness (Article 8)**
+  - Planned endpoints include contract paths and ownership for request/response/error documentation.
+  - No endpoint is considered complete in planning without contract update tasks.
+
+- **GC-04 Test Strategy Alignment (Article 9)**
+  - Plan identifies required evidence by test type (unit or black-box) according to phase policy.
+  - Validation approach is defined for each user story.
+
+- **GC-05 Field-Level Traceability (Article 10, C10)**
+  - Plan references the Implementation Coverage Matrix in spec.md and confirms coverage rows for all required fields/flows.
+  - Any missing coverage row is a planning blocker.
+
+- **GC-06 Spec-to-Deliverable Parity (Article 12, C11)**
+  - For persistent entities, runtime source of truth is planned as persistence-backed (not hardcoded in-memory).
+  - Temporary exceptions require explicit authorization and removal date.
+
+- **GC-07 Schema Change Governance (Articles 3-5 + schema governance section)**
+  - If structural DB changes exist, plan includes migration strategy, impact analysis, rollback plan, and explicit authorization evidence.
+  - Plan includes SQL verification evidence for final schema parity (tables, columns nullability, FK and delete actions).
+
+### Gate Evidence Table *(mandatory)*
+
+| Gate | Status (Pass/Fail) | Evidence (file paths, approvals, notes) |
+|------|---------------------|------------------------------------------|
+| GC-01 | [ ] | [ ] |
+| GC-02 | [ ] | [ ] |
+| GC-03 | [ ] | [ ] |
+| GC-04 | [ ] | [ ] |
+| GC-05 | [ ] | [ ] |
+| GC-06 | [ ] | [ ] |
+| GC-07 | [ ] | [ ] |
+
+**Blocking rule**: Any gate in Fail status blocks progression to Phase 0/1/2 until corrected or explicitly authorized as exception.
 
 ## Project Structure
 
