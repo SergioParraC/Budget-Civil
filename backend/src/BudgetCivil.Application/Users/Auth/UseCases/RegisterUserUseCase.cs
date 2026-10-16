@@ -1,5 +1,7 @@
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Common.Security;
+using BudgetCivil.Application.Catalogs;
+using BudgetCivil.Application.Catalogs.Repositories;
 using BudgetCivil.Application.Users.Auth.Dtos;
 using BudgetCivil.Application.Users.Auth.Repositories;
 using BudgetCivil.Domain.Users.Entities;
@@ -9,6 +11,7 @@ namespace BudgetCivil.Application.Users.Auth.UseCases;
 
 public sealed class RegisterUserUseCase(
     IAuthRepository authRepository,
+    IGeographicCatalogRepository geographicCatalogRepository,
     IPasswordHasher passwordHasher,
     IValidator<RegisterUserRequest> validator)
 {
@@ -17,6 +20,12 @@ public sealed class RegisterUserUseCase(
     public async Task<RegisterUserResponse> ExecuteAsync(RegisterUserRequest request, CancellationToken cancellationToken = default)
     {
         await ValidateAsync(request, cancellationToken);
+        await GeographicLocationRules.EnsureValidActiveLocationAsync(
+            geographicCatalogRepository,
+            request.CountryId,
+            request.DepartmentId,
+            request.MunicipalityId,
+            cancellationToken);
 
         if (await authRepository.EmailExistsAsync(request.Email, cancellationToken))
         {
@@ -61,9 +70,9 @@ public sealed class RegisterUserUseCase(
                 DocumentType = request.DocumentType.Trim(),
                 DocumentNumber = request.DocumentNumber.Trim(),
                 BirthDate = new DateOnly(2000, 1, 1),
-                ResidenceCity = "PENDING",
-                ResidenceDepartment = "PENDING",
-                ResidenceCountry = "PENDING"
+                CountryId = request.CountryId,
+                DepartmentId = request.DepartmentId,
+                MunicipalityId = request.MunicipalityId
             }
         };
 

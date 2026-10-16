@@ -1,6 +1,8 @@
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Catalogs.Repositories;
 using BudgetCivil.Application.Companies.Dtos;
+using BudgetCivil.Application.Companies;
 using BudgetCivil.Application.Companies.Repositories;
 using BudgetCivil.Application.Companies.UseCases;
 using BudgetCivil.Domain.Users.Entities;
@@ -12,6 +14,7 @@ namespace BudgetCivil.Application.Companies.UpdateCompany;
 
 public sealed class UpdateCompanyCommandHandler(
     ICompanyRepository companyRepository,
+    IGeographicCatalogRepository geographicCatalogRepository,
     ISecurityAuditService securityAuditService,
     IValidator<UpdateCompanyCommand> validator)
 {
@@ -22,6 +25,13 @@ public sealed class UpdateCompanyCommandHandler(
         CancellationToken cancellationToken = default)
     {
         await ValidateAsync(command, cancellationToken);
+        await CompanyReferenceRules.EnsureValidReferencesAsync(
+            geographicCatalogRepository,
+            command.CountryId,
+            command.DepartmentId,
+            command.MunicipalityId,
+            command.Representative,
+            cancellationToken);
 
         var actor = await companyRepository.GetActorByIdAsync(actorUserId, cancellationToken);
         actor = CompanyAdministrationAuthorizationRules.EnsureActorCanUpdateCompany(actor, companyId);
@@ -44,12 +54,24 @@ public sealed class UpdateCompanyCommandHandler(
 
         var normalizedBusinessName = CompanyDomainRules.NormalizeBusinessName(command.BusinessName);
         var normalizedTaxId = CompanyDomainRules.NormalizeTaxId(command.TaxId);
+        var normalizedCompanyType = CompanyDomainRules.NormalizeCompanyType(command.CompanyType);
         CompanyDomainRules.ValidateTerritorialLevel(command.CompanyType, command.TerritorialLevel);
         CompanyDomainRules.ValidateRepresentative(MapRepresentative(command.Representative));
 
         company.BusinessName = normalizedBusinessName;
         company.TaxId = normalizedTaxId;
-        company.UpdatedAtUtc = DateTime.UtcNow;
+        company.CompanyType = normalizedCompanyType;
+        company.TerritorialLevel = NormalizeOptionalText(command.TerritorialLevel);
+        company.CountryId = command.CountryId;
+        company.DepartmentId = command.DepartmentId;
+        company.MunicipalityId = command.MunicipalityId;
+        company.RepresentativeMode = command.Representative!.Mode!.Trim().ToUpperInvariant();
+        company.RepresentativeUserId = command.Representative.UserId;
+        company.RepresentativeFullName = NormalizeOptionalText(command.Representative.FullName);
+        company.RepresentativeDocumentTypeId = command.Representative.DocumentTypeId;
+        company.RepresentativeDocumentNumber = NormalizeOptionalText(command.Representative.DocumentNumber);
+        company.LastModifiedByUserId = actor.Id;
+        company.LastModifiedAtUtc = DateTime.UtcNow;
 
         await companyRepository.SaveChangesAsync(cancellationToken);
 
@@ -68,7 +90,7 @@ public sealed class UpdateCompanyCommandHandler(
         return new UpdateCompanyResponse
         {
             CompanyId = company.Id,
-            UpdatedAtUtc = company.UpdatedAtUtc
+            UpdatedAtUtc = company.LastModifiedAtUtc!.Value
         };
     }
 
@@ -84,8 +106,14 @@ public sealed class UpdateCompanyCommandHandler(
             Mode = representative.Mode,
             UserId = representative.UserId,
             FullName = representative.FullName,
-            DocumentNumber = representative.DocumentNumber
+            DocumentNumber = representative.DocumentNumber,
+            DocumentTypeId = representative.DocumentTypeId
         };
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private async Task ValidateAsync(UpdateCompanyCommand command, CancellationToken cancellationToken)

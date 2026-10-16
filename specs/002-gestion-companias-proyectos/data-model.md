@@ -55,6 +55,9 @@ Rules:
 - Sin borrado fisico.
 - Inhabilitar bloquea operacion para actores no autorizados.
 - Rehabilitar no reactiva membresias manualmente desactivadas.
+- Pais, departamento y municipio deben estar activos y pertenecer entre si en la jerarquia `Country -> Department -> Municipality`.
+- Registros historicos sin ubicacion conocida pueden tener `country_id`, `department_id` y `municipality_id` nulos; toda nueva creacion o actualizacion requiere los tres IDs validos.
+- Las filas historicas sin datos previos para tipo, representante o creador pueden mantener nulos en los campos agregados por migracion; las escrituras nuevas requieren los campos obligatorios de este modelo.
 
 ## 3.2 `dbo.CompanyUserMembership`
 

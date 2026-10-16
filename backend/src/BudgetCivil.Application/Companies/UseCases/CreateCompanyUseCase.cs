@@ -1,5 +1,7 @@
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Catalogs.Repositories;
+using BudgetCivil.Application.Companies;
 using BudgetCivil.Application.Companies.Dtos;
 using BudgetCivil.Application.Companies.Repositories;
 using BudgetCivil.Domain.Users.Entities;
@@ -9,6 +11,7 @@ namespace BudgetCivil.Application.Companies.UseCases;
 
 public sealed class CreateCompanyUseCase(
     ICompanyRepository companyRepository,
+    IGeographicCatalogRepository geographicCatalogRepository,
     ISecurityAuditService securityAuditService,
     IValidator<CreateCompanyRequest> validator)
 {
@@ -18,6 +21,15 @@ public sealed class CreateCompanyUseCase(
         CancellationToken cancellationToken = default)
     {
         await ValidateAsync(request, cancellationToken);
+        await CompanyReferenceRules.EnsureValidReferencesAsync(
+            geographicCatalogRepository,
+            request.CountryId,
+            request.DepartmentId,
+            request.MunicipalityId,
+            request.Representative,
+            cancellationToken);
+        BudgetCivil.Domain.Companies.Company.ValidateTerritorialLevel(request.CompanyType, request.TerritorialLevel);
+        BudgetCivil.Domain.Companies.Company.ValidateRepresentative(MapRepresentative(request.Representative));
 
         var actor = await companyRepository.GetActorByIdAsync(actorUserId, cancellationToken);
         actor = CompanyAdministrationAuthorizationRules.EnsureActorCanCreateCompany(actor);
@@ -45,9 +57,19 @@ public sealed class CreateCompanyUseCase(
             Id = Guid.NewGuid(),
             BusinessName = request.BusinessName.Trim(),
             TaxId = request.TaxId.Trim(),
+            CompanyType = BudgetCivil.Domain.Companies.Company.NormalizeCompanyType(request.CompanyType),
+            TerritorialLevel = NormalizeOptionalText(request.TerritorialLevel),
+            CountryId = request.CountryId,
+            DepartmentId = request.DepartmentId,
+            MunicipalityId = request.MunicipalityId,
+            RepresentativeMode = request.Representative!.Mode!.Trim().ToUpperInvariant(),
+            RepresentativeUserId = request.Representative.UserId,
+            RepresentativeFullName = NormalizeOptionalText(request.Representative.FullName),
+            RepresentativeDocumentTypeId = request.Representative.DocumentTypeId,
+            RepresentativeDocumentNumber = NormalizeOptionalText(request.Representative.DocumentNumber),
             IsActive = isManager ? true : request.IsActive ?? true,
+            CreatedByUserId = actor.Id,
             CreatedAtUtc = utcNow,
-            UpdatedAtUtc = utcNow
         };
 
         await companyRepository.AddCompanyAsync(createdCompany, cancellationToken);
@@ -105,5 +127,24 @@ public sealed class CreateCompanyUseCase(
 
         var message = string.Join(" | ", validationResult.Errors.Select(error => error.ErrorMessage));
         throw new ValidationAppException(message, "VALIDATION_ERROR");
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static BudgetCivil.Domain.Companies.LegalRepresentativeInput? MapRepresentative(LegalRepresentativePayload? representative)
+    {
+        return representative is null
+            ? null
+            : new BudgetCivil.Domain.Companies.LegalRepresentativeInput
+            {
+                Mode = representative.Mode,
+                UserId = representative.UserId,
+                FullName = representative.FullName,
+                DocumentNumber = representative.DocumentNumber,
+                DocumentTypeId = representative.DocumentTypeId
+            };
     }
 }

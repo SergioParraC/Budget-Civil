@@ -65,13 +65,22 @@ public sealed class ProfileSummaryResponse
 public sealed class ProfileResidenceResponse
 {
     [JsonPropertyName("municipio")]
-    public string City { get; init; } = string.Empty;
+    public string? City { get; init; }
 
     [JsonPropertyName("departamento")]
-    public string Department { get; init; } = string.Empty;
+    public string? Department { get; init; }
 
     [JsonPropertyName("pais")]
-    public string Country { get; init; } = string.Empty;
+    public string? Country { get; init; }
+
+    [JsonPropertyName("country_id")]
+    public Guid? CountryId { get; init; }
+
+    [JsonPropertyName("department_id")]
+    public Guid? DepartmentId { get; init; }
+
+    [JsonPropertyName("municipality_id")]
+    public Guid? MunicipalityId { get; init; }
 }
 
 public sealed class UpdateMyProfileResponse

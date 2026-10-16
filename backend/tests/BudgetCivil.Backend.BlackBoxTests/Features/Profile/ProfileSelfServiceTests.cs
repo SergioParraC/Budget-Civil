@@ -58,6 +58,7 @@ public sealed class ProfileSelfServiceTests
             .Build();
 
         var unique = Guid.NewGuid().ToString("N")[..8];
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
         var payload = new
         {
             primer_nombre = "Luisa",
@@ -69,9 +70,9 @@ public sealed class ProfileSelfServiceTests
             fecha_nacimiento = "1993-07-21",
             residencia = new
             {
-                municipio = "Cali",
-                departamento = "Valle del Cauca",
-                pais = "Colombia"
+                country_id = location.CountryId,
+                department_id = location.DepartmentId,
+                municipality_id = location.MunicipalityId
             },
             email = $"self.{unique}@mail.local",
             username = $"self_{unique}",
@@ -98,7 +99,9 @@ public sealed class ProfileSelfServiceTests
         actorUser.Username.Should().Be(payload.username);
         actorUser.Profile!.FirstName.Should().Be(payload.primer_nombre);
         actorUser.Profile.LastName.Should().Be(payload.primer_apellido);
-        actorUser.Profile.ResidenceCity.Should().Be(payload.residencia.municipio);
+        actorUser.Profile.CountryId.Should().Be(location.CountryId);
+        actorUser.Profile.DepartmentId.Should().Be(location.DepartmentId);
+        actorUser.Profile.MunicipalityId.Should().Be(location.MunicipalityId);
 
         var unaffectedUser = await dbContext.UserAccounts
             .Include(user => user.Profile)
@@ -124,7 +127,7 @@ public sealed class ProfileSelfServiceTests
             TaxId = $"TP{token}"[..12],
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            UpdatedAtUtc = DateTime.UtcNow
+            LastModifiedAtUtc = DateTime.UtcNow
         });
 
         await dbContext.SaveChangesAsync();

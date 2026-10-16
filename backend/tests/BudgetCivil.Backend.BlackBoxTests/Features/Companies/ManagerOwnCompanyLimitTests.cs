@@ -23,12 +23,23 @@ public sealed class ManagerOwnCompanyLimitTests
             .WithUser(managerUser.UserId, "GERENTE_PROYECTOS")
             .Build();
 
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
         var unique = Guid.NewGuid().ToString("N")[..10].ToUpperInvariant();
         var payload = new
         {
             business_name = $"Compania Gerente {unique}",
             tax_id = $"TM{unique}"[..12],
-            is_active = true
+            is_active = true,
+            company_type = "PRIVADA",
+            country_id = location.CountryId,
+            department_id = location.DepartmentId,
+            municipality_id = location.MunicipalityId,
+            representative = new
+            {
+                mode = "MANUAL_DATA",
+                full_name = "Representante Gerente",
+                document_number = unique
+            }
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/companies", payload);
@@ -63,12 +74,23 @@ public sealed class ManagerOwnCompanyLimitTests
             .WithUser(managerUser.UserId, "GERENTE_PROYECTOS", existingCompanyId)
             .Build();
 
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
         var unique = Guid.NewGuid().ToString("N")[..10].ToUpperInvariant();
         var payload = new
         {
             business_name = $"Segunda Compania {unique}",
             tax_id = $"TN{unique}"[..12],
-            is_active = true
+            is_active = true,
+            company_type = "PRIVADA",
+            country_id = location.CountryId,
+            department_id = location.DepartmentId,
+            municipality_id = location.MunicipalityId,
+            representative = new
+            {
+                mode = "MANUAL_DATA",
+                full_name = "Representante Gerente",
+                document_number = unique
+            }
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/companies", payload);
@@ -84,6 +106,7 @@ public sealed class ManagerOwnCompanyLimitTests
         var ownCompanyId = await SeedCompanyAsync(factory, "Own Manager Company");
         var otherCompanyId = await SeedCompanyAsync(factory, "Other Company");
         var managerUser = await TestDataSeeder.SeedUserAsync(factory, "GERENTE_PROYECTOS", "Password1!", companyId: ownCompanyId);
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
 
         var client = new AuthenticatedClientBuilder(factory)
             .WithUser(managerUser.UserId, "GERENTE_PROYECTOS", ownCompanyId)
@@ -94,7 +117,15 @@ public sealed class ManagerOwnCompanyLimitTests
         {
             business_name = $"Edited By Manager {unique}",
             tax_id = $"TO{unique}"[..12],
-            is_active = true
+            company_type = "PRIVADA",
+            country_id = location.CountryId,
+            department_id = location.DepartmentId,
+            municipality_id = location.MunicipalityId,
+            representative = new
+            {
+                mode = "USER_REFERENCE",
+                user_id = managerUser.UserId
+            }
         };
 
         var response = await client.PutAsJsonAsync($"/api/v1/companies/{otherCompanyId}", payload);
@@ -117,7 +148,7 @@ public sealed class ManagerOwnCompanyLimitTests
             TaxId = $"TP{token}"[..12],
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            UpdatedAtUtc = DateTime.UtcNow
+            LastModifiedAtUtc = DateTime.UtcNow
         });
 
         await dbContext.SaveChangesAsync();

@@ -1,6 +1,8 @@
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Catalogs.Repositories;
 using BudgetCivil.Application.Companies.Dtos;
+using BudgetCivil.Application.Companies;
 using BudgetCivil.Application.Companies.Repositories;
 using BudgetCivil.Application.Companies.UseCases;
 using BudgetCivil.Domain.Users.Entities;
@@ -12,6 +14,7 @@ namespace BudgetCivil.Application.Companies.CreateCompany;
 
 public sealed class CreateCompanyCommandHandler(
     ICompanyRepository companyRepository,
+    IGeographicCatalogRepository geographicCatalogRepository,
     ISecurityAuditService securityAuditService,
     IValidator<CreateCompanyCommand> validator)
 {
@@ -21,6 +24,13 @@ public sealed class CreateCompanyCommandHandler(
         CancellationToken cancellationToken = default)
     {
         await ValidateAsync(command, cancellationToken);
+        await CompanyReferenceRules.EnsureValidReferencesAsync(
+            geographicCatalogRepository,
+            command.CountryId,
+            command.DepartmentId,
+            command.MunicipalityId,
+            command.Representative,
+            cancellationToken);
 
         var actor = await companyRepository.GetActorByIdAsync(actorUserId, cancellationToken);
         actor = CompanyAdministrationAuthorizationRules.EnsureActorCanCreateCompany(actor);
@@ -44,6 +54,7 @@ public sealed class CreateCompanyCommandHandler(
 
         var normalizedBusinessName = CompanyDomainRules.NormalizeBusinessName(command.BusinessName);
         var normalizedTaxId = CompanyDomainRules.NormalizeTaxId(command.TaxId);
+        var normalizedCompanyType = CompanyDomainRules.NormalizeCompanyType(command.CompanyType);
         CompanyDomainRules.ValidateTerritorialLevel(command.CompanyType, command.TerritorialLevel);
         CompanyDomainRules.ValidateRepresentative(MapRepresentative(command.Representative));
 
@@ -53,9 +64,19 @@ public sealed class CreateCompanyCommandHandler(
             Id = Guid.NewGuid(),
             BusinessName = normalizedBusinessName,
             TaxId = normalizedTaxId,
+            CompanyType = normalizedCompanyType,
+            TerritorialLevel = NormalizeOptionalText(command.TerritorialLevel),
+            CountryId = command.CountryId,
+            DepartmentId = command.DepartmentId,
+            MunicipalityId = command.MunicipalityId,
+            RepresentativeMode = command.Representative!.Mode!.Trim().ToUpperInvariant(),
+            RepresentativeUserId = command.Representative.UserId,
+            RepresentativeFullName = NormalizeOptionalText(command.Representative.FullName),
+            RepresentativeDocumentTypeId = command.Representative.DocumentTypeId,
+            RepresentativeDocumentNumber = NormalizeOptionalText(command.Representative.DocumentNumber),
             IsActive = isManager ? true : command.IsActive ?? true,
+            CreatedByUserId = actor.Id,
             CreatedAtUtc = utcNow,
-            UpdatedAtUtc = utcNow
         };
 
         await companyRepository.AddCompanyAsync(createdCompany, cancellationToken);
@@ -115,8 +136,14 @@ public sealed class CreateCompanyCommandHandler(
             Mode = representative.Mode,
             UserId = representative.UserId,
             FullName = representative.FullName,
-            DocumentNumber = representative.DocumentNumber
+            DocumentNumber = representative.DocumentNumber,
+            DocumentTypeId = representative.DocumentTypeId
         };
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private async Task ValidateAsync(CreateCompanyCommand command, CancellationToken cancellationToken)

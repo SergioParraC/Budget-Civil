@@ -192,6 +192,10 @@ Error when invalid:
     - `fullName` (optional)
     - `documentTypeId` (optional)
     - `documentNumber` (optional)
+  - `representative` is required; its mode and data must be consistent.
+  - `isActive` (optional; only Administrador can set it)
+  - `representative.mode=USER_REFERENCE` requires an existing user ID; `MANUAL_DATA` requires a full name and document number.
+  - Country, department and municipality must exist, be active and match the `Country -> Department -> Municipality` hierarchy.
 - Response 201: `companyId`, `isActive`, `createdAt`
 - Errors:
   - 400 `VALIDATION_ERROR`
@@ -202,7 +206,8 @@ Error when invalid:
 
 - Auth required: Yes
 - Allowed roles: Administrador, Director de proyectos
-- Request: campos editables de compania y representante
+- Request: `businessName`, `taxId`, `companyType`, `territorialLevel` when required, `countryId`, `departmentId`, `municipalityId` and `representative`.
+- Country, department and municipality must be active and belong to the same hierarchy.
 - Response 200: `companyId`, `updatedAt`
 - Errors: 400, 403, 404
 

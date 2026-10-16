@@ -91,7 +91,7 @@ public sealed class UserCompanyConstraintTests
             TaxId = $"UC{token}"[..12],
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            UpdatedAtUtc = DateTime.UtcNow
+            LastModifiedAtUtc = DateTime.UtcNow
         });
 
         await dbContext.SaveChangesAsync();

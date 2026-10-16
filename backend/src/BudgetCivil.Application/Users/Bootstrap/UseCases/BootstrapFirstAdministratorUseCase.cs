@@ -1,4 +1,7 @@
 using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Catalogs;
+using BudgetCivil.Application.Catalogs.Repositories;
+using BudgetCivil.Application.Companies;
 using BudgetCivil.Application.Users.Bootstrap.Dtos;
 using BudgetCivil.Application.Users.Bootstrap.Repositories;
 using FluentValidation;
@@ -7,11 +10,34 @@ namespace BudgetCivil.Application.Users.Bootstrap.UseCases;
 
 public sealed class BootstrapFirstAdministratorUseCase(
     IBootstrapRepository bootstrapRepository,
+    IGeographicCatalogRepository geographicCatalogRepository,
     IValidator<BootstrapRequest> validator)
 {
     public async Task<BootstrapResponse> ExecuteAsync(BootstrapRequest request, CancellationToken cancellationToken = default)
     {
         await ValidateAsync(request, cancellationToken);
+        await GeographicLocationRules.EnsureValidActiveLocationAsync(
+            geographicCatalogRepository,
+            request.AdminProfile.CountryId,
+            request.AdminProfile.DepartmentId,
+            request.AdminProfile.MunicipalityId,
+            cancellationToken);
+        await CompanyReferenceRules.EnsureValidReferencesAsync(
+            geographicCatalogRepository,
+            request.Company.CountryId,
+            request.Company.DepartmentId,
+            request.Company.MunicipalityId,
+            request.Company.Representative,
+            cancellationToken);
+        BudgetCivil.Domain.Companies.Company.ValidateTerritorialLevel(request.Company.CompanyType, request.Company.TerritorialLevel);
+        BudgetCivil.Domain.Companies.Company.ValidateRepresentative(new BudgetCivil.Domain.Companies.LegalRepresentativeInput
+        {
+            Mode = request.Company.Representative?.Mode,
+            UserId = request.Company.Representative?.UserId,
+            FullName = request.Company.Representative?.FullName,
+            DocumentTypeId = request.Company.Representative?.DocumentTypeId,
+            DocumentNumber = request.Company.Representative?.DocumentNumber
+        });
 
         if (await bootstrapRepository.AnyAdministratorExistsAsync(cancellationToken))
         {

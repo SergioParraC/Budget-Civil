@@ -34,17 +34,14 @@ public sealed class UpdateUserRequestValidator : AbstractValidator<UpdateUserReq
         RuleFor(request => request.Residence)
             .NotNull();
 
-        RuleFor(request => request.Residence.City)
-            .NotEmpty()
-            .MaximumLength(120);
+        RuleFor(request => request.Residence.CountryId)
+            .NotEmpty();
 
-        RuleFor(request => request.Residence.Department)
-            .NotEmpty()
-            .MaximumLength(120);
+        RuleFor(request => request.Residence.DepartmentId)
+            .NotEmpty();
 
-        RuleFor(request => request.Residence.Country)
-            .NotEmpty()
-            .MaximumLength(120);
+        RuleFor(request => request.Residence.MunicipalityId)
+            .NotEmpty();
 
         RuleFor(request => request.Email)
             .NotEmpty()

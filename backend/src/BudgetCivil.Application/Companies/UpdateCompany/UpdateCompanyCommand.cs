@@ -12,10 +12,19 @@ public sealed class UpdateCompanyCommand
     public string TaxId { get; init; } = string.Empty;
 
     [JsonPropertyName("company_type")]
-    public string? CompanyType { get; init; }
+    public string CompanyType { get; init; } = string.Empty;
 
     [JsonPropertyName("territorial_level")]
     public string? TerritorialLevel { get; init; }
+
+    [JsonPropertyName("country_id")]
+    public Guid CountryId { get; init; }
+
+    [JsonPropertyName("department_id")]
+    public Guid DepartmentId { get; init; }
+
+    [JsonPropertyName("municipality_id")]
+    public Guid MunicipalityId { get; init; }
 
     [JsonPropertyName("representative")]
     public LegalRepresentativePayload? Representative { get; init; }

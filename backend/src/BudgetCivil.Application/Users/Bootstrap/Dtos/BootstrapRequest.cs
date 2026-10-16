@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using BudgetCivil.Application.Companies.Dtos;
 
 namespace BudgetCivil.Application.Users.Bootstrap.Dtos;
 
@@ -33,6 +34,15 @@ public sealed class BootstrapAdminProfileRequest
 
     [JsonPropertyName("password")]
     public string Password { get; init; } = string.Empty;
+
+    [JsonPropertyName("country_id")]
+    public Guid CountryId { get; init; }
+
+    [JsonPropertyName("department_id")]
+    public Guid DepartmentId { get; init; }
+
+    [JsonPropertyName("municipality_id")]
+    public Guid MunicipalityId { get; init; }
 }
 
 public sealed class BootstrapCompanyRequest
@@ -42,4 +52,22 @@ public sealed class BootstrapCompanyRequest
 
     [JsonPropertyName("tax_id")]
     public string TaxId { get; init; } = string.Empty;
+
+    [JsonPropertyName("company_type")]
+    public string CompanyType { get; init; } = string.Empty;
+
+    [JsonPropertyName("territorial_level")]
+    public string? TerritorialLevel { get; init; }
+
+    [JsonPropertyName("country_id")]
+    public Guid CountryId { get; init; }
+
+    [JsonPropertyName("department_id")]
+    public Guid DepartmentId { get; init; }
+
+    [JsonPropertyName("municipality_id")]
+    public Guid MunicipalityId { get; init; }
+
+    [JsonPropertyName("representative")]
+    public LegalRepresentativePayload? Representative { get; init; }
 }

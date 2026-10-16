@@ -145,7 +145,7 @@ public sealed class ProjectStatusReactivationTests
             TaxId = $"PR{token}"[..12],
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            UpdatedAtUtc = DateTime.UtcNow
+            LastModifiedAtUtc = DateTime.UtcNow
         });
 
         await dbContext.SaveChangesAsync();

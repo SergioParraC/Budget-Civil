@@ -47,6 +47,15 @@ public sealed class RegisterUserRequestValidator : AbstractValidator<RegisterUse
             .NotEmpty()
             .MaximumLength(50);
 
+        RuleFor(request => request.CountryId)
+            .NotEmpty();
+
+        RuleFor(request => request.DepartmentId)
+            .NotEmpty();
+
+        RuleFor(request => request.MunicipalityId)
+            .NotEmpty();
+
         RuleFor(request => request.ExtensionData)
             .Must(HasNoForbiddenFields)
             .WithMessage("Self-registration payload cannot include rol_asignado, company_id, or project_id.");

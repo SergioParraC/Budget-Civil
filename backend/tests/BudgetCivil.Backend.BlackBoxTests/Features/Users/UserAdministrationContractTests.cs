@@ -26,6 +26,7 @@ public sealed class UserAdministrationContractTests
             .Build();
 
         var unique = Guid.NewGuid().ToString("N")[..8];
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
         var payload = new Dictionary<string, object?>
         {
             ["primer_nombre"] = "Laura",
@@ -37,9 +38,9 @@ public sealed class UserAdministrationContractTests
             ["fecha_nacimiento"] = "1992-03-08",
             ["residencia"] = new Dictionary<string, object?>
             {
-                ["municipio"] = "Medellin",
-                ["departamento"] = "Antioquia",
-                ["pais"] = "Colombia"
+                ["country_id"] = location.CountryId,
+                ["department_id"] = location.DepartmentId,
+                ["municipality_id"] = location.MunicipalityId
             },
             ["email"] = $"updated.{unique}@mail.local",
             ["username"] = $"updated_{unique}",
@@ -65,7 +66,9 @@ public sealed class UserAdministrationContractTests
         updatedUser.Username.Should().Be($"updated_{unique}");
         updatedUser.Profile!.FirstName.Should().Be("Laura");
         updatedUser.Profile.LastName.Should().Be("Suarez");
-        updatedUser.Profile.ResidenceCity.Should().Be("Medellin");
+        updatedUser.Profile.CountryId.Should().Be(location.CountryId);
+        updatedUser.Profile.DepartmentId.Should().Be(location.DepartmentId);
+        updatedUser.Profile.MunicipalityId.Should().Be(location.MunicipalityId);
     }
 
     [Fact]
@@ -205,6 +208,7 @@ public sealed class UserAdministrationContractTests
             .Build();
 
         var unique = Guid.NewGuid().ToString("N")[..8];
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
         var payload = new Dictionary<string, object?>
         {
             ["primer_nombre"] = "Ana",
@@ -214,9 +218,9 @@ public sealed class UserAdministrationContractTests
             ["fecha_nacimiento"] = "1990-01-01",
             ["residencia"] = new Dictionary<string, object?>
             {
-                ["municipio"] = "Bogota",
-                ["departamento"] = "Cundinamarca",
-                ["pais"] = "Colombia"
+                ["country_id"] = location.CountryId,
+                ["department_id"] = location.DepartmentId,
+                ["municipality_id"] = location.MunicipalityId
             },
             ["email"] = $"project.{unique}@mail.local",
             ["username"] = $"project_{unique}",
@@ -244,7 +248,7 @@ public sealed class UserAdministrationContractTests
             TaxId = $"TAX{token}"[..13],
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            UpdatedAtUtc = DateTime.UtcNow
+            LastModifiedAtUtc = DateTime.UtcNow
         });
 
         await dbContext.SaveChangesAsync();

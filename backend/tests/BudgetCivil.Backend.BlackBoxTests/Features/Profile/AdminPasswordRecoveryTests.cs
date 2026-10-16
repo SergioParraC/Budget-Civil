@@ -88,7 +88,7 @@ public sealed class AdminPasswordRecoveryTests
             TaxId = $"TR{token}"[..12],
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            UpdatedAtUtc = DateTime.UtcNow
+            LastModifiedAtUtc = DateTime.UtcNow
         });
 
         await dbContext.SaveChangesAsync();

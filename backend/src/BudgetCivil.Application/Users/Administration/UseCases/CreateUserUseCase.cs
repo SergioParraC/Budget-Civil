@@ -1,6 +1,8 @@
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Common.Security;
+using BudgetCivil.Application.Catalogs;
+using BudgetCivil.Application.Catalogs.Repositories;
 using BudgetCivil.Application.Users.Administration.Dtos;
 using BudgetCivil.Application.Users.Administration.Repositories;
 using BudgetCivil.Domain.Users.Entities;
@@ -10,6 +12,7 @@ namespace BudgetCivil.Application.Users.Administration.UseCases;
 
 public sealed class CreateUserUseCase(
     IUserAdministrationRepository repository,
+    IGeographicCatalogRepository geographicCatalogRepository,
     IPasswordHasher passwordHasher,
     ISecurityAuditService securityAuditService,
     IValidator<CreateUserRequest> validator)
@@ -25,6 +28,13 @@ public sealed class CreateUserUseCase(
 
         var actor = await repository.GetActorByIdAsync(actorUserId, cancellationToken);
         AdministrationAuthorizationRules.EnsureActorCanCreateUsers(actor);
+
+        await GeographicLocationRules.EnsureValidActiveLocationAsync(
+            geographicCatalogRepository,
+            request.Residence.CountryId,
+            request.Residence.DepartmentId,
+            request.Residence.MunicipalityId,
+            cancellationToken);
 
         if (await repository.EmailExistsAsync(request.Email, cancellationToken: cancellationToken))
         {
@@ -87,9 +97,9 @@ public sealed class CreateUserUseCase(
                 DocumentType = request.DocumentType.Trim(),
                 DocumentNumber = request.DocumentNumber.Trim(),
                 BirthDate = request.BirthDate,
-                ResidenceCity = request.Residence.City.Trim(),
-                ResidenceDepartment = request.Residence.Department.Trim(),
-                ResidenceCountry = request.Residence.Country.Trim(),
+                CountryId = request.Residence.CountryId,
+                DepartmentId = request.Residence.DepartmentId,
+                MunicipalityId = request.Residence.MunicipalityId,
                 ProfessionalCard = NormalizeOptionalText(request.ProfessionalCard),
                 ProfessionalCardIssuedAt = request.ProfessionalCardIssuedAt,
                 ProfessionalCardFilePath = NormalizeOptionalText(request.ProfessionalCardFilePath)

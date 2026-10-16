@@ -78,6 +78,9 @@ Request:
 - password: string, required
 - tipo_documento: string, required
 - numero_documento: string, required
+- country_id: uuid, required
+- department_id: uuid, required
+- municipality_id: uuid, required
 
 Response 201:
 - user_id: uuid
@@ -88,6 +91,7 @@ Response 201:
 
 Validations:
 - Self-registration siempre fija rol Presupuestador.
+- Los catalogos deben existir, estar activos y respetar la jerarquia pais -> departamento -> municipio.
 - Debe rechazar payload con `rol_asignado`, `company_id` o `project_id`.
 
 Errors:
@@ -100,8 +104,8 @@ Auth required: No (solo si no existe Administrador)
 Allowed roles reference: Public bootstrap controlado por estado
 
 Request:
-- admin_profile: object, required
-- company: object, required
+- admin_profile: object, required; incluye `country_id`, `department_id` y `municipality_id` UUID
+- company: object, required; incluye `company_type`, `territorial_level` cuando aplica, los tres IDs geograficos y `representative` con modo y datos requeridos.
 
 Response 200/201:
 - bootstrap_enabled: bool
@@ -112,6 +116,7 @@ Response 200/201:
 Validations:
 - Solo habilitado cuando no existe ningun Administrador.
 - Idempotente ante reintentos.
+- Los catalogos deben existir, estar activos y respetar la jerarquia pais -> departamento -> municipio.
 
 Errors:
 - 409 bootstrap deshabilitado por existencia previa de Administrador
@@ -134,7 +139,7 @@ Request:
 - tipo_documento: string, required
 - numero_documento: string, required
 - fecha_nacimiento: date, required
-- residencia: object, required (municipio, departamento, pais)
+- residencia: object, required (`country_id`, `department_id`, `municipality_id`; los tres UUID)
 - email: string, required
 - username: string, required
 - password: string, required
@@ -155,6 +160,7 @@ Validations:
 - email unico global
 - username unico global
 - politica minima de password
+- Los catalogos geograficos deben existir, estar activos y respetar la jerarquia pais -> departamento -> municipio.
 - Si actor != Administrador, rechazar creacion administrativa.
 
 Errors:
@@ -169,7 +175,8 @@ Permission key: USERS_UPDATE
 Allowed roles reference: Administrador, Gerente de proyectos
 
 Request:
-- Campos administrativos editables del perfil (sin cambio directo de password)
+- Campos administrativos editables del perfil (sin cambio directo de password).
+- `residencia` requiere `country_id`, `department_id` y `municipality_id` UUID, existentes, activos y jerarquicamente consistentes.
 
 Response 200:
 - user_id: uuid
@@ -282,9 +289,10 @@ Company ownership:
 - Gerente de proyectos solo puede crear una compania propia si no tiene una asociada.
 
 Request:
-- business_name: string, required
-- tax_id: string, required
-- is_active: bool, optional
+- `business_name`, `tax_id`, `company_type` (`PUBLICA|PRIVADA`), `country_id`, `department_id`, `municipality_id` y `representative` son requeridos.
+- `territorial_level` es requerido para `PUBLICA`; `is_active` es opcional al crear.
+- `representative.mode` es `USER_REFERENCE` o `MANUAL_DATA`; el modo y sus campos deben ser consistentes y las referencias suministradas deben estar activas.
+- Los catalogos geograficos deben existir, estar activos y respetar la jerarquia pais -> departamento -> municipio.
 
 Response 201:
 - company_id: uuid
@@ -306,7 +314,9 @@ Company ownership:
 - Gerente de proyectos solo puede editar su propia compania.
 
 Request:
-- Campos editables de compania
+- `business_name`, `tax_id`, `company_type` (`PUBLICA|PRIVADA`), `territorial_level` (requerido para `PUBLICA`), `country_id`, `department_id`, `municipality_id` y `representative` son requeridos.
+- `representative` requiere `mode` (`USER_REFERENCE|MANUAL_DATA`); incluye `user_id`, `full_name`, `document_type_id` y `document_number` segun el modo.
+- Los catalogos geograficos deben existir, estar activos y respetar la jerarquia pais -> departamento -> municipio.
 
 Response 200:
 - company_id: uuid
@@ -342,6 +352,7 @@ Allowed roles reference: Administrador, Gerente de proyectos, Presupuestador, Au
 
 Response 200:
 - Perfil del usuario autenticado
+- `perfil.residencia` incluye los UUID `country_id`, `department_id` y `municipality_id`; las filas historicas sin ubicacion pueden responderlos como null.
 
 Errors:
 - 401 no autenticado
@@ -354,6 +365,7 @@ Allowed roles reference: Administrador, Gerente de proyectos, Presupuestador, Au
 
 Request:
 - Campos permitidos de perfil propio
+- `residencia` requiere `country_id`, `department_id` y `municipality_id` UUID, existentes, activos y jerarquicamente consistentes.
 
 Response 200:
 - user_id: uuid

@@ -1,4 +1,5 @@
 using BudgetCivil.Domain.Users.Entities;
+using BudgetCivil.Domain.Catalogs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -47,20 +48,14 @@ public sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProf
             .HasColumnName("birth_date")
             .IsRequired();
 
-        builder.Property(userProfile => userProfile.ResidenceCity)
-            .HasColumnName("residence_city")
-            .HasMaxLength(120)
-            .IsRequired();
+        builder.Property(userProfile => userProfile.CountryId)
+            .HasColumnName("country_id");
 
-        builder.Property(userProfile => userProfile.ResidenceDepartment)
-            .HasColumnName("residence_department")
-            .HasMaxLength(120)
-            .IsRequired();
+        builder.Property(userProfile => userProfile.DepartmentId)
+            .HasColumnName("department_id");
 
-        builder.Property(userProfile => userProfile.ResidenceCountry)
-            .HasColumnName("residence_country")
-            .HasMaxLength(120)
-            .IsRequired();
+        builder.Property(userProfile => userProfile.MunicipalityId)
+            .HasColumnName("municipality_id");
 
         builder.Property(userProfile => userProfile.ProfessionalCard)
             .HasColumnName("professional_card")
@@ -74,5 +69,20 @@ public sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProf
             .HasMaxLength(255);
 
         builder.HasIndex(userProfile => userProfile.DocumentNumber);
+
+        builder.HasOne(userProfile => userProfile.Country)
+            .WithMany()
+            .HasForeignKey(userProfile => userProfile.CountryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(userProfile => userProfile.Department)
+            .WithMany()
+            .HasForeignKey(userProfile => userProfile.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(userProfile => userProfile.Municipality)
+            .WithMany()
+            .HasForeignKey(userProfile => userProfile.MunicipalityId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

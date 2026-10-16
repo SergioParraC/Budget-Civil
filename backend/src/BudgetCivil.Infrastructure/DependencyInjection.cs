@@ -1,5 +1,6 @@
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Security;
+using BudgetCivil.Application.Catalogs.Repositories;
 using BudgetCivil.Application.Companies.Repositories;
 using BudgetCivil.Application.Listings.Repositories;
 using BudgetCivil.Application.Memberships.Repositories;
@@ -34,6 +35,7 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddScoped<ISecurityAuditRepository, SecurityAuditRepository>();
+        services.AddScoped<IGeographicCatalogRepository, GeographicCatalogRepository>();
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IBootstrapRepository, BootstrapRepository>();
         services.AddScoped<IUserAdministrationRepository, UserAdministrationRepository>();

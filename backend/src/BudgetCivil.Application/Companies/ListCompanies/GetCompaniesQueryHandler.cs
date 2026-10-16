@@ -38,7 +38,21 @@ public sealed class GetCompaniesQueryHandler(
                     CompanyId = company.Id,
                     BusinessName = company.BusinessName,
                     TaxId = company.TaxId,
-                    IsActive = company.IsActive
+                    CompanyType = company.CompanyType,
+                    TerritorialLevel = company.TerritorialLevel,
+                    CountryId = company.CountryId,
+                    DepartmentId = company.DepartmentId,
+                    MunicipalityId = company.MunicipalityId,
+                    RepresentativeMode = company.RepresentativeMode,
+                    RepresentativeUserId = company.RepresentativeUserId,
+                    RepresentativeFullName = company.RepresentativeFullName,
+                    RepresentativeDocumentTypeId = company.RepresentativeDocumentTypeId,
+                    RepresentativeDocumentNumber = company.RepresentativeDocumentNumber,
+                    IsActive = company.IsActive,
+                    CreatedByUserId = company.CreatedByUserId,
+                    CreatedAtUtc = company.CreatedAtUtc,
+                    LastModifiedByUserId = company.LastModifiedByUserId,
+                    LastModifiedAtUtc = company.LastModifiedAtUtc
                 })
                 .ToArray(),
             PageNumber = pagination.PageNumber,

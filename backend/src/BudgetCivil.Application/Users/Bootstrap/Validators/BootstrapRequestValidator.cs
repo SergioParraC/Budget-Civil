@@ -46,6 +46,10 @@ public sealed class BootstrapRequestValidator : AbstractValidator<BootstrapReque
             .Matches("[0-9]").WithMessage("Password must include at least one number.")
             .Matches("[^a-zA-Z0-9]").WithMessage("Password must include at least one special character.");
 
+        RuleFor(request => request.AdminProfile.CountryId).NotEmpty();
+        RuleFor(request => request.AdminProfile.DepartmentId).NotEmpty();
+        RuleFor(request => request.AdminProfile.MunicipalityId).NotEmpty();
+
         RuleFor(request => request.Company.BusinessName)
             .NotEmpty()
             .MaximumLength(255);
@@ -53,5 +57,42 @@ public sealed class BootstrapRequestValidator : AbstractValidator<BootstrapReque
         RuleFor(request => request.Company.TaxId)
             .NotEmpty()
             .MaximumLength(20);
+
+        RuleFor(request => request.Company.CompanyType)
+            .NotEmpty()
+            .Must(companyType =>
+                string.Equals(companyType?.Trim(), "PUBLICA", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(companyType?.Trim(), "PRIVADA", StringComparison.OrdinalIgnoreCase));
+
+        RuleFor(request => request.Company.TerritorialLevel)
+            .NotEmpty()
+            .When(request => string.Equals(request.Company.CompanyType?.Trim(), "PUBLICA", StringComparison.OrdinalIgnoreCase));
+
+        RuleFor(request => request.Company.CountryId).NotEmpty();
+        RuleFor(request => request.Company.DepartmentId).NotEmpty();
+        RuleFor(request => request.Company.MunicipalityId).NotEmpty();
+
+        RuleFor(request => request.Company.Representative)
+            .NotNull();
+
+        RuleFor(request => request.Company.Representative!.Mode)
+            .Must(mode =>
+                string.Equals(mode?.Trim(), "USER_REFERENCE", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(mode?.Trim(), "MANUAL_DATA", StringComparison.OrdinalIgnoreCase))
+            .When(request => request.Company.Representative is not null);
+
+        RuleFor(request => request.Company.Representative!.UserId)
+            .NotNull()
+            .When(request => string.Equals(request.Company.Representative?.Mode?.Trim(), "USER_REFERENCE", StringComparison.OrdinalIgnoreCase));
+
+        RuleFor(request => request.Company.Representative!.FullName)
+            .NotEmpty()
+            .MaximumLength(200)
+            .When(request => string.Equals(request.Company.Representative?.Mode?.Trim(), "MANUAL_DATA", StringComparison.OrdinalIgnoreCase));
+
+        RuleFor(request => request.Company.Representative!.DocumentNumber)
+            .NotEmpty()
+            .MaximumLength(50)
+            .When(request => string.Equals(request.Company.Representative?.Mode?.Trim(), "MANUAL_DATA", StringComparison.OrdinalIgnoreCase));
     }
 }

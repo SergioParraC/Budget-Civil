@@ -15,4 +15,7 @@ public sealed class LegalRepresentativePayload
 
     [JsonPropertyName("document_number")]
     public string? DocumentNumber { get; init; }
+
+    [JsonPropertyName("document_type_id")]
+    public Guid? DocumentTypeId { get; init; }
 }

@@ -32,7 +32,8 @@ public sealed class EnableCompanyCommandHandler(
         }
 
         company.IsActive = true;
-        company.UpdatedAtUtc = DateTime.UtcNow;
+        company.LastModifiedByUserId = actor.Id;
+        company.LastModifiedAtUtc = DateTime.UtcNow;
 
         await companyRepository.SaveChangesAsync(cancellationToken);
 

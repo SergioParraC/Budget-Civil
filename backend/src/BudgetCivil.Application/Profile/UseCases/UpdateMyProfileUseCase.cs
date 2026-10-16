@@ -1,4 +1,6 @@
 using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Catalogs;
+using BudgetCivil.Application.Catalogs.Repositories;
 using BudgetCivil.Application.Profile.Dtos;
 using BudgetCivil.Application.Profile.Repositories;
 using FluentValidation;
@@ -7,6 +9,7 @@ namespace BudgetCivil.Application.Profile.UseCases;
 
 public sealed class UpdateMyProfileUseCase(
     IProfileRepository repository,
+    IGeographicCatalogRepository geographicCatalogRepository,
     IValidator<UpdateMyProfileRequest> validator)
 {
     public async Task<UpdateMyProfileResponse> ExecuteAsync(
@@ -15,6 +18,12 @@ public sealed class UpdateMyProfileUseCase(
         CancellationToken cancellationToken = default)
     {
         await ValidateAsync(request, cancellationToken);
+        await GeographicLocationRules.EnsureValidActiveLocationAsync(
+            geographicCatalogRepository,
+            request.Residence.CountryId,
+            request.Residence.DepartmentId,
+            request.Residence.MunicipalityId,
+            cancellationToken);
 
         var actor = await repository.GetUserWithProfileByIdAsync(actorUserId, cancellationToken);
         if (actor is null)
@@ -55,9 +64,9 @@ public sealed class UpdateMyProfileUseCase(
         actor.Profile.DocumentType = request.DocumentType.Trim();
         actor.Profile.DocumentNumber = request.DocumentNumber.Trim();
         actor.Profile.BirthDate = request.BirthDate;
-        actor.Profile.ResidenceCity = request.Residence.City.Trim();
-        actor.Profile.ResidenceDepartment = request.Residence.Department.Trim();
-        actor.Profile.ResidenceCountry = request.Residence.Country.Trim();
+        actor.Profile.CountryId = request.Residence.CountryId;
+        actor.Profile.DepartmentId = request.Residence.DepartmentId;
+        actor.Profile.MunicipalityId = request.Residence.MunicipalityId;
         actor.Profile.ProfessionalCard = NormalizeOptionalText(request.ProfessionalCard);
         actor.Profile.ProfessionalCardIssuedAt = request.ProfessionalCardIssuedAt;
         actor.Profile.ProfessionalCardFilePath = NormalizeOptionalText(request.ProfessionalCardFilePath);

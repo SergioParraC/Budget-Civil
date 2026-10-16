@@ -46,12 +46,12 @@ public sealed class UpdateMyProfileRequest
 
 public sealed class ProfileResidenceRequest
 {
-    [JsonPropertyName("municipio")]
-    public string City { get; init; } = string.Empty;
+    [JsonPropertyName("country_id")]
+    public Guid CountryId { get; init; }
 
-    [JsonPropertyName("departamento")]
-    public string Department { get; init; } = string.Empty;
+    [JsonPropertyName("department_id")]
+    public Guid DepartmentId { get; init; }
 
-    [JsonPropertyName("pais")]
-    public string Country { get; init; } = string.Empty;
+    [JsonPropertyName("municipality_id")]
+    public Guid MunicipalityId { get; init; }
 }

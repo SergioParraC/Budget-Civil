@@ -59,6 +59,7 @@ public sealed class AuditorReadScopeTests
             .Build();
 
         var unique = Guid.NewGuid().ToString("N")[..8];
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
         var payload = new
         {
             primer_nombre = "Read",
@@ -68,9 +69,9 @@ public sealed class AuditorReadScopeTests
             fecha_nacimiento = "1992-01-20",
             residencia = new
             {
-                municipio = "Bogota",
-                departamento = "Cundinamarca",
-                pais = "Colombia"
+                country_id = location.CountryId,
+                department_id = location.DepartmentId,
+                municipality_id = location.MunicipalityId
             },
             email = $"auditor.write.{unique}@mail.local",
             username = $"auditor_write_{unique}",
@@ -97,7 +98,7 @@ public sealed class AuditorReadScopeTests
             TaxId = $"AU{token}"[..12],
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            UpdatedAtUtc = DateTime.UtcNow
+            LastModifiedAtUtc = DateTime.UtcNow
         });
 
         await dbContext.SaveChangesAsync();

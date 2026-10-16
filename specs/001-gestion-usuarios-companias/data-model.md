@@ -121,15 +121,17 @@ Core fields:
 - tipo_documento: string(20), required
 - numero_documento: string(50), required
 - fecha_nacimiento: date, required
-- residencia_municipio: string(120), required
-- residencia_departamento: string(120), required
-- residencia_pais: string(120), required
+- municipality_id: UUID, FK -> `param.Municipality.id`, required for new/updated profiles
+- department_id: UUID, FK -> `param.Department.id`, required for new/updated profiles
+- country_id: UUID, FK -> `param.Country.id`, required for new/updated profiles
 - tarjeta_profesional: string(80), optional
 - fecha_expedicion_tarjeta_profesional: date, optional
 - archivo_tarjeta_profesional: string(255), optional
 
 Rules:
 - `numero_documento` participa en busqueda administrativa.
+- La ubicacion se persiste mediante claves de catalogo; municipio, departamento y pais deben pertenecer a la misma jerarquia y estar activos.
+- En registros historicos, las tres FK pueden ser nulas si no se puede determinar la ubicacion anterior sin ambiguedad. Las nuevas altas y actualizaciones siempre las requieren.
 
 ### 2.7 UserCompanyMembership
 

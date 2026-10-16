@@ -514,9 +514,26 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("business_name");
 
+                    b.Property<string>("CompanyType")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("company_type");
+
+                    b.Property<Guid?>("CountryId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("country_id");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2")
-                        .HasColumnName("created_at_utc");
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("department_id");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -524,18 +541,75 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
+                    b.Property<DateTime?>("LastModifiedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("last_modified_at");
+
+                    b.Property<Guid?>("LastModifiedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("last_modified_by_user_id");
+
+                    b.Property<Guid?>("MunicipalityId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("municipality_id");
+
+                    b.Property<string>("RepresentativeDocumentNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("representative_document_number");
+
+                    b.Property<Guid?>("RepresentativeDocumentTypeId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("representative_document_type_id");
+
+                    b.Property<string>("RepresentativeFullName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("representative_full_name");
+
+                    b.Property<string>("RepresentativeMode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("representative_mode");
+
+                    b.Property<Guid?>("RepresentativeUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("representative_user_id");
+
                     b.Property<string>("TaxId")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("tax_id");
 
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("updated_at_utc");
+                    b.Property<string>("TerritorialLevel")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("territorial_level");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo_companies");
+
+                    b.HasIndex("CountryId")
+                        .HasDatabaseName("IX_dbo_companies_country_id");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("IX_dbo_companies_created_by_user_id");
+
+                    b.HasIndex("DepartmentId")
+                        .HasDatabaseName("IX_dbo_companies_department_id");
+
+                    b.HasIndex("LastModifiedByUserId")
+                        .HasDatabaseName("IX_dbo_companies_last_modified_by_user_id");
+
+                    b.HasIndex("MunicipalityId")
+                        .HasDatabaseName("IX_dbo_companies_municipality_id");
+
+                    b.HasIndex("RepresentativeDocumentTypeId")
+                        .HasDatabaseName("IX_dbo_companies_representative_document_type_id");
+
+                    b.HasIndex("RepresentativeUserId")
+                        .HasDatabaseName("IX_dbo_companies_representative_user_id");
 
                     b.HasIndex("TaxId")
                         .IsUnique()
@@ -950,6 +1024,14 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("birth_date");
 
+                    b.Property<Guid?>("CountryId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("country_id");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("department_id");
+
                     b.Property<string>("DocumentNumber")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -979,6 +1061,10 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("middle_name");
 
+                    b.Property<Guid?>("MunicipalityId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("municipality_id");
+
                     b.Property<string>("ProfessionalCard")
                         .HasMaxLength(80)
                         .HasColumnType("nvarchar(80)")
@@ -993,24 +1079,6 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("professional_card_issued_at");
 
-                    b.Property<string>("ResidenceCity")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)")
-                        .HasColumnName("residence_city");
-
-                    b.Property<string>("ResidenceCountry")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)")
-                        .HasColumnName("residence_country");
-
-                    b.Property<string>("ResidenceDepartment")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)")
-                        .HasColumnName("residence_department");
-
                     b.Property<string>("SecondLastName")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
@@ -1019,8 +1087,17 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.HasKey("UserId")
                         .HasName("PK_dbo_user_profiles");
 
+                    b.HasIndex("CountryId")
+                        .HasDatabaseName("IX_dbo_user_profiles_country_id");
+
+                    b.HasIndex("DepartmentId")
+                        .HasDatabaseName("IX_dbo_user_profiles_department_id");
+
                     b.HasIndex("DocumentNumber")
                         .HasDatabaseName("IX_dbo_user_profiles_document_number");
+
+                    b.HasIndex("MunicipalityId")
+                        .HasDatabaseName("IX_dbo_user_profiles_municipality_id");
 
                     b.ToTable("user_profiles", "dbo");
                 });
@@ -1209,6 +1286,57 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasConstraintName("FK_audit_project_visibility_transitions_projects_project_id");
                 });
 
+            modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.Company", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_companies_countries_country_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_companies_user_accounts_created_by_user_id");
+
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_companies_departments_department_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("LastModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_companies_user_accounts_last_modified_by_user_id");
+
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Municipality", "Municipality")
+                        .WithMany()
+                        .HasForeignKey("MunicipalityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_companies_municipalities_municipality_id");
+
+                    b.HasOne("BudgetCivil.Domain.Catalogs.DocumentType", null)
+                        .WithMany()
+                        .HasForeignKey("RepresentativeDocumentTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_companies_document_types_representative_document_type_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("RepresentativeUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_companies_user_accounts_representative_user_id");
+
+                    b.Navigation("Country");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Municipality");
+                });
+
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.PasswordRecoveryGrant", b =>
                 {
                     b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", "EnabledByUser")
@@ -1314,12 +1442,36 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.UserProfile", b =>
                 {
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_user_profiles_countries_country_id");
+
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_user_profiles_departments_department_id");
+
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Municipality", "Municipality")
+                        .WithMany()
+                        .HasForeignKey("MunicipalityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_user_profiles_municipalities_municipality_id");
+
                     b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", "UserAccount")
                         .WithOne("Profile")
                         .HasForeignKey("BudgetCivil.Domain.Users.Entities.UserProfile", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_dbo_user_profiles_user_accounts_user_id");
+
+                    b.Navigation("Country");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Municipality");
 
                     b.Navigation("UserAccount");
                 });

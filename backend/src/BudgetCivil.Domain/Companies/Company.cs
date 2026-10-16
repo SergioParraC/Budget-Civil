@@ -37,11 +37,22 @@ public sealed class Company
         }
     }
 
+    public static string NormalizeCompanyType(string? companyType)
+    {
+        var normalized = companyType?.Trim().ToUpperInvariant();
+        if (normalized is not "PUBLICA" and not "PRIVADA")
+        {
+            throw new ArgumentException("Company type must be PUBLICA or PRIVADA.", nameof(companyType));
+        }
+
+        return normalized;
+    }
+
     public static void ValidateRepresentative(LegalRepresentativeInput? representative)
     {
         if (representative is null)
         {
-            return;
+            throw new ArgumentException("Representative data is required.", nameof(representative));
         }
 
         if (string.IsNullOrWhiteSpace(representative.Mode))
@@ -62,7 +73,19 @@ public sealed class Company
                 throw new ArgumentException("Representative user id is required for USER_REFERENCE mode.", nameof(representative.UserId));
             }
 
+            if (!string.IsNullOrWhiteSpace(representative.FullName) ||
+                representative.DocumentTypeId.HasValue ||
+                !string.IsNullOrWhiteSpace(representative.DocumentNumber))
+            {
+                throw new ArgumentException("Manual representative fields are not allowed for USER_REFERENCE mode.", nameof(representative));
+            }
+
             return;
+        }
+
+        if (representative.UserId.HasValue)
+        {
+            throw new ArgumentException("Representative user id is not allowed for MANUAL_DATA mode.", nameof(representative.UserId));
         }
 
         if (string.IsNullOrWhiteSpace(representative.FullName))
@@ -86,4 +109,6 @@ public sealed class LegalRepresentativeInput
     public string? FullName { get; init; }
 
     public string? DocumentNumber { get; init; }
+
+    public Guid? DocumentTypeId { get; init; }
 }

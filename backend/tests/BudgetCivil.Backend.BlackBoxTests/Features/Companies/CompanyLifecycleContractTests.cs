@@ -23,6 +23,7 @@ public sealed class CompanyLifecycleContractTests
             .WithUser(adminUser.UserId, Feature002TestData.Roles.Administrador)
             .Build();
 
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
         var createPayload = new
         {
             business_name = $"Constructora {Feature002TestData.UniqueSuffix()}",
@@ -30,6 +31,9 @@ public sealed class CompanyLifecycleContractTests
             is_active = true,
             company_type = "PUBLICA",
             territorial_level = "DEPARTAMENTAL",
+            country_id = location.CountryId,
+            department_id = location.DepartmentId,
+            municipality_id = location.MunicipalityId,
             representative = new
             {
                 mode = "MANUAL_DATA",
@@ -50,6 +54,9 @@ public sealed class CompanyLifecycleContractTests
             business_name = $"Constructora Editada {Feature002TestData.UniqueSuffix()}",
             tax_id = Feature002TestData.UniqueTaxId("LE"),
             company_type = "PRIVADA",
+            country_id = location.CountryId,
+            department_id = location.DepartmentId,
+            municipality_id = location.MunicipalityId,
             representative = new
             {
                 mode = "USER_REFERENCE",
@@ -93,6 +100,14 @@ public sealed class CompanyLifecycleContractTests
         var persistedCompany = await dbContext.Companies.SingleAsync(company => company.Id == companyId);
         persistedCompany.IsActive.Should().BeTrue();
         persistedCompany.TaxId.Should().Be(updatePayload.tax_id);
+        persistedCompany.CompanyType.Should().Be(updatePayload.company_type);
+        persistedCompany.CountryId.Should().Be(location.CountryId);
+        persistedCompany.DepartmentId.Should().Be(location.DepartmentId);
+        persistedCompany.MunicipalityId.Should().Be(location.MunicipalityId);
+        persistedCompany.RepresentativeMode.Should().Be("USER_REFERENCE");
+        persistedCompany.RepresentativeUserId.Should().Be(adminUser.UserId);
+        persistedCompany.CreatedByUserId.Should().Be(adminUser.UserId);
+        persistedCompany.LastModifiedByUserId.Should().Be(adminUser.UserId);
     }
 
     [Fact]
@@ -107,13 +122,23 @@ public sealed class CompanyLifecycleContractTests
         var client = new AuthenticatedClientBuilder(factory)
             .WithUser(managerUser.UserId, Feature002TestData.Roles.DirectorProyectos, ownCompanyId)
             .Build();
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
 
         var response = await client.PutAsJsonAsync(
             $"/api/v1/companies/{otherCompanyId}",
             new
             {
                 business_name = "Intento Invalido",
-                tax_id = Feature002TestData.UniqueTaxId("XX")
+                tax_id = Feature002TestData.UniqueTaxId("XX"),
+                company_type = "PRIVADA",
+                country_id = location.CountryId,
+                department_id = location.DepartmentId,
+                municipality_id = location.MunicipalityId,
+                representative = new
+                {
+                    mode = "USER_REFERENCE",
+                    user_id = managerUser.UserId
+                }
             });
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -151,7 +176,7 @@ public sealed class CompanyLifecycleContractTests
             TaxId = $"TL{token}"[..12],
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            UpdatedAtUtc = DateTime.UtcNow
+            LastModifiedAtUtc = DateTime.UtcNow
         });
 
         await dbContext.SaveChangesAsync();

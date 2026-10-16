@@ -14,6 +14,7 @@ public sealed class BootstrapAuditVisibilityTests
         var anonymousClient = factory.CreateClient();
 
         var unique = Guid.NewGuid().ToString("N")[..8];
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
         var bootstrapRequest = new
         {
             admin_profile = new
@@ -24,12 +25,25 @@ public sealed class BootstrapAuditVisibilityTests
                 numero_documento = $"LT{unique}",
                 email = $"linus.{unique}@mail.local",
                 username = $"linus_{unique}",
-                password = "Password1!"
+                password = "Password1!",
+                country_id = location.CountryId,
+                department_id = location.DepartmentId,
+                municipality_id = location.MunicipalityId
             },
             company = new
             {
                 business_name = $"Bootstrap Company {unique}",
-                tax_id = $"TX{unique}"
+                tax_id = $"TX{unique}",
+                company_type = "PRIVADA",
+                country_id = location.CountryId,
+                department_id = location.DepartmentId,
+                municipality_id = location.MunicipalityId,
+                representative = new
+                {
+                    mode = "MANUAL_DATA",
+                    full_name = "Bootstrap Representative",
+                    document_number = unique
+                }
             }
         };
 
@@ -56,6 +70,7 @@ public sealed class BootstrapAuditVisibilityTests
         var anonymousClient = factory.CreateClient();
 
         var unique = Guid.NewGuid().ToString("N")[..8];
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
         var bootstrapRequest = new
         {
             admin_profile = new
@@ -66,12 +81,25 @@ public sealed class BootstrapAuditVisibilityTests
                 numero_documento = $"MH{unique}",
                 email = $"margaret.{unique}@mail.local",
                 username = $"margaret_{unique}",
-                password = "Password1!"
+                password = "Password1!",
+                country_id = location.CountryId,
+                department_id = location.DepartmentId,
+                municipality_id = location.MunicipalityId
             },
             company = new
             {
                 business_name = $"Bootstrap Company {unique}",
-                tax_id = $"TY{unique}"
+                tax_id = $"TY{unique}",
+                company_type = "PRIVADA",
+                country_id = location.CountryId,
+                department_id = location.DepartmentId,
+                municipality_id = location.MunicipalityId,
+                representative = new
+                {
+                    mode = "MANUAL_DATA",
+                    full_name = "Bootstrap Representative",
+                    document_number = unique
+                }
             }
         };
 

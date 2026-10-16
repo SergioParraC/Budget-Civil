@@ -1,5 +1,7 @@
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Catalogs;
+using BudgetCivil.Application.Catalogs.Repositories;
 using BudgetCivil.Application.Users.Administration.Dtos;
 using BudgetCivil.Application.Users.Administration.Repositories;
 using BudgetCivil.Domain.Users.Entities;
@@ -9,6 +11,7 @@ namespace BudgetCivil.Application.Users.Administration.UseCases;
 
 public sealed class UpdateUserUseCase(
     IUserAdministrationRepository repository,
+    IGeographicCatalogRepository geographicCatalogRepository,
     ISecurityAuditService securityAuditService,
     IValidator<UpdateUserRequest> validator)
 {
@@ -19,6 +22,12 @@ public sealed class UpdateUserUseCase(
         CancellationToken cancellationToken = default)
     {
         await ValidateAsync(request, cancellationToken);
+        await GeographicLocationRules.EnsureValidActiveLocationAsync(
+            geographicCatalogRepository,
+            request.Residence.CountryId,
+            request.Residence.DepartmentId,
+            request.Residence.MunicipalityId,
+            cancellationToken);
 
         var actor = await repository.GetActorByIdAsync(actorUserId, cancellationToken);
         var targetUser = await repository.GetUserForManagementAsync(targetUserId, cancellationToken);
@@ -58,9 +67,9 @@ public sealed class UpdateUserUseCase(
         targetUser.Profile.DocumentType = request.DocumentType.Trim();
         targetUser.Profile.DocumentNumber = request.DocumentNumber.Trim();
         targetUser.Profile.BirthDate = request.BirthDate;
-        targetUser.Profile.ResidenceCity = request.Residence.City.Trim();
-        targetUser.Profile.ResidenceDepartment = request.Residence.Department.Trim();
-        targetUser.Profile.ResidenceCountry = request.Residence.Country.Trim();
+        targetUser.Profile.CountryId = request.Residence.CountryId;
+        targetUser.Profile.DepartmentId = request.Residence.DepartmentId;
+        targetUser.Profile.MunicipalityId = request.Residence.MunicipalityId;
         targetUser.Profile.ProfessionalCard = NormalizeOptionalText(request.ProfessionalCard);
         targetUser.Profile.ProfessionalCardIssuedAt = request.ProfessionalCardIssuedAt;
         targetUser.Profile.ProfessionalCardFilePath = NormalizeOptionalText(request.ProfessionalCardFilePath);

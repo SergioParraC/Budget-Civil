@@ -1,3 +1,5 @@
+using BudgetCivil.Domain.Catalogs;
+
 namespace BudgetCivil.Domain.Users.Entities;
 
 public sealed class UserProfile
@@ -18,11 +20,11 @@ public sealed class UserProfile
 
     public DateOnly BirthDate { get; set; }
 
-    public string ResidenceCity { get; set; } = string.Empty;
+    public Guid? MunicipalityId { get; set; }
 
-    public string ResidenceDepartment { get; set; } = string.Empty;
+    public Guid? DepartmentId { get; set; }
 
-    public string ResidenceCountry { get; set; } = string.Empty;
+    public Guid? CountryId { get; set; }
 
     public string? ProfessionalCard { get; set; }
 
@@ -31,4 +33,10 @@ public sealed class UserProfile
     public string? ProfessionalCardFilePath { get; set; }
 
     public UserAccount UserAccount { get; set; } = null!;
+
+    public Municipality? Municipality { get; set; }
+
+    public Department? Department { get; set; }
+
+    public Country? Country { get; set; }
 }

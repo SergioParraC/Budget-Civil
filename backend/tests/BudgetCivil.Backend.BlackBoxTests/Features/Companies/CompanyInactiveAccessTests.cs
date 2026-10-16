@@ -49,7 +49,7 @@ public sealed class CompanyInactiveAccessTests
             TaxId = $"TI{token}"[..12],
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            UpdatedAtUtc = DateTime.UtcNow
+            LastModifiedAtUtc = DateTime.UtcNow
         });
 
         await dbContext.SaveChangesAsync();
@@ -63,7 +63,7 @@ public sealed class CompanyInactiveAccessTests
 
         var company = await dbContext.Companies.SingleAsync(existingCompany => existingCompany.Id == companyId);
         company.IsActive = false;
-        company.UpdatedAtUtc = DateTime.UtcNow;
+        company.LastModifiedAtUtc = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync();
     }

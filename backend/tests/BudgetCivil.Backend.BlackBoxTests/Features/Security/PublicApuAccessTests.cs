@@ -14,6 +14,7 @@ public sealed class PublicApuAccessTests
     {
         using var factory = new TestWebApplicationFactory();
         var client = factory.CreateClient();
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
 
         var unique = Guid.NewGuid().ToString("N")[..8];
         var registerPayload = new Dictionary<string, object?>
@@ -24,7 +25,10 @@ public sealed class PublicApuAccessTests
             ["username"] = $"ana_{unique}",
             ["password"] = "Password1!",
             ["tipo_documento"] = "CC",
-            ["numero_documento"] = $"CC{unique}"
+            ["numero_documento"] = $"CC{unique}",
+            ["country_id"] = location.CountryId,
+            ["department_id"] = location.DepartmentId,
+            ["municipality_id"] = location.MunicipalityId
         };
 
         var registerResponse = await client.PostAsJsonAsync("/api/v1/auth/register", registerPayload);

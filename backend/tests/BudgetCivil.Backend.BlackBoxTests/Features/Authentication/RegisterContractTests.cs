@@ -2,9 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BudgetCivil.Backend.BlackBoxTests.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using BudgetCivil.Infrastructure.Persistence;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BudgetCivil.Backend.BlackBoxTests.Features.Authentication;
@@ -16,6 +16,7 @@ public sealed class RegisterContractTests
     {
         using var factory = new TestWebApplicationFactory();
         var client = factory.CreateClient();
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
 
         var unique = Guid.NewGuid().ToString("N")[..8];
         var payload = new Dictionary<string, object?>
@@ -26,7 +27,10 @@ public sealed class RegisterContractTests
             ["username"] = $"laura_{unique}",
             ["password"] = "Password1!",
             ["tipo_documento"] = "CC",
-            ["numero_documento"] = $"CC{unique}"
+            ["numero_documento"] = $"CC{unique}",
+            ["country_id"] = location.CountryId,
+            ["department_id"] = location.DepartmentId,
+            ["municipality_id"] = location.MunicipalityId
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/auth/register", payload);
@@ -43,10 +47,14 @@ public sealed class RegisterContractTests
 
         var createdUser = await dbContext.UserAccounts
             .Include(user => user.Role)
+            .Include(user => user.Profile)
             .SingleAsync(user => user.Id == userId);
 
         createdUser.Role.Code.Should().Be("PRESUPUESTADOR");
         createdUser.CompanyId.Should().BeNull();
+        createdUser.Profile!.CountryId.Should().Be(location.CountryId);
+        createdUser.Profile.DepartmentId.Should().Be(location.DepartmentId);
+        createdUser.Profile.MunicipalityId.Should().Be(location.MunicipalityId);
     }
 
     [Theory]
@@ -57,6 +65,7 @@ public sealed class RegisterContractTests
     {
         using var factory = new TestWebApplicationFactory();
         var client = factory.CreateClient();
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
 
         var unique = Guid.NewGuid().ToString("N")[..8];
         var payload = new Dictionary<string, object?>
@@ -68,6 +77,9 @@ public sealed class RegisterContractTests
             ["password"] = "Password1!",
             ["tipo_documento"] = "CC",
             ["numero_documento"] = $"CC{unique}",
+            ["country_id"] = location.CountryId,
+            ["department_id"] = location.DepartmentId,
+            ["municipality_id"] = location.MunicipalityId,
             [fieldName] = fieldValue
         };
 

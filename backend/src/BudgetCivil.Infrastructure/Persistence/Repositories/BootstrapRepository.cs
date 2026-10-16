@@ -81,9 +81,24 @@ public sealed class BootstrapRepository(
                 Id = Guid.NewGuid(),
                 BusinessName = request.Company.BusinessName.Trim(),
                 TaxId = request.Company.TaxId.Trim(),
+                CompanyType = BudgetCivil.Domain.Companies.Company.NormalizeCompanyType(request.Company.CompanyType),
+                TerritorialLevel = string.IsNullOrWhiteSpace(request.Company.TerritorialLevel)
+                    ? null
+                    : request.Company.TerritorialLevel.Trim(),
+                CountryId = request.Company.CountryId,
+                DepartmentId = request.Company.DepartmentId,
+                MunicipalityId = request.Company.MunicipalityId,
+                RepresentativeMode = request.Company.Representative!.Mode!.Trim().ToUpperInvariant(),
+                RepresentativeUserId = request.Company.Representative.UserId,
+                RepresentativeFullName = string.IsNullOrWhiteSpace(request.Company.Representative.FullName)
+                    ? null
+                    : request.Company.Representative.FullName.Trim(),
+                RepresentativeDocumentTypeId = request.Company.Representative.DocumentTypeId,
+                RepresentativeDocumentNumber = string.IsNullOrWhiteSpace(request.Company.Representative.DocumentNumber)
+                    ? null
+                    : request.Company.Representative.DocumentNumber.Trim(),
                 IsActive = true,
                 CreatedAtUtc = utcNow,
-                UpdatedAtUtc = utcNow
             };
 
             var administratorId = Guid.NewGuid();
@@ -108,9 +123,9 @@ public sealed class BootstrapRepository(
                     DocumentType = request.AdminProfile.DocumentType.Trim(),
                     DocumentNumber = request.AdminProfile.DocumentNumber.Trim(),
                     BirthDate = new DateOnly(2000, 1, 1),
-                    ResidenceCity = "PENDING",
-                    ResidenceDepartment = "PENDING",
-                    ResidenceCountry = "PENDING"
+                    CountryId = request.AdminProfile.CountryId,
+                    DepartmentId = request.AdminProfile.DepartmentId,
+                    MunicipalityId = request.AdminProfile.MunicipalityId
                 }
             };
 
@@ -138,6 +153,9 @@ public sealed class BootstrapRepository(
             dbContext.UserAccounts.Add(administrator);
             dbContext.SecurityAuditEvents.Add(auditEvent);
 
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            company.CreatedByUserId = administratorId;
             await dbContext.SaveChangesAsync(cancellationToken);
 
             if (transaction is not null)

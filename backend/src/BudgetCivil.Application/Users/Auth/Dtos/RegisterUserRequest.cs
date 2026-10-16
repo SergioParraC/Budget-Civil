@@ -26,6 +26,15 @@ public sealed class RegisterUserRequest
     [JsonPropertyName("numero_documento")]
     public string DocumentNumber { get; init; } = string.Empty;
 
+    [JsonPropertyName("country_id")]
+    public Guid CountryId { get; init; }
+
+    [JsonPropertyName("department_id")]
+    public Guid DepartmentId { get; init; }
+
+    [JsonPropertyName("municipality_id")]
+    public Guid MunicipalityId { get; init; }
+
     [JsonExtensionData]
     public IDictionary<string, JsonElement>? ExtensionData { get; init; }
 }

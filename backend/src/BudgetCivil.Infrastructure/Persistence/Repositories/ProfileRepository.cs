@@ -18,6 +18,11 @@ public sealed class ProfileRepository(BudgetCivilDbContext dbContext) : IProfile
         return dbContext.UserAccounts
             .Include(user => user.Role)
             .Include(user => user.Profile)
+                .ThenInclude(profile => profile!.Country)
+            .Include(user => user.Profile)
+                .ThenInclude(profile => profile!.Department)
+            .Include(user => user.Profile)
+                .ThenInclude(profile => profile!.Municipality)
             .SingleOrDefaultAsync(user => user.Id == userId, cancellationToken);
     }
 

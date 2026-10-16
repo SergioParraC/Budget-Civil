@@ -38,9 +38,12 @@ public sealed class GetMyProfileUseCase(IProfileRepository repository)
                 BirthDate = actor.Profile.BirthDate,
                 Residence = new ProfileResidenceResponse
                 {
-                    City = actor.Profile.ResidenceCity,
-                    Department = actor.Profile.ResidenceDepartment,
-                    Country = actor.Profile.ResidenceCountry
+                    City = actor.Profile.Municipality?.Name,
+                    Department = actor.Profile.Department?.Name,
+                    Country = actor.Profile.Country?.Name,
+                    CountryId = actor.Profile.CountryId,
+                    DepartmentId = actor.Profile.DepartmentId,
+                    MunicipalityId = actor.Profile.MunicipalityId
                 },
                 ProfessionalCard = actor.Profile.ProfessionalCard,
                 ProfessionalCardIssuedAt = actor.Profile.ProfessionalCardIssuedAt,

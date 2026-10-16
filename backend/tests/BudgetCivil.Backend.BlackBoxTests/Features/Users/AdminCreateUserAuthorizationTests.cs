@@ -23,7 +23,8 @@ public sealed class AdminCreateUserAuthorizationTests
             .Build();
 
         var unique = Guid.NewGuid().ToString("N")[..8];
-        var payload = BuildCreateUserPayload(unique);
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
+        var payload = BuildCreateUserPayload(unique, location);
 
         var response = await client.PostAsJsonAsync("/api/v1/users", payload);
 
@@ -37,10 +38,14 @@ public sealed class AdminCreateUserAuthorizationTests
 
         var createdUser = await dbContext.UserAccounts
             .Include(user => user.Role)
+            .Include(user => user.Profile)
             .SingleAsync(user => user.Id == createdUserId);
 
         createdUser.Role.Code.Should().Be("PRESUPUESTADOR");
         createdUser.AccountEnabled.Should().BeTrue();
+        createdUser.Profile!.CountryId.Should().Be(location.CountryId);
+        createdUser.Profile.DepartmentId.Should().Be(location.DepartmentId);
+        createdUser.Profile.MunicipalityId.Should().Be(location.MunicipalityId);
     }
 
     [Theory]
@@ -63,14 +68,15 @@ public sealed class AdminCreateUserAuthorizationTests
             .Build();
 
         var unique = Guid.NewGuid().ToString("N")[..8];
-        var payload = BuildCreateUserPayload(unique);
+        var location = await TestDataSeeder.SeedLocationAsync(factory);
+        var payload = BuildCreateUserPayload(unique, location);
 
         var response = await client.PostAsJsonAsync("/api/v1/users", payload);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
-    private static Dictionary<string, object?> BuildCreateUserPayload(string unique)
+    private static Dictionary<string, object?> BuildCreateUserPayload(string unique, SeededLocation location)
     {
         return new Dictionary<string, object?>
         {
@@ -83,9 +89,9 @@ public sealed class AdminCreateUserAuthorizationTests
             ["fecha_nacimiento"] = "1994-01-10",
             ["residencia"] = new Dictionary<string, object?>
             {
-                ["municipio"] = "Bogota",
-                ["departamento"] = "Cundinamarca",
-                ["pais"] = "Colombia"
+                ["country_id"] = location.CountryId,
+                ["department_id"] = location.DepartmentId,
+                ["municipality_id"] = location.MunicipalityId
             },
             ["email"] = $"ana.{unique}@mail.local",
             ["username"] = $"ana_{unique}",

@@ -113,7 +113,7 @@ public sealed class UserCompanyMembershipRulesTests
             TaxId = $"TAX{token}"[..13],
             IsActive = true,
             CreatedAtUtc = DateTime.UtcNow,
-            UpdatedAtUtc = DateTime.UtcNow
+            LastModifiedAtUtc = DateTime.UtcNow
         });
 
         await dbContext.SaveChangesAsync();
