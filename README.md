@@ -1,62 +1,152 @@
-# Budget Civil 🏗️💰
+# Budget Civil Backend
 
-Bienvenido al repositorio del backend de Budget Civil.
+Backend del sistema **Budget Civil**, orientado a la gestion de usuarios, companias, proyectos y procesos asociados a presupuestos de obra civil, con enfoque en seguridad por roles, trazabilidad y aislamiento por compania.
 
-## 👋 Presentación
-Budget Civil Backend es la API del proyecto Budget Civil, orientado a la gestión y control de presupuestos para obras civiles.
+---
 
-### 👥 Creadores
-- Juan Pablo Ramírez Carmona
+## 1) Nombre y descripcion del proyecto
+
+**Nombre**: Budget Civil Backend  
+**Descripcion**: API REST del dominio de presupuestos de obra civil. Se encarga del login y los permisos, de la administración de usuarios y compañías, y de todo el ciclo de vida del presupuesto de un proyecto. También define los contratos de datos que usan los clientes frontend y los procesos de integración.
+
+---
+
+## 2) Integrantes
+
+- Juan Pablo Ramirez Carmona
 - Sergio Steven Parra Cuesta
-- David Eduardo Alvarado Martínez
+- David Eduardo Alvarado Martinez
 
-## 🧭 ¿De qué trata el proyecto?
-El proyecto busca centralizar la construcción, validación y seguimiento de presupuestos de obra, incluyendo estructuras WBS/APU, reglas de aprobación y trazabilidad para decisiones técnicas y de negocio.
+---
 
-## 🧩 Estrategia de desarrollo (SDD)
-Seguimos Spec-Driven Development (SDD): primero se especifica, luego se planifica, se desglosan tareas y finalmente se implementa y converge contra lo definido.
+## 3) Tecnologias utilizadas
 
-## 🛠️ Tecnologías utilizadas
-- ASP.NET Core Web API (.NET 10)
-- Entity Framework Core (8.x)
-- SQL Server 2022
-- Angular 20.x
-- Nginx
-- Docker Compose v2
+### Backend
+- **ASP.NET Core Web API (.NET 10)**: exposicion de endpoints HTTP y pipeline de middleware.
+- **C#**: implementacion de reglas de negocio y casos de uso.
+- **Entity Framework Core + SQL Server**: persistencia relacional, mapeo ORM y control de esquema.
 
-## 📚 Estructura actual de la documentación
+### Arquitectura y calidad
+- **Arquitectura en capas (Api, Application, Domain, Infrastructure)**: separacion de responsabilidades y mantenibilidad.
+- **JWT**: autenticacion y autorizacion de endpoints privados.
+
+### Control de versiones
+- **Git + GitHub**: control de cambios, historial de commits y colaboracion del equipo.
+
+---
+
+## 4) Arquitectura general
+
+El backend implementa una arquitectura en 4 capas:
+
+- **Api**: controladores, middleware, autenticacion/autorizacion y contratos HTTP.
+- **Application**: casos de uso y orquestacion de reglas del negocio.
+- **Domain**: entidades, invariantes y reglas centrales del dominio.
+- **Infrastructure**: persistencia, repositorios e integraciones tecnicas.
+
+Flujo general:
+1. Cliente (frontend/consumidor API) invoca endpoint.
+2. Api valida autenticacion/autorizacion.
+3. Application ejecuta el caso de uso.
+4. Domain aplica reglas del negocio.
+5. Infrastructure persiste/consulta en SQL Server.
+6. Api retorna respuesta estandarizada.
+
+Documentacion de soporte:
+- `specs/` (especificaciones, planes, tareas y contratos)
+- `docs/architecture/` (diagramas de arquitectura y modelo de datos)
+- `.github/docs/` (requerimientos y lineamientos generales del proyecto)
+
+---
+
+## 5) Estructura del repositorio (resumen)
 
 ```text
-.github/
-	AI-INSTRUCTIONS.md
-	copilot-instructions.md
-	docs/
-		00-idea-problema.md
-		01-viabilidad-basica.md
-		02-requerimientos.md
-		03-arquitectura-general.md
-		04-stack-tecnologico.md
-		05-modelo-datos.md
-		06-flujos-casos-de-uso.md
-		09-operacion-copilot-spec-kit.md
+backend/
+  BudgetCivil.Backend.sln
+  src/
+    BudgetCivil.Api/
+    BudgetCivil.Application/
+    BudgetCivil.Domain/
+    BudgetCivil.Infrastructure/
+  tests/
+    BudgetCivil.Backend.BlackBoxTests/
 
 docs/
-	architecture/
-		components.puml
-		deployment.puml
-		domain-model.dbdiagram
+  architecture/
+
+specs/
+  001-gestion-usuarios-companias/
+  002-gestion-companias-proyectos/
 ```
 
-## ▶️ Instrucciones para ejecutar
-Por ahora, la ejecución se realizará únicamente desde el archivo de solución principal .sln.
+---
 
-1. Abre la solución principal .sln en un IDE Microsoft Visual Studo 2026.
-2. Configura los proyectos de inicio dentro de la solución.
-3. Ejecuta la solución desde el IDE (Run/F5).
+## 6) Instalacion y ejecucion local
 
-**NOTA:** En el estado actual del proyecto no se tiene un desarrollo iniciado, solamente se encuentra la documentación inicial del proyecto, creada con apoyo de IA.
+### Prerrequisitos
+- .NET SDK 10
+- SQL Server 2022 (o instancia compatible)
+- Git
+- IDE recomendado: Visual Studio
 
-## 📖 Bibliografía
+### Pasos
+1. Clonar repositorio:
+   ```bash
+   git clone https://github.com/SergioParraC/Budget-Civil.git
+   cd Budget-Civil-Backend
+   ```
+2. Restaurar paquetes:
+   ```bash
+   dotnet restore backend/BudgetCivil.Backend.sln
+   ```
+3. Compilar solucion:
+   ```bash
+   dotnet build backend/BudgetCivil.Backend.sln
+   ```
+4. Ejecutar API:
+   ```bash
+   dotnet run --project backend/src/BudgetCivil.Api/BudgetCivil.Api.csproj
+   ```
+
+---
+
+## 7) Variables de entorno y configuracion
+
+La configuracion base se encuentra en:
+- `backend/src/BudgetCivil.Api/appsettings.json`
+- `backend/src/BudgetCivil.Api/appsettings.Development.json`
+
+### Variables clave esperadas
+- `ConnectionStrings__BudgetCivilDatabase`
+- `Jwt__Issuer`
+- `Jwt__Audience`
+- `Jwt__SigningKey`
+
+### Ejemplo de configuracion local
+```json
+{
+  "ConnectionStrings": {
+    "BudgetCivilDatabase": "Server=localhost;Database=BudgetCivilDb;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "Jwt": {
+    "Issuer": "BudgetCivil.Api",
+    "Audience": "BudgetCivil.Client",
+    "SigningKey": "REEMPLAZAR_POR_SECRETO_DE_AL_MENOS_32_CARACTERES"
+  }
+}
+```
+
+---
+
+## 8) Informacion de despliegue
+
+- **Estado actual**: despliegue orientado a entorno local de desarrollo.
+- **Objetivo de plataforma**: Linux Ubuntu 24.04 para despliegues del backend.
+
+---
+
+## Bibliografia
 
 - Caro Ortega, J. A., & Guerrero Herrera, C. E. (2022). Estrategias para la optimización del control de costos en proyectos de construcción con base en la aplicación de la metodología del Project Management Institute – PMI [Trabajo de grado, Universidad de Cartagena]. https://repositorio.unicartagena.edu.co/server/api/core/bitstreams/2b64a6d3-5133-4e03-9051-4903b2b7e8f9/content
 
@@ -81,4 +171,3 @@ Por ahora, la ejecución se realizará únicamente desde el archivo de solución
 - Google. (2026). Gemini [Modelo de inteligencia artificial]. Google. https://gemini.google.com/
 
 > **Nota:** Se utilizó Google Gemini como herramienta de razonamiento técnico y modelado de dominio para la estructuración del planteamiento del problema, los requerimientos funcionales y la alineación bibliográfica con estándares de ingeniería de costos. Asimismo, actuó como facilitador en la resolución de ambigüedades de arquitectura (definición de reglas en cascada, contratos DTO sanitizados, algoritmos de recursividad en matrices y estrategias de firma auditada) previas a la fase de codificación.
-
