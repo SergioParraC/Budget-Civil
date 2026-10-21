@@ -1,0 +1,20 @@
+<p-toast />
+<p-confirmDialog />
+
+<div class="layout">
+  <aside class="layout__sidebar">
+    <div class="layout__brand">Budget Civil</div>
+    <p-menu [model]="menuItems" styleClass="layout__menu"></p-menu>
+  </aside>
+
+  <div class="layout__content">
+    <header class="layout__topbar">
+      <span>{{ currentUser()?.username }}</span>
+      <p-button icon="pi pi-sign-out" [text]="true" (onClick)="logout()" />
+    </header>
+
+    <main class="layout__main">
+      <router-outlet />
+    </main>
+  </div>
+</div>

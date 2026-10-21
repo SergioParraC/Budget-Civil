@@ -1,0 +1,17 @@
+<div class="login">
+  <p-card header="Budget Civil" class="login__card">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="login__form">
+      <label for="identifier">Usuario o correo</label>
+      <input id="identifier" pInputText formControlName="identifier" />
+
+      <label for="password">Contraseña</label>
+      <p-password id="password" formControlName="password" [feedback]="false" [toggleMask]="true" />
+
+      @if (errorMessage()) {
+        <p-message severity="error" [text]="errorMessage()!" />
+      }
+
+      <p-button type="submit" label="Ingresar" [loading]="loading()" />
+    </form>
+  </p-card>
+</div>

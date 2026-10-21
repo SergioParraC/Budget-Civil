@@ -1,0 +1,50 @@
+<p-card header="Nuevo proyecto">
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form-grid">
+    <label for="name">Nombre</label>
+    <input id="name" pInputText formControlName="name" />
+
+    <label for="description">Descripción</label>
+    <textarea id="description" pTextarea formControlName="description" rows="2"></textarea>
+
+    <label for="objective">Objetivo</label>
+    <textarea id="objective" pTextarea formControlName="objective" rows="2" maxlength="1000"></textarea>
+
+    <label for="country">País</label>
+    <p-select
+      id="country"
+      formControlName="countryId"
+      [options]="countries()"
+      optionLabel="name"
+      optionValue="id"
+      (onChange)="onCountryChange($event.value)"
+    />
+
+    <label for="department">Departamento</label>
+    <p-select
+      id="department"
+      formControlName="departmentId"
+      [options]="departments()"
+      optionLabel="name"
+      optionValue="id"
+      (onChange)="onDepartmentChange($event.value)"
+    />
+
+    <label for="municipality">Municipio</label>
+    <p-select id="municipality" formControlName="municipalityId" [options]="municipalities()" optionLabel="name" optionValue="id" />
+
+    <label for="currency">Divisa</label>
+    <p-select id="currency" formControlName="baseCurrencyId" [options]="currencies()" optionLabel="iso_code" optionValue="id" />
+
+    <label for="signingMode">Modo de firma</label>
+    <p-select id="signingMode" formControlName="signingMode" [options]="signingModes" optionLabel="label" optionValue="value" />
+
+    <label>AIU (%)</label>
+    <div class="form-grid__aiu">
+      <p-inputnumber formControlName="adminPercent" suffix="%" placeholder="Administración" />
+      <p-inputnumber formControlName="unforeseenPercent" suffix="%" placeholder="Imprevistos" />
+      <p-inputnumber formControlName="profitPercent" suffix="%" placeholder="Utilidad" />
+    </div>
+
+    <p-button type="submit" label="Guardar" [loading]="saving()" />
+  </form>
+</p-card>

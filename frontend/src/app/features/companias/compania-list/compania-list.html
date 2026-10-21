@@ -1,0 +1,103 @@
+<div class="compania-list">
+  <div class="compania-list__header">
+    <h2>Compañías</h2>
+    <p-button label="Nueva compañía" icon="pi pi-plus" (onClick)="openCreate()" />
+  </div>
+
+  <p-table
+    [value]="companies()"
+    [lazy]="true"
+    [paginator]="true"
+    [rows]="10"
+    [rowsPerPageOptions]="[10, 50, 100]"
+    [totalRecords]="totalRecords()"
+    [loading]="loading()"
+    (onLazyLoad)="load($event)"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Razón social</th>
+        <th>NIT</th>
+        <th>Tipo</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-company>
+      <tr>
+        <td>{{ company.business_name }}</td>
+        <td>{{ company.tax_id }}</td>
+        <td>{{ company.company_type }}</td>
+        <td><p-tag [value]="company.is_active ? 'Activa' : 'Inactiva'" [severity]="company.is_active ? 'success' : 'danger'" /></td>
+        <td class="compania-list__actions">
+          <p-button icon="pi pi-pencil" [text]="true" (onClick)="openEdit(company)" />
+          <p-button icon="pi pi-users" [text]="true" (onClick)="openMemberships(company)" />
+          <p-button
+            [icon]="company.is_active ? 'pi pi-ban' : 'pi pi-check'"
+            [text]="true"
+            [severity]="company.is_active ? 'danger' : 'success'"
+            (onClick)="toggleActive(company)"
+          />
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog [(visible)]="dialogVisible" [modal]="true" [style]="{ width: '480px' }" header="Compañía">
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form-grid">
+    <label for="businessName">Razón social</label>
+    <input id="businessName" pInputText formControlName="businessName" />
+
+    <label for="taxId">NIT</label>
+    <input id="taxId" pInputText formControlName="taxId" />
+
+    <label for="companyType">Tipo</label>
+    <p-select id="companyType" formControlName="companyType" [options]="companyTypes" optionLabel="label" optionValue="value" />
+
+    @if (form.value.companyType === 'PUBLICA') {
+      <label for="territorialLevel">Nivel territorial</label>
+      <input id="territorialLevel" pInputText formControlName="territorialLevel" />
+    }
+
+    <label for="country">País</label>
+    <p-select id="country" formControlName="countryId" [options]="countries()" optionLabel="name" optionValue="id" (onChange)="onCountryChange($event.value)" />
+
+    <label for="department">Departamento</label>
+    <p-select id="department" formControlName="departmentId" [options]="departments()" optionLabel="name" optionValue="id" (onChange)="onDepartmentChange($event.value)" />
+
+    <label for="municipality">Municipio</label>
+    <p-select id="municipality" formControlName="municipalityId" [options]="municipalities()" optionLabel="name" optionValue="id" />
+
+    <label for="representativeMode">Representante</label>
+    <p-select id="representativeMode" formControlName="representativeMode" [options]="representativeModes" optionLabel="label" optionValue="value" />
+
+    @if (form.value.representativeMode === 'USER_REFERENCE') {
+      <label for="representativeUserId">ID de usuario</label>
+      <input id="representativeUserId" pInputText formControlName="representativeUserId" />
+    } @else {
+      <label for="representativeFullName">Nombre completo</label>
+      <input id="representativeFullName" pInputText formControlName="representativeFullName" />
+
+      <label for="representativeDocumentTypeId">Tipo de documento</label>
+      <p-select id="representativeDocumentTypeId" formControlName="representativeDocumentTypeId" [options]="documentTypes()" optionLabel="name" optionValue="id" />
+
+      <label for="representativeDocumentNumber">Número de documento</label>
+      <input id="representativeDocumentNumber" pInputText formControlName="representativeDocumentNumber" />
+    }
+
+    <p-button type="submit" label="Guardar" [loading]="saving()" />
+  </form>
+</p-dialog>
+
+<p-dialog [(visible)]="membershipDialogVisible" [modal]="true" [style]="{ width: '420px' }" [header]="'Miembros de ' + (selectedCompany()?.business_name ?? '')">
+  <form [formGroup]="membershipForm" (ngSubmit)="assignMembership()" class="form-grid">
+    <label for="memberUser">Usuario</label>
+    <p-select id="memberUser" formControlName="userId" [options]="memberCandidates()" optionLabel="username" optionValue="user_id" [filter]="true" filterBy="username,email" />
+
+    <label for="memberRole">Rol</label>
+    <p-select id="memberRole" formControlName="roleCode" [options]="roleCodes" optionLabel="label" optionValue="value" />
+
+    <p-button type="submit" label="Vincular" />
+  </form>
+</p-dialog>

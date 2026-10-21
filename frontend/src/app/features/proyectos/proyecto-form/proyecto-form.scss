@@ -1,0 +1,11 @@
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 480px;
+
+  &__aiu {
+    display: flex;
+    gap: 0.5rem;
+  }
+}

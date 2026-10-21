@@ -32,6 +32,15 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                 table: "companies",
                 newName: "last_modified_at");
 
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "last_modified_at",
+                schema: "dbo",
+                table: "companies",
+                type: "datetime2",
+                nullable: true,
+                oldClrType: typeof(DateTime),
+                oldType: "datetime2");
+
             migrationBuilder.RenameColumn(
                 name: "created_at_utc",
                 schema: "dbo",
@@ -86,13 +95,6 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                 schema: "dbo",
                 table: "companies",
                 type: "uniqueidentifier",
-                nullable: true);
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "last_modified_at",
-                schema: "dbo",
-                table: "companies",
-                type: "datetime2",
                 nullable: true);
 
             migrationBuilder.AddColumn<Guid>(
@@ -455,11 +457,6 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                 table: "companies");
 
             migrationBuilder.DropColumn(
-                name: "last_modified_at",
-                schema: "dbo",
-                table: "companies");
-
-            migrationBuilder.DropColumn(
                 name: "last_modified_by_user_id",
                 schema: "dbo",
                 table: "companies");
@@ -531,6 +528,17 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                 maxLength: 120,
                 nullable: false,
                 defaultValue: "");
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "last_modified_at",
+                schema: "dbo",
+                table: "companies",
+                type: "datetime2",
+                nullable: false,
+                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                oldClrType: typeof(DateTime),
+                oldType: "datetime2",
+                oldNullable: true);
 
             migrationBuilder.RenameColumn(
                 name: "last_modified_at",

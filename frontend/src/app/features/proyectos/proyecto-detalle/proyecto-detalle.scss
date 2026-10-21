@@ -1,0 +1,25 @@
+.proyecto-detalle {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  &__visibility {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__members {
+    margin-top: 1rem;
+  }
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 480px;
+}

@@ -1,0 +1,75 @@
+@if (project(); as p) {
+  <div class="proyecto-detalle">
+    <div class="proyecto-detalle__header">
+      <h2>{{ p.name }}</h2>
+      <p-tag [value]="p.status" [severity]="statusSeverity(p.status)" />
+    </div>
+
+    <p-tabs value="0">
+      <p-tablist>
+        <p-tab value="0">Datos generales</p-tab>
+        <p-tab value="1">Estado y visibilidad</p-tab>
+        <p-tab value="2">Miembros</p-tab>
+      </p-tablist>
+
+      <p-tabpanels>
+        <p-tabpanel value="0">
+          <form [formGroup]="editForm" (ngSubmit)="saveEdit()" class="form-grid">
+            <label for="name">Nombre</label>
+            <input id="name" pInputText formControlName="name" />
+
+            <label for="description">Descripción</label>
+            <textarea id="description" pTextarea formControlName="description" rows="2"></textarea>
+
+            <label for="objective">Objetivo</label>
+            <textarea id="objective" pTextarea formControlName="objective" rows="2" maxlength="1000"></textarea>
+
+            <p-button type="submit" label="Guardar cambios" [loading]="saving()" />
+          </form>
+        </p-tabpanel>
+
+        <p-tabpanel value="1">
+          <div class="form-grid">
+            <div class="proyecto-detalle__visibility">
+              <label>Proyecto público</label>
+              <p-toggleswitch [ngModel]="p.is_public" [ngModelOptions]="{ standalone: true }" (onChange)="toggleVisibility($event.checked)" />
+            </div>
+
+            @if (nextStatusAction(); as action) {
+              <p-button [label]="action.label" (onClick)="advanceStatus()" />
+            }
+
+            @if (p.status !== 'INHABILITADO') {
+              <p-button label="Deshabilitar proyecto" severity="danger" (onClick)="disableProject()" />
+            } @else {
+              <p-button label="Reactivar proyecto" severity="success" (onClick)="reactivateProject()" />
+            }
+          </div>
+        </p-tabpanel>
+
+        <p-tabpanel value="2">
+          <p-button label="Asignar miembro" icon="pi pi-plus" (onClick)="openMemberships()" />
+          <p-table [value]="members()" class="proyecto-detalle__members">
+            <ng-template pTemplate="body" let-member>
+              <tr>
+                <td>{{ member | json }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </div>
+}
+
+<p-dialog [(visible)]="membershipDialogVisible" [modal]="true" [style]="{ width: '420px' }" header="Asignar miembro">
+  <form [formGroup]="membershipForm" (ngSubmit)="assignMembership()" class="form-grid">
+    <label for="memberUser">Usuario</label>
+    <p-select id="memberUser" formControlName="userId" [options]="memberCandidates()" optionLabel="username" optionValue="user_id" [filter]="true" filterBy="username,email" />
+
+    <label for="memberRole">Rol</label>
+    <p-select id="memberRole" formControlName="roleCode" [options]="roleCodes" optionLabel="label" optionValue="value" />
+
+    <p-button type="submit" label="Vincular" />
+  </form>
+</p-dialog>
