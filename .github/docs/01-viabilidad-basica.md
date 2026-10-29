@@ -1,59 +1,69 @@
-# Viabilidad basica
+# Viabilidad básica
 
-## 1. Viabilidad tecnica
+> Documento actualizado el 27/10/2026. Detalle en `PLAN_INGENIERIA.md` (v0.26).
 
-* **Stack Tecnológico:Frontend:**
-  * Framework basado en componentes (TypeScript/Angular) orientado a la gestión de datos jerárquicos (WBS/EDT).  
-  * Backend: API REST desacoplada sobre C# (.NET) para el motor de cálculo en tiempo real y lógica de negocio.  
-  * Persistencia: Base de datos relacional (SQL Server) con esquema unificado multitenant para Proyectos, APUs e Insumos.  
-  H* Seguridad y Auditoría: Autenticación por JWT/OAuth2 con RBAC (Control de Acceso Basado en Roles).
-* **Infraestructura:** Servicios local de servidor en Linux, con despliegue de contenedores (Docker) y base de datos administrada.
-* **Metodología de Desarrollo:** Spec-Driven Development (SDD) con enfoque Spec-anchored. Uso de GitHub Copilot y Spec Kit (.github/spec/) para acelerar la codificación, generación de contratos API y cobertura de pruebas unitarias en backend.
+## 1. Viabilidad técnica
+| Componente | Definición |
+|---|---|
+| Frontend | Angular 20 con TypeScript, Angular Material y `signature_pad` |
+| Backend | ASP.NET Core Web API sobre .NET 10, Clean Architecture y monolito modular |
+| Persistencia | SQL Server 2022 con EF Core 10, esquema compartido y filtro por compañía |
+| Seguridad | ASP.NET Identity + JWT, RBAC de cuatro roles y asignación por proyecto |
+| Despliegue | Docker Compose con Nginx, API y SQL Server en Ubuntu 24.04 |
+| Integración | OpenAPI con Swashbuckle y cliente Angular generado |
+
+La arquitectura y el stack están decididos en los capítulos 3 del plan. El riesgo técnico principal es el aislamiento multitenant con un único bypass para el catálogo público (`D-36`).
 
 ## 2. Viabilidad operativa
+Flujo diario:
 
-Describe como operara la solucion en el dia a dia.
-Incluye usuarios responsables, soporte y flujo de trabajo.
+1. El Administrador crea compañías y usuarios, y designa Directores.
+2. El Director configura la compañía y el proyecto: divisa, AIU, tope, modo de firma, requisito de auditor y visibilidad.
+3. El Director asigna Presupuestadores y Auditores de su compañía.
+4. El Presupuestador construye la EDT y registra insumos; puede copiarlos desde otros proyectos.
+5. Crea o copia APUs, reconcilia insumos y se calcula el costo.
+6. Los insumos se cotizan; el paso a `COTIZADO` puede ser masivo.
+7. Se aprueba cada APU según el modo configurado.
+8. El Director cierra el presupuesto: todo cotizado y aprobado.
+9. Si el proyecto es público, sus APUs e insumos se exponen en el catálogo.
 
-* **Flujo de Trabajo del Sistema:** 
-  1. El Administrador parametriza la empresa y permisos de usuarios (ADMIN, ESTIMATOR, AUDITOR).  
-  2. El Presupuestador crea el proyecto, define la WBS/EDT (Capítulos/Ítems) e ingresa/importa los APUs e insumos.  
-  3. El motor de cálculo procesa automáticamente el presupuesto en tiempo real sin formulas expuestas ni riesgo de corrupción de datos.  
-  4. Cada cambio en un valor o rendimiento activa el middleware de trazabilidad, registrando un log inmutable asociado al ID de usuario y firma registrada.  
-  5. Para la consulta de referencia, el backend expone un endpoint que filtra la tabla unificada por Is_Public = true y utiliza DTOs sanitizados para omitir datos de autoría/empresa.  
-* **Soporte y Mantenimiento:** Trazabilidad de fallos mediante logs centralizados.
+**Soporte y mantenimiento:** logs estructurados, `/health`, migraciones manuales con runbook (`D-40`) y respaldos documentados. No hay soporte 24/7 ni alta disponibilidad.
 
-## 3. Viabilidad economica inicial
+## 3. Viabilidad económica inicial
+| Concepto | Estimación |
+|---|---|
+| Servidor de aplicaciones / contenedores | USD 20–50 / mes |
+| Base de datos | USD 25–60 / mes (más licencia si es edición comercial) |
+| Dominio y logs | USD 5–15 / mes |
+| Correo transaccional | Plan gratuito o de bajo costo |
+| TLS | Postergado; sin costo en entorno local |
 
-* **Costos de Desarrollo:** 
-  * Reducción de costos de horas/hombre de desarrollo mediante el uso de Spec Kit y GitHub Copilot para la generación automatizada de boilerplate, DTOs, mappers y pruebas unitarias.
-* **Costos de Infraestructura (Nube - Fase MVP):**
-  * Servidor de aplicaciones / Contenedores (Instancia básica / Serverless): USD 20 - 50 / mes.
-  * Base de datos relacional administrada (vCPU y almacenamiento básico): USD 25 - 60 / mes.
-  * Dominio y almacenamiento de logs: USD 5 - 15 / mes.
-  * Costo mensual estimado MVP: USD 50 - 125 / mes.
+**Costo mensual estimado del MVP:** USD 50–125, sin incluir la licencia de SQL Server en producción (`RT-15`).
 
 ## 4. Restricciones y dependencias
-
-* **Restricciones:**
-  * Modelo de Datos Unificado: Obligatoriedad de mantener Proyectos, APUs e Insumos en la misma estructura de tablas relacionales, manejando la privacidad a nivel de API/DTOs y no por bases de datos separadas.
-  * Sin Auto-asignación por IA: La IA no debe decidir los valores ni rendimientos de los presupuestos; su alcance es prescriptivo, de soporte y consulta de referencias.
-* **Dependencias:**
-  * Definición técnica del flujo de firma en frontend (Signature Pad) y validación de aprobación en backend.
-  * Definición de los esquemas de importación (CSV) para migrar matrices desde Excel. 
+1. Migraciones manuales; no hay inicialización automática (`D-40`).
+2. TLS postergado: solo entorno local o demo controlada (`D-39`).
+3. Proveedor de correo por definir (`D-45`).
+4. Fórmulas de cálculo pendientes (`X-15`).
+5. Licenciamiento de SQL Server antes de un despliegue real (`RT-15`).
+6. Pruebas de integración y E2E manuales (`D-65`, `D-66`).
 
 ## 5. Riesgos y mitigaciones
+| Riesgo | Mitigación |
+|---|---|
+| Fuga entre compañías (`RT-13`) | Un único bypass y checklist con dos compañías |
+| Exposición al publicar precios (`RT-11`) | Advertencia y aceptación al publicar |
+| Concurrencia (`RT-14`) | `rowversion` y `409 Conflict` |
+| Licenciamiento de SQL Server (`RT-15`) | Definir edición o migrar a PostgreSQL |
+| Migraciones manuales (`RT-17`) | Runbook y respaldo previo |
+| Correo no entregado (`RT-18`) | Proveedor transaccional y prueba de envío |
+| Deriva del cliente (`RT-19`) | Regeneración en CI |
 
-* Riesgo 1: Fuga de información corporativa al consultar APUs públicos.
-  * Mitigación: Implementar pruebas unitarias en backend sobre la capa de DTOs sanitizados para garantizar que el CompanyId y los nombres de proyectos nunca se envíen en la respuesta JSON de la API compartida.
-* Riesgo 2: Drift/desalineación de la API frente a las especificaciones escritas (Deuda técnica por IA).
-  * Mitigación: Adoptar el enfoque Spec-anchored de SDD, donde las especificaciones OpenAPI/Markdown en .github/spec/ se validan mediante pipelines automatizados de CI/CD antes de permitir merges al código fuente.  
-* Riesgo 3: Bajo desempeño en consultas complejas sobre la tabla unificada de APUs.
-  * Mitigación: Creación de índices compuestos sobre la columna Is_Public y claves de insumos para acelerar las búsquedas en la base compartida.
+## 6. Decisión
+**GO CON CONDICIONES.**
 
-## 6. Decision
-
-* Estado Actual: GO CON CONDICIONES
-* Condiciones para pasar a Sprint 1 de Desarrollo:
-  1. Implementar en código la aprobación con firma única desde Signature Pad en frontend y validación de autorización en backend.  
-  2. Implementar y validar por pruebas unitarias backend el diseño de `PublicApuDTO` por whitelist para exposición de la base compartida sobre la tabla unificada.
+Condiciones para iniciar E-0:
+1. Resolver `X-15` antes de abrir E-4a.
+2. Elegir proveedor de correo antes de E-1.
+3. Definir la edición de SQL Server antes de E-6.
+4. No exponer la aplicación a Internet sin TLS (`D-39`).

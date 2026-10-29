@@ -1,71 +1,72 @@
 # Idea y problema a resolver
 
+> Documento actualizado el 27/10/2026. La fuente de verdad es `PLAN_INGENIERIA.md` (v0.26); este documento resume el problema, los actores y el alcance.
+
 ## 1. Resumen de la idea
-Desarrollar una aplicación web de gestión de presupuestos de obra civil para empresas del sector construcción. El sistema debe permitir la estructuración de Análisis de Precios Unitarios (APUs) e insumos, garantizar un registro de trazabilidad y firma de autoría sobre cada modificación, y proveer una base de datos de consulta compartida para comparar la composición técnica de APUs (rendimientos y consumos de insumos) entre proyectos decidiendo por cada empresa si esta información es ´pública. El desarrollo se ejecuta bajo la metodología Spec-Driven Development (SDD).
+Aplicación web multiempresa para gestionar presupuestos de obra civil. Permite estructurar la EDT, administrar insumos y APUs, calcular el presupuesto, gestionar cotización y aprobación, y publicar composiciones en un catálogo abierto.
+
+El desarrollo sigue Spec-Driven Development con **OpenSpec** (`D-09`). El sistema no asigna precios ni cantidades por IA: automatiza cálculo, integridad y trazabilidad de lo que define el usuario.
 
 ## 2. Problema actual
-El proceso actual basado en hojas de cálculo (Excel) genera las siguientes limitantes técnicas en el sistema:
-* **Falta de Trazabilidad:** Inexistencia de registros de auditoría sobre modificaciones de los APUs. No hay asociación de firma ni responsabilidad de usuario.
-* **Aislamiento de Datos de Rendimiento:** La información de rendimientos de mano de obra y equipo queda aislada en archivos locales, impidiendo la reutilización estructurada y el contraste de composiciones técnicas entre proyectos.
+El proceso basado en hojas de cálculo presenta:
+
+1. **Trazabilidad limitada:** no se sabe quién modificó por última vez un APU o un insumo ni quién aprobó. La solución registra el último modificador y una aprobación por APU (`D-08`, `D-52`), no un historial completo.
+2. **Aislamiento y duplicidad:** los APUs e insumos se reconstruyen por proyecto; no hay reutilización estructurada ni detección de similitudes (`D-05`, `D-25`).
+3. **Cálculo manual:** fórmulas frágiles y redondeos inconsistentes (`X-15` pendiente).
+4. **Cierre sin control:** un presupuesto puede cerrarse sin que todo esté cotizado o aprobado (`D-04`, `D-14`).
 
 ## 3. Usuarios y actores
-* **Gerente de proyectos (`Role: ADMIN`):**
-  * Gestión de cuenta corporativa y usuarios de la empresa.
-  * Configuración de parámetros globales del sistema.
-  * Configuración de divisas por proyecto.
-  * Creación y gestión de proyectos (WBS / Capítulos / Ítems), APUs y materiales.
-  * Control de visibilidad/privacidad de los poryectos, APUs y materiales (publicar en base compartida o mantener privado).
-  * Establecer usuario firmador de los APUs o si cada usuario firma por cada APU y/o presupuesto.
-* **Gestor de Proyecto / Presupuestador (`Role: PROJECT_MANAGER` / `Role: ESTIMATOR`):**
-  * Creación y gestión de proyectos y presupuestos (WBS / Capítulos / Ítems).
-  * Creación, edición y firmado de APUs e insumos.
-  * Configuración de divisas por proyecto.
-  * Consulta de la base de APUs de referencia.
-  * Actualización del estado de cotización por ítem/insumo.
-* **Usuario Lector / Auditor (`Role: AUDITOR` / `Role: READ_ONLY`):**
-  * Lectura de resúmenes de presupuesto y cotización.
-  * Inspección de la bitácora auditable de cambios y verificación de firmas registradas.
-  * Visualización de alertas por superación de topes presupuestales.
+| Rol | Ámbito | Responsabilidad principal |
+|---|---|---|
+| **Administrador** | Plataforma, sin compañía | Crea usuarios y compañías, cambia roles globalmente; solo lee proyectos e insumos |
+| **Director de proyectos** | Una compañía y sus proyectos | Configura compañía y proyectos, asigna usuarios, define el modo de firma y cierra el presupuesto |
+| **Presupuestador** | Compañía y proyectos asignados | Construye la EDT, crea insumos, APUs y matrices; cotiza |
+| **Auditor** | Proyectos asignados | Lee la información y aprueba APUs cuando el proyecto lo exige |
+
+Los roles `PROJECT_MANAGER`, `ESTIMATOR` y `READ_ONLY` quedan reemplazados (`D-02`, `D-15`, `D-34`).
 
 ## 4. Objetivo del producto
-Proveer un backend y frontend desacoplados que automaticen el cálculo de presupuestos de obra estructurados (Estructura de Desglose del Trabajo - EDT/WBS), eliminen la manipulación manual de fórmulas mediante motores de cálculo validados, registren el 100 % de los cambios mediante eventos auditables con firma de autoría, y expongan APIs para la consulta anonimizada de composiciones técnicas de APUs.
+Automatizar el cálculo de presupuestos estructurados, garantizar integridad y trazabilidad mínima, permitir la reutilización de composiciones y ofrecer un catálogo público de referencia.
 
-## 5. Alcance MVP
-* **Gestión de Proyectos y Presupuestos:**
-  * Estructura jerárquica: Proyecto -> Capítulos o subcapítulos (se debe de definir en BD el rango que pertenece) -> Ítems/Actividades -> APU (Materiales, Mano de Obra, Equipos, Subcontratos).
-  * Parametrización de divisa por proyecto.
-  * Estados de cotización por ítem: `POR_COTIZAR`, `FALTA_INFORMACION`, `COTIZADO`, tener en cuenta que los estados pueden aumentar en el tiempo.
-  * Motor de alertas activas para topes presupuestales configurados o proyecto.
-  * Generación de resúmenes de cotización y exportación de presupuestos.
-* **Módulo de Auditoría y Trazabilidad (Firma de Autoría):**
-  * Registro inmutable (log de auditoría) de cada acción se realice en el presupuesto como en los APUs y cambios en los costos de materiales.
-  * Vinculación obligatoria del ID de usuario, timestamp y firma registrada en cada cambio, según el elemento modificado.
-* **Base de Datos Compartida de Consulta APU:**
-  * Repositorio de consulta colaborativa para composición técnica (consumos y rendimientos, no precios).
-  * Endpoints para buscar y comparar la composición de un APU propio frente a las referencias de la base de datos.
-* **Módulo de Configuración de Privacidad:**
-  * Flag/Toggle de privacidad a nivel de APU o Proyecto: `Is_Public` (`true`/`false`) para autorizar su replicación en la base de datos compartida.
-* **Pruebas y Verificación:**
-  * Cobertura de pruebas unitarias exclusivamente en backend para el motor de cálculo de APUs/presupuestos y reglas de privacidad por empresa.
+## 5. Alcance del MVP
+| Bloque | Incluye |
+|---|---|
+| Identidad | Usuarios, roles, asignación a compañía y proyecto, dos correos transaccionales (`D-17`) |
+| Compañías y proyectos | Creación, datos de registro, divisa, AIU, tope, modo de firma, requisito de auditor, visibilidad (`D-03`, `D-07`, `D-22`) |
+| EDT | Capítulos e ítems recursivos, numeración automática editable, códigos únicos por proyecto, búsqueda por código o nombre (`D-30`, `D-51`) |
+| Insumos | Siete tipos, estados de cotización, listado con filtros, sugerencia de unicidad, copia desde otros proyectos (`D-05`, `D-29`) |
+| APUs y matrices | APU 1:1 con el ítem, copia desde proyectos o catálogo, reconciliación de insumos, matriz reutilizable (`D-13`, `D-16`, `D-25`, `D-48`) |
+| Cálculo | Consumo, costo directo, AIU y redondeo (`D-06`, `D-07`) |
+| Cierre | Todo cotizado, aprobación por APU, cierre por el Director (`D-04`, `D-14`, `D-52`) |
+| Catálogo | Proyectos públicos, APUs e insumos con todos sus campos, consulta anónima (`D-22`, `D-28`, `D-38`) |
+| Alertas | Tope presupuestal (`D-18`) |
 
 ## 6. Fuera de alcance
-* **Cálculo Autónomo por IA:** El sistema no debe asignar precios o cantidades de forma automática sin la interacción del usuario. La IA del sistema es puramente prescriptiva y de consulta.
-* **Scraping o Comparación de Precios Comerciales en Tiempo Real:** La base de datos compartida solo almacena y compara *composición técnica* (rendimientos/cantidades), no valores monetarios de proveedores.
-* **Módulos de Ejecución de Obra (Post-planeación):** No implementar módulos de inventario de almacén, control de entrada de materiales en obra, facturación ni gestión de compras.
-* **Visores 3D / Integración CAD/BIM:** No procesar archivos IFC, DWG ni visores tridimensionales geométricos.
+- Asignación automática de precios, cantidades o rendimientos por IA.
+- Scraping o comparación de precios de proveedores en tiempo real.
+- Ejecución de obra: inventarios, compras, facturación.
+- Visores 3D e integración CAD/BIM.
+- Historial de cambios y de valores (`E-05`).
+- Conversión de divisas (`E-06`).
+- Importación y exportación en el MVP (`D-18`).
+- Congelamiento o versionado del presupuesto (`E-12`).
 
-## 7. Criterios de exito
-* **Automatización del Motor de Cálculo:** Cálculo en tiempo real de costos directos (APU) e indirectos (AIU) sin inconsistencias de redondeo ni fórmulas rotas.
-* **Trazabilidad Inmutable:** 100 % de las transacciones de modificación registran un evento de auditoría asociado a un `UserId` y al evento de firma capturado desde frontend.
-* **Validación de Integridad:** El sistema debe rechazar la consolidación de un presupuesto si existen insumos en estado `FALTA_INFORMACION` o sin cotización asignada.
+## 7. Criterios de éxito
+1. Cálculo determinista y único para APU y presupuesto.
+2. Última modificación registrada por APU e insumo, y una aprobación por APU cuando el modo lo exige.
+3. Cierre bloqueado si falta cotización o aprobación.
+4. Catálogo público sin datos de autoría ni empresa, y sin acceso a proyectos privados.
+5. Cobertura ≥ 80 % en dominio y motor de cálculo.
 
 ## 8. Supuestos y riesgos de negocio
-* **Usabilidad e Interfaz (UX):** La carga de APUs y creación de WBS/EDT debe requerir la menor cantidad de clics posible para no perder la agilidad percibida en hojas de cálculo.
-* **Persistencia Unificada y Visibilidad (Multitenant):** Proyectos, APUs, Materiales e Insumos deben convivir en el mismo esquema de tablas relacionales (modelo unificado). La condición de visibilidad (pública o privada) estará determinada por un estado/flag en la misma entidad.
-* **Privacidad y Sanitización de DTOs en Consultas Públicas:** Cuando se consulte un APU en la base de datos compartida, el backend debe omitir/sanitizar en los Data Transfer Objects (DTOs) la información del `CompanyId`, nombres de proyectos específicos, firmas y metadatos sensibles de la empresa creadora.
-* **Seguridad y Control de Accesos:** Aislamiento estricto multitenant (multi-empresa) para evitar fugas de información entre organizaciones cuando los APUs estén marcados como privados.
+- La publicación expone precios y contactos; el usuario lo acepta al publicar (`D-28`, `RT-11`).
+- El auditor puede ser interno o externo; el sistema no evita conflictos de interés (`Q-03`).
+- El catálogo no tiene curaduría (`D-12`).
+- El equipo es una sola persona y no hay datos históricos del proceso (`D-19`).
 
-## 9. Preguntas abiertas y estado de clarificacion
-* **Mecanismo de Firma de Autoría (Resuelto):** Se implementa firma en frontend mediante Signature Pad para el acto de aprobación. La evidencia visual se usa de forma temporal en la solicitud y el backend registra el evento de auditoría (`SIGN`) sin persistir token/hash criptográfico.
-* **Lógica de Filtrado y Mapping DTO en la API (Resuelto):** Se mantiene Query Filter global por `CompanyId` y se habilita un bypass controlado solo para `GET /api/v1/public-apus`, con validación `Project.Is_Public = true AND Apu.Is_Public = true` y salida `PublicApuDTO` por whitelist.
-* **Estructura de Importación desde Excel (Abierto):** Pendiente definir esquemas JSON/CSV y reglas de parseo estandarizadas para mapear matrices de presupuestos tradicionales hacia la estructura relacional del sistema.
+## 9. Preguntas abiertas
+| ID | Tema | Estado |
+|---|---|---|
+| `X-15` | Fórmulas exactas de cálculo | Pendiente; bloquea E-4a |
+| `D-45` | Proveedor de correo concreto | Se elige al implementar |
+| `RT-15` | Edición de SQL Server para producción | Antes de E-6 |

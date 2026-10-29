@@ -1,148 +1,158 @@
-# Flujos o casos de uso principales
+# Flujos y casos de uso
+
+> Documento actualizado el 27/10/2026. Actores y reglas según `PLAN_INGENIERIA.md` (v0.26).
 
 ## 1. Actores
-* **`ADMIN` (Administrador):** Responsable de la parametrización de la empresa (tenant), gestión de accesos, creación de usuarios y configuración global del proyecto.
-* **`ESTIMATOR` (Presupuestador / Compras):** Encargado de la estructuración de la WBS (Capítulos/Ítems), creación de Análisis de Precios Unitarios (APUs), actualización del valor de los materiales e insumos, y primera firma técnica del presupuesto.
-* **`AUDITOR` (Interventor / Director):** Usuario con permisos de lectura sobre presupuestos, encargado de auditar la trazabilidad de cambios y consultar APUs compartidos.
-
-## 2. Lista de casos de uso
-
-* **UC-001:** Administrar usuarios y control de acceso por empresa.
-* **UC-002:** Estructurar WBS del presupuesto (Capítulos e Ítems).
-* **UC-003:** Crear y estructurar APU con vinculación de Insumos/Matrices.
-* **UC-004:** Consultar base compartida pública de APUs.
-* **UC-005:** Evaluar reglas de integridad y cascada de estado `Falta_informacion`.
-* **UC-006:** Aprobación única y congelamiento de presupuesto a estado `Finalizado`.
-
-## 3. Plantilla por caso de uso
-
-### UC-001 Administrar usuarios y control de acceso por empresa
-* **Objetivo:** Permitir al administrador de la empresa gestionar las cuentas de usuario (`ADMIN`, `ESTIMATOR`, `AUDITOR`) asociadas a su `CompanyId`.
-* **Actor principal:** `ADMIN`.
-* **Precondiciones:** El usuario `ADMIN` debe estar autenticado con un token JWT válido vinculado a su empresa.
-* **Postcondiciones:** Se crea, modifica o desactiva la cuenta de usuario en la base de datos relacional dentro de la misma empresa.
-* **Flujo principal:**
-  1. El actor ingresa al panel de administración de usuarios de su organización.
-  2. Solicita crear un nuevo usuario ingresando correo electrónico, nombre completo y asignando un rol (`ADMIN`, `ESTIMATOR`, `AUDITOR`).
-  3. El sistema valida la unicidad del correo electrónico en el sistema.
-  4. El backend inyecta automáticamente el `CompanyId` de la sesión del administrador y guarda la entidad `User`.
-  5. Se envía una notificación/credencial de acceso al usuario creado.
-* **Flujos alternos:**
-  * *Desactivación:* El actor selecciona un usuario existente y cambia su estado `is_active` a `false`.
-* **Reglas de validación:** Un usuario `ADMIN` no puede crear ni consultar usuarios pertenecientes a otra empresa (`BR-001`).
-* **Errores esperados:** `DuplicateEmailException` si el correo ya existe. `UnauthorizedAccessException` si se intenta modificar un usuario de otro tenant.
-
----
-
-### UC-002 Estructurar WBS del presupuesto (Capítulos e Ítems)
-* **Objetivo:** Definir la estructura jerárquica de trabajo (WBS/EDT) de un proyecto creando capítulos, ítems y asignando cantidades de obra.
-* **Actor principal:** `ESTIMATOR`, `ADMIN`.
-* **Precondiciones:** El proyecto debe estar creado y en estado distinto de `FINALIZADO`.
-* **Postcondiciones:** Se registra la jerarquía WBS y se recalculan automáticamente los subtotales del capítulo y del proyecto.
-* **Flujo principal:**
-  1. El actor selecciona un proyecto y accede a la vista de presupuesto.
-  2. Crea un nuevo capítulo (ej. "01. CIMENTACIÓN").
-  3. Dentro del capítulo, agrega un ítem/actividad especificando nombre, cantidad de obra y vinculando un APU existente.
-  4. El sistema consulta el costo directo del APU vinculado, calcula el costo total del ítem ($Q \times CD$) y actualiza los subtotales del capítulo.
-  5. El sistema registra al usuario en la bitácora de personal participante.
-* **Flujos alternos:**
-  * *Reordenamiento:* El actor reordena la secuencia de capítulos/ítems; el sistema actualiza los códigos posicionales.
-* **Reglas de validación:** No se pueden ingresar cantidades de obra menores o iguales a cero.
-* **Errores esperados:** `InvalidQuantityException` si la cantidad es $\le 0$. `ProjectLockedException` si el proyecto está en estado `FINALIZADO`.
-
----
-
-### UC-003 Crear y estructurar APU con vinculación de Insumos/Matrices
-* **Objetivo:** Definir la composición técnica de un APU vinculando materiales, mano de obra, equipos, auxiliares, trabajos o matrices reutilizables.
-* **Actor principal:** `ESTIMATOR`.
-* **Precondiciones:** Existencia de registros en la tabla unificada `Resource` y catálogo `ResourceType`.
-* **Postcondiciones:** El costo directo unitario del APU se recalcula y se registra al personal participante en `AuditLog`.
-* **Flujo principal:**
-  1. El actor crea o edita un APU ingresando código, descripción, unidad y rendimiento ($> 0$).
-  2. Busca en el catálogo unificado deduplicado (filtrando por ubicación, tipo, marca o descripción) e inserta un recurso a la tabla `ApuResource`.
-  3. Asigna el consumo requerida y el porcentaje de desperdicio.
-  4. El sistema calcula el costo del recurso y actualiza el valor del APU.
-  5. Registra el evento en el log de participación de personal.
-* **Flujos alternos:**
-  * *Vinculación de Matriz:* Si el recurso vinculado posee `ResourceType = Matriz`, el sistema lo procesa como sub-APU compuesto desplegando solo un nivel de su composición interna.
-  * *Detección de Datos Faltantes:* Si el recurso carece de descripción, valor unitario, unidad o marca, se marca con el estado `Falta_informacion`.
-* **Reglas de validación:** Rendimiento debe ser $> 0$. No se permite anidamiento `Matriz -> Matriz` ni autorreferencia.
-* **Errores esperados:** `ValidationException` (rendimiento $\le 0$). `MatrixNestingNotAllowedException` (anidamiento de matrices).
-
----
-
-### UC-004 Consultar base compartida pública de APUs
-* **Objetivo:** Consultar la composición técnica (rendimientos y consumos) de APUs compartidos colaborativamente por la comunidad.
-* **Actor principal:** `ESTIMATOR`, `AUDITOR`.
-* **Precondiciones:** Existen APUs vinculados a proyectos que cumplan `Apu.is_public = true` y `Project.is_public = true`.
-* **Postcondiciones:** El sistema retorna el objeto `PublicApuDTO` omitiendo cualquier metadato de autoría o empresa.
-* **Flujo principal:**
-  1. El actor accede al buscador de la base pública compartida.
-  2. Ingrese criterios de búsqueda (palabra clave, tipo de actividad, rendimiento).
-  3. El backend ejecuta la consulta pública con bypass controlado del filtro multitenant, forzando `WHERE Apu.is_public = true AND Project.is_public = true`.
-  4. La capa de aplicación mapea los resultados hacia el DTO sanitizado (`PublicApuDTO`).
-  5. Se despliega en pantalla la composición técnica (consumos y rendimientos) sin mostrar precios ni empresas creadoras.
-* **Flujos alternos:** Ninguno.
-* **Reglas de validación:** La API usa whitelist estricta de `PublicApuDTO` y jamás incluye `company_id`, `project_id`, firmas, precios, distribuidores ni contactos (`NFR-002`).
-* **Errores esperados:** Ninguno. Si no hay coincidencias, devuelve una lista vacía `200 OK []`.
-
----
-
-### UC-005 Evaluar reglas de integridad y cascada de estado `Falta_informacion`
-* **Objetivo:** Evaluar automáticamente la integridad de los datos de un presupuesto propagando el estado `Falta_informacion` desde Insumos hasta el Proyecto global.
-* **Actor principal:** Sistema (Proceso Automatizado / Middleware).
-* **Precondiciones:** Creación o modificación de un recurso en la tabla `Resource` o en un `Apu`.
-* **Postcondiciones:** Se actualizan las banderas de estado en las entidades `Resource`, `Apu` y `Project`.
-* **Flujo principal:**
-  1. El sistema evalúa los campos de un `Resource`: si `description`, `unit_price`, `unit` o `brand` están vacíos/nulos, asigna el estado `FALTA_INFORMACION` al recurso.
-  2. El motor de reglas busca todos los APUs que utilicen dicho recurso en `ApuResource` y cambia su estado a `FALTA_INFORMACION`.
-  3. El motor evalúa los proyectos que utilicen dichos APUs y recalcula `Project.status` (`FALTA_INFORMACION`, `POR_COTIZAR` o `COTIZADO` según mapeo de dominio).
-  4. La propagación y reversión se ejecutan de forma sincrónica en la misma transacción.
-  5. Se despliega una alerta visual en la interfaz del presupuesto notificando los campos faltantes.
-* **Flujos alternos:**
-  * *Subsanación:* Cuando el usuario completa los 4 campos obligatorios del insumo, el sistema recalcula en la misma transacción y remueve `FALTA_INFORMACION` si no existen otros elementos incompletos.
-* **Reglas de validación:** Los campos obligatorios son: Descripción, Valor Unitario, Unidad y Marca (`BR-009`). La cascada debe ser transaccional (`BR-014`).
-* **Errores esperados:** Ninguno (Lógica interna de dominio).
-
----
-
-### UC-006 Aprobación única y congelamiento de presupuesto a estado `Finalizado`
-* **Objetivo:** Otorgar aprobación digital única con firma capturada en frontend para congelar el presupuesto y transicionar al estado `FINALIZADO`.
-* **Actor principal:** Usuario autorizado (`ADMIN` o `ESTIMATOR`) de la compañía propietaria del proyecto.
-* **Precondiciones:** El proyecto no debe contener ningún APU o insumo en estado `FALTA_INFORMACION`.
-* **Postcondiciones:** Generación de un snapshot inmutable en `BudgetVersion` y cambio del estado del proyecto a `FINALIZADO`.
-* **Flujo principal:**
-  1. El usuario autorizado accede al cierre de presupuesto y registra su firma en frontend mediante Signature Pad.
-  2. El usuario presiona "Aprobar y Finalizar".
-  3. El sistema valida que el proyecto no posea `FALTA_INFORMACION` y que el actor pertenezca a la misma compañía propietaria del proyecto.
-  4. El backend registra evento `SIGN` en `AuditLog` y confirma la aprobación.
-  5. Se serializa la WBS y APUs en un JSON inmutable grabado en la tabla `BudgetVersion` y el proyecto pasa a `FINALIZADO`.
-* **Flujos alternos:**
-  * *Bloqueo por Incompleto:* Si existe al menos un elemento en `Falta_informacion`, el sistema rechaza la transición y despliega la lista de tareas/insumos pendientes.
-* **Reglas de validación:** Se requiere una firma capturada desde Signature Pad y autorización por compañía. Un proyecto en estado `FINALIZADO` queda congelado en modo lectura (`BR-011`).
-* **Errores esperados:** `IncompleteBudgetException` si se intenta finalizar con datos faltantes. `MissingSignatureException` si no se captura firma. `UnauthorizedAccessException` si el actor no pertenece a la compañía propietaria.
-
-## 4. Mapeo a requerimientos
-
-| Caso de Uso (UC) | Requerimientos Funcionales (FR) | Reglas de Negocio (BR) |
+| Actor | Ámbito | Responsabilidad |
 |---|---|---|
-| **UC-001** (Administrar usuarios) | FR-001, FR-002 | BR-001 |
-| **UC-002** (Estructurar WBS) | FR-003, FR-009 | BR-002, BR-003 |
-| **UC-003** (Estructurar APU/Matriz) | FR-004, FR-006, FR-007 | BR-003, BR-004, BR-008 |
-| **UC-004** (Consultar base APU) | FR-005, FR-007 | BR-005, BR-006, BR-013 |
-| **UC-005** (Cascada `Falta_informacion`) | FR-008 | BR-007, BR-009, BR-010, BR-014 |
-| **UC-006** (Aprobación única) | FR-011, FR-012 | BR-011, BR-012 |
+| Administrador | Plataforma, sin compañía | Usuarios, roles y compañías; lectura de proyectos e insumos |
+| Director de proyectos | Una compañía y sus proyectos | Configuración, asignaciones, modo de firma y cierre |
+| Presupuestador | Proyectos asignados | EDT, insumos, APUs, matrices y cotización |
+| Auditor | Proyectos asignados | Lectura y aprobación de APUs cuando el proyecto lo exige |
 
-## 5. Mapeo a pruebas
+## 2. Casos de uso
+| ID | Caso de uso | Actores |
+|---|---|---|
+| UC-01 | Administrar usuarios, roles y compañías | Administrador, Director |
+| UC-02 | Configurar proyecto | Director |
+| UC-03 | Estructurar la EDT | Director, Presupuestador |
+| UC-04 | Gestionar insumos | Director, Presupuestador |
+| UC-05 | Crear o copiar APU y reconciliar insumos | Director, Presupuestador |
+| UC-06 | Calcular, cotizar y alertar | Sistema, Director, Presupuestador |
+| UC-07 | Aprobar y cerrar el presupuesto | Director, Presupuestador, Auditor |
+| UC-08 | Consultar el catálogo público | Cualquiera (anónimo) |
 
-| Caso de Uso (UC) | Nombre / Archivo de Prueba | Tipo de Prueba | Criterio a Evaluar |
-|---|---|---|---|
-| **UC-001** | `tests/backend/unit/user_authorization_tests.cs` | Unitaria Backend | Creación de usuarios restringida a la misma compañía del actor autenticado. |
-| **UC-002** | `tests/backend/unit/wbs_calculation_tests.cs` | Unitaria Backend | Agregar un `WbsItem` recalcula el total del `WbsChapter`. |
-| **UC-003** | `tests/backend/unit/apu_calculation_tests.cs` | Unitaria Backend | El costo directo coincide con consumos, precios unitarios y desperdicio, dividido por rendimiento. |
-| **UC-003** | `tests/backend/unit/matrix_single_level_expansion_tests.cs` | Unitaria Backend | Una Matriz se expande solo un nivel y rechaza anidamiento Matriz -> Matriz. |
-| **UC-003** | `tests/backend/unit/audit_sign_event_tests.cs` | Unitaria Backend | Se genera un registro `SIGN` al aprobar un cierre con firma capturada en frontend. |
-| **UC-004** | `tests/backend/unit/public_dto_sanitization_tests.cs` | Unitaria Backend | El resultado cumple whitelist de `PublicApuDTO` y no contiene campos sensibles. |
-| **UC-004** | `tests/backend/unit/public_apu_visibility_and_rule_tests.cs` | Unitaria Backend | Solo se exponen APUs con `Project.Is_Public = true` y `Apu.Is_Public = true`. |
-| **UC-005** | `tests/backend/unit/missing_info_cascade_transactional_tests.cs` | Unitaria Backend | La propagación y reversión de estado se ejecutan en una sola transacción. |
-| **UC-006** | `tests/backend/unit/single_approval_freeze_tests.cs` | Unitaria Backend | Lanza excepción si falta firma, hay datos incompletos o el actor no pertenece a la compañía propietaria. |
+## 3. UC-01 Administrar usuarios, roles y compañías
+- **Objetivo:** gestionar cuentas, roles y pertenencia a compañías.
+- **Actor principal:** Administrador; el Director participa en su compañía.
+- **Precondiciones:** sesión con JWT válido.
+- **Postcondiciones:** usuario creado, rol cambiado o compañía asignada.
+- **Flujo principal:**
+  1. El Administrador crea la compañía o selecciona una existente.
+  2. Crea el usuario con correo, nombre y rol.
+  3. El sistema valida correo único y `companyId` (nulo solo para Administrador).
+  4. El Director busca usuarios y los asigna a su compañía o a sus proyectos.
+  5. Se envían los correos de creación y recuperación.
+- **Alternos:** cambio de rol global por el Administrador; retiro de un usuario de la compañía por el Director.
+- **Errores:** correo duplicado; usuario ya asignado a otra compañía; rol inexistente.
+
+## 4. UC-02 Configurar proyecto
+- **Objetivo:** definir divisa, AIU, tope, modo de firma, requisito de auditor y visibilidad.
+- **Actor:** Director.
+- **Precondiciones:** compañía propia creada.
+- **Postcondiciones:** proyecto con configuración única.
+- **Flujo:**
+  1. El Director crea el proyecto.
+  2. Define `currency` ISO, `aiuAdmin`, `aiuContingency`, `aiuProfit`, `budgetLimit`, `signatureMode`, `requiresAuditor` e `isPublic`.
+  3. El sistema valida rangos y guarda la configuración.
+- **Alternos:** cambio de modo de firma antes de la primera aprobación.
+- **Errores:** divisa inválida; AIU fuera de 0–100; configuración duplicada.
+
+## 5. UC-03 Estructurar la EDT
+- **Objetivo:** crear capítulos e ítems con códigos únicos.
+- **Actores:** Director y Presupuestador.
+- **Precondiciones:** proyecto existente y no finalizado.
+- **Postcondiciones:** árbol con numeración y códigos válidos.
+- **Flujo:**
+  1. Se crea un capítulo; el sistema propone el número según la posición.
+  2. Se agregan subcapítulos sin límite de profundidad.
+  3. Se crea un ítem con cantidad de obra y APU.
+  4. Se registra el código en `WbsCode`; el sistema valida unicidad por proyecto.
+  5. Se puede buscar por código de ítem o nombre de capítulo.
+- **Alternos:** el usuario sobrescribe el código; los hijos heredan el prefijo (`CIM.1`).
+- **Errores:** código duplicado; cantidad ≤ 0; padre de otro proyecto.
+
+## 6. UC-04 Gestionar insumos
+- **Objetivo:** registrar, listar, filtrar y copiar insumos del proyecto.
+- **Actores:** Director y Presupuestador.
+- **Precondiciones:** proyecto con catálogo de tipos cargado.
+- **Postcondiciones:** insumo creado o copiado, con estado de cotización calculado.
+- **Flujo:**
+  1. Se crea el insumo con descripción, tipo, unidad, precio, marca y datos opcionales.
+  2. El sistema evalúa los cuatro campos obligatorios y asigna `FALTA_INFORMACION` o `POR_COTIZAR`.
+  3. Se listan los insumos con filtros por tipo, estado, marca, descripción, ciudad y precio.
+  4. Se puede copiar un insumo desde otro proyecto de la compañía; la copia es independiente.
+  5. Al copiar un APU se sugiere un insumo similar y el usuario decide.
+- **Alternos:** cambio de estado a `COTIZADO`; edición de precio y marca.
+- **Errores:** tipo inexistente; precio negativo; insumo de otro proyecto.
+
+## 7. UC-05 Crear o copiar APU y reconciliar insumos
+- **Objetivo:** definir la composición técnica de un APU y vincularlo al ítem.
+- **Actores:** Director y Presupuestador.
+- **Precondiciones:** ítem de la EDT e insumos disponibles.
+- **Postcondiciones:** APU 1:1 con el ítem, sin aprobación y con el editor como último modificador.
+- **Flujo:**
+  1. Se crea el APU con descripción, unidad y rendimiento > 0.
+  2. Se agregan insumos con consumo y desperdicio.
+  3. Se puede vincular una Matriz; se expande un solo nivel.
+  4. Se puede copiar un APU desde otro proyecto de la compañía o del catálogo público.
+  5. Al copiar se comparan los insumos con el destino: los inexistentes se agregan y los similares se sugieren.
+  6. El usuario decide usar el insumo existente o conservar el de origen.
+- **Alternos:** copia de una Matriz, que queda independiente y exige reconciliar sus componentes.
+- **Errores:** rendimiento ≤ 0; anidamiento de matrices; copia desde otra compañía; APU ya vinculado a otro ítem.
+
+## 8. UC-06 Calcular, cotizar y alertar
+- **Objetivo:** calcular costos, cotizar insumos y alertar sobre el tope.
+- **Actores:** Sistema, Director y Presupuestador.
+- **Precondiciones:** APUs con composición e insumos.
+- **Postcondiciones:** costos recalculados, insumos cotizados y alerta evaluada.
+- **Flujo:**
+  1. El motor calcula el costo directo del APU y el total del ítem.
+  2. Se aplica el AIU del proyecto.
+  3. Se calcula el conteo de uso por insumo.
+  4. El usuario marca insumos como `COTIZADO` de forma masiva por selección, filtro o totalidad.
+  5. Si el costo supera el tope, se muestra la alerta.
+- **Alternos:** recálculo tras cambiar precio, consumo o rendimiento.
+- **Errores:** datos incompletos (`FALTA_INFORMACION`); rendimiento inválido.
+
+## 9. UC-07 Aprobar y cerrar el presupuesto
+- **Objetivo:** aprobar cada APU según el modo de firma y cerrar el proyecto.
+- **Actores:** Presupuestador, Auditor y Director.
+- **Precondiciones:** APUs calculados y todos los insumos cotizados.
+- **Postcondiciones:** un registro de aprobación por APU y proyecto en `FINALIZADO`.
+- **Flujo:**
+  1. El Presupuestador firma los APUs que le corresponden, según el modo.
+  2. En el modo con auditor, el Auditor aprueba cada APU.
+  3. El Director verifica que todos los APUs tengan la aprobación exigida.
+  4. Si todo está cotizado y aprobado, ejecuta el cierre.
+  5. El sistema registra la aprobación final y cambia el estado.
+- **Alternos:** edición de un APU aprobado, que elimina su aprobación y exige una nueva.
+- **Errores:** insumos sin cotizar; APUs sin aprobación; actor de otra compañía; falta de firma cuando el modo la exige.
+
+## 10. UC-08 Consultar el catálogo público
+- **Objetivo:** consultar y copiar composiciones de proyectos públicos.
+- **Actor:** cualquiera, sin autenticación.
+- **Precondiciones:** proyectos públicos con APUs e insumos.
+- **Postcondiciones:** resultados sin autoría ni empresa.
+- **Flujo:**
+  1. El usuario busca por palabra clave, tipo o rendimiento.
+  2. El sistema consulta solo proyectos públicos.
+  3. Devuelve APUs e insumos con precios y contactos, sin `companyId`, autor ni firma.
+  4. El usuario copia un APU o un insumo; la copia es independiente.
+- **Alternos:** sin resultados, devuelve lista vacía.
+- **Errores:** ninguno; el acceso es anónimo y limitado por IP.
+
+## 11. Mapeo a requerimientos
+| UC | RF | BR |
+|---|---|---|
+| UC-01 | RF-01, RF-02, RF-18 | BR-001 |
+| UC-02 | RF-03 | BR-019, BR-020 |
+| UC-03 | RF-04 | BR-015 |
+| UC-04 | RF-05, RF-06, RF-16, RF-20 | BR-009, BR-010 |
+| UC-05 | RF-07, RF-08, RF-09, RF-22 | BR-008, BR-016, BR-017, BR-018, BR-021 |
+| UC-06 | RF-10, RF-11, RF-14, RF-17 | BR-003, BR-007 |
+| UC-07 | RF-12, RF-13, RF-21 | BR-011, BR-012, BR-013 |
+| UC-08 | RF-15 | BR-005, BR-006, BR-013 |
+
+## 12. Mapeo a pruebas
+| UC | Verificación |
+|---|---|
+| UC-01 | T-I-01, T-S-01, T-S-04 |
+| UC-02 | T-I-03 |
+| UC-03 | T-U-01, T-I-04 |
+| UC-04 | T-U-02, T-I-05, T-I-06, T-I-18, T-U-08 |
+| UC-05 | T-U-03, T-U-04, T-U-11, T-I-07, T-I-08, T-I-09, T-I-20 |
+| UC-06 | T-U-05, T-U-06, T-U-09, T-I-10, T-I-16 |
+| UC-07 | T-U-07, T-U-10, T-I-11, T-I-12, T-I-13, T-I-19 |
+| UC-08 | T-I-14, T-S-02, T-S-06 |
+
