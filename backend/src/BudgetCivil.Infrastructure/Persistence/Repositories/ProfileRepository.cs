@@ -1,4 +1,4 @@
-using BudgetCivil.Application.Profile.Repositories;
+using BudgetCivil.Application.Repositories;
 using BudgetCivil.Domain.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,12 +17,9 @@ public sealed class ProfileRepository(BudgetCivilDbContext dbContext) : IProfile
     {
         return dbContext.UserAccounts
             .Include(user => user.Role)
-            .Include(user => user.Profile)
-                .ThenInclude(profile => profile!.Country)
-            .Include(user => user.Profile)
-                .ThenInclude(profile => profile!.Department)
-            .Include(user => user.Profile)
-                .ThenInclude(profile => profile!.Municipality)
+            .Include(user => user.Country)
+            .Include(user => user.Department)
+            .Include(user => user.Municipality)
             .SingleOrDefaultAsync(user => user.Id == userId, cancellationToken);
     }
 
@@ -57,11 +54,11 @@ public sealed class ProfileRepository(BudgetCivilDbContext dbContext) : IProfile
         var normalizedDocumentType = documentType.Trim().ToUpperInvariant();
         var normalizedDocumentNumber = documentNumber.Trim().ToUpperInvariant();
 
-        return dbContext.UserProfiles.AnyAsync(
+        return dbContext.UserAccounts.AnyAsync(
             profile =>
                 profile.DocumentType.ToUpper() == normalizedDocumentType &&
                 profile.DocumentNumber.ToUpper() == normalizedDocumentNumber &&
-                profile.UserId != excludingUserId,
+                profile.Id != excludingUserId,
             cancellationToken);
     }
 

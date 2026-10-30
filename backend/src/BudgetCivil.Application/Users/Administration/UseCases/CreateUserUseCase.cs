@@ -1,5 +1,6 @@
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Common.Notifications;
 using BudgetCivil.Application.Common.Security;
 using BudgetCivil.Application.Catalogs;
 using BudgetCivil.Application.Catalogs.Repositories;
@@ -15,7 +16,8 @@ public sealed class CreateUserUseCase(
     IGeographicCatalogRepository geographicCatalogRepository,
     IPasswordHasher passwordHasher,
     ISecurityAuditService securityAuditService,
-    IValidator<CreateUserRequest> validator)
+    IValidator<CreateUserRequest> validator,
+    IEmailSender emailSender)
 {
     private const string DefaultAssignedRoleCode = "PRESUPUESTADOR";
 
@@ -44,11 +46,6 @@ public sealed class CreateUserUseCase(
         if (await repository.UsernameExistsAsync(request.Username, cancellationToken: cancellationToken))
         {
             throw new ConflictAppException("Username already exists.", "USERNAME_ALREADY_EXISTS");
-        }
-
-        if (await repository.DocumentExistsAsync(request.DocumentType, request.DocumentNumber, cancellationToken: cancellationToken))
-        {
-            throw new ConflictAppException("Document already exists.", "DOCUMENT_ALREADY_EXISTS");
         }
 
         var requestedRoleCode = string.IsNullOrWhiteSpace(request.AssignedRoleCode)
@@ -87,41 +84,28 @@ public sealed class CreateUserUseCase(
             FailedLoginAttempts = 0,
             CreatedAtUtc = utcNow,
             UpdatedAtUtc = utcNow,
-            Profile = new UserProfile
-            {
-                UserId = userId,
-                FirstName = request.FirstName.Trim(),
-                MiddleName = NormalizeOptionalText(request.MiddleName),
-                LastName = request.LastName.Trim(),
-                SecondLastName = NormalizeOptionalText(request.SecondLastName),
-                DocumentType = request.DocumentType.Trim(),
-                DocumentNumber = request.DocumentNumber.Trim(),
-                BirthDate = request.BirthDate,
-                CountryId = request.Residence.CountryId,
-                DepartmentId = request.Residence.DepartmentId,
-                MunicipalityId = request.Residence.MunicipalityId,
-                ProfessionalCard = NormalizeOptionalText(request.ProfessionalCard),
-                ProfessionalCardIssuedAt = request.ProfessionalCardIssuedAt,
-                ProfessionalCardFilePath = NormalizeOptionalText(request.ProfessionalCardFilePath)
-            }
+            FirstName = request.FirstName.Trim(),
+            MiddleName = NormalizeOptionalText(request.MiddleName),
+            LastName = request.LastName.Trim(),
+            SecondLastName = NormalizeOptionalText(request.SecondLastName),
+            DocumentType = request.DocumentType.Trim(),
+            DocumentNumber = request.DocumentNumber.Trim(),
+            BirthDate = request.BirthDate,
+            CountryId = request.Residence.CountryId,
+            DepartmentId = request.Residence.DepartmentId,
+            MunicipalityId = request.Residence.MunicipalityId,
+            ProfessionalCard = NormalizeOptionalText(request.ProfessionalCard),
+            ProfessionalCardIssuedAt = request.ProfessionalCardIssuedAt,
+            ProfessionalCardFilePath = NormalizeOptionalText(request.ProfessionalCardFilePath)
         };
 
         await repository.AddUserAsync(userAccount, cancellationToken);
 
-        if (assignedCompany is not null)
-        {
-            await repository.AddMembershipAsync(
-                new UserCompanyMembership
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    CompanyId = assignedCompany.Id,
-                    IsActive = true,
-                    AssignedByUserId = actor!.Id,
-                    AssignedAtUtc = utcNow
-                },
-                cancellationToken);
-        }
+        await emailSender.SendAsync(
+            userAccount.Email,
+            "Cuenta creada en Budget Civil",
+            "Tu cuenta fue creada por el administrador. Ya puedes iniciar sesion.",
+            cancellationToken);
 
         await repository.SaveChangesAsync(cancellationToken);
 

@@ -5,7 +5,6 @@ namespace BudgetCivil.Application.Users.Administration.Dtos;
 
 public sealed class DeactivateUserRequest
 {
-    [JsonPropertyName("motivo")]
     public string Reason { get; init; } = string.Empty;
 
     [JsonExtensionData]

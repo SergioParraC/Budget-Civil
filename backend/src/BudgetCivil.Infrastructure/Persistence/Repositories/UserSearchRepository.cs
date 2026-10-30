@@ -30,7 +30,6 @@ public sealed class UserSearchRepository(BudgetCivilDbContext dbContext) : IUser
         var searchQuery = dbContext.UserAccounts
             .AsNoTracking()
             .Include(user => user.Role)
-            .Include(user => user.Profile)
             .AsQueryable();
 
         if (actorSnapshot.RoleCode != "ADMINISTRADOR")
@@ -60,10 +59,10 @@ public sealed class UserSearchRepository(BudgetCivilDbContext dbContext) : IUser
             var normalizedFullName = query.FullName.Trim().ToUpperInvariant();
 
             searchQuery = searchQuery.Where(user =>
-                ((user.Profile!.FirstName + " " +
-                  (user.Profile.MiddleName ?? string.Empty) + " " +
-                  user.Profile.LastName + " " +
-                  (user.Profile.SecondLastName ?? string.Empty))
+                ((user.FirstName + " " +
+                  (user.MiddleName ?? string.Empty) + " " +
+                  user.LastName + " " +
+                  (user.SecondLastName ?? string.Empty))
                 .ToUpper())
                 .Contains(normalizedFullName));
         }
@@ -71,7 +70,7 @@ public sealed class UserSearchRepository(BudgetCivilDbContext dbContext) : IUser
         if (!string.IsNullOrWhiteSpace(query.DocumentNumber))
         {
             var normalizedDocumentNumber = query.DocumentNumber.Trim().ToUpperInvariant();
-            searchQuery = searchQuery.Where(user => user.Profile!.DocumentNumber.ToUpper().Contains(normalizedDocumentNumber));
+            searchQuery = searchQuery.Where(user => user.DocumentNumber.ToUpper().Contains(normalizedDocumentNumber));
         }
 
         if (query.AccountEnabled.HasValue)
@@ -80,8 +79,8 @@ public sealed class UserSearchRepository(BudgetCivilDbContext dbContext) : IUser
         }
 
         var rows = await searchQuery
-            .OrderBy(user => user.Profile!.FirstName)
-            .ThenBy(user => user.Profile!.LastName)
+            .OrderBy(user => user.FirstName)
+            .ThenBy(user => user.LastName)
             .ThenBy(user => user.Username)
             .Select(user => new UserSearchResult
             {
@@ -91,11 +90,11 @@ public sealed class UserSearchRepository(BudgetCivilDbContext dbContext) : IUser
                 Username = user.Username,
                 RoleCode = user.Role.Code,
                 AccountEnabled = user.AccountEnabled,
-                FirstName = user.Profile!.FirstName,
-                MiddleName = user.Profile.MiddleName,
-                LastName = user.Profile.LastName,
-                SecondLastName = user.Profile.SecondLastName,
-                DocumentNumber = user.Profile.DocumentNumber
+                FirstName = user.FirstName,
+                MiddleName = user.MiddleName,
+                LastName = user.LastName,
+                SecondLastName = user.SecondLastName,
+                DocumentNumber = user.DocumentNumber
             })
             .ToListAsync(cancellationToken);
 

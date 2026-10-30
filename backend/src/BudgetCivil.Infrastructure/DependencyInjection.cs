@@ -1,11 +1,12 @@
 using BudgetCivil.Application.Common.Auditing;
+using BudgetCivil.Application.Common.Notifications;
 using BudgetCivil.Application.Common.Security;
 using BudgetCivil.Application.Catalogs.Repositories;
 using BudgetCivil.Application.Companies.Repositories;
 using BudgetCivil.Application.Listings.Repositories;
 using BudgetCivil.Application.Memberships.Repositories;
 using BudgetCivil.Application.Projects.Repositories;
-using BudgetCivil.Application.Profile.Repositories;
+using BudgetCivil.Application.Repositories;
 using BudgetCivil.Application.Users.Administration.Repositories;
 using BudgetCivil.Application.Users.Auth.Repositories;
 using BudgetCivil.Application.Users.Bootstrap.Repositories;
@@ -36,6 +37,7 @@ public static class DependencyInjection
 
         services.AddScoped<ISecurityAuditRepository, SecurityAuditRepository>();
         services.AddScoped<IGeographicCatalogRepository, GeographicCatalogRepository>();
+        services.AddScoped<IActorAccessReader, ActorAccessReader>();
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IBootstrapRepository, BootstrapRepository>();
         services.AddScoped<IUserAdministrationRepository, UserAdministrationRepository>();
@@ -46,9 +48,12 @@ public static class DependencyInjection
         services.AddScoped<IProjectMembershipRepository, ProjectMembershipRepository>();
         services.AddScoped<IProjectTransitionRepository, ProjectTransitionRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
+        services.AddScoped<IPasswordRecoveryRepository, PasswordRecoveryRepository>();
+        services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
         services.AddScoped<IUserSearchRepository, UserSearchRepository>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
-        services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
+        services.AddScoped<IPasswordHasher, IdentityPasswordHasher>();
+        services.AddScoped<IEmailSender, LoggingEmailSender>();
         services.AddScoped<ISecurityBaselineSeeder, SecurityBaselineSeeder>();
 
         return services;

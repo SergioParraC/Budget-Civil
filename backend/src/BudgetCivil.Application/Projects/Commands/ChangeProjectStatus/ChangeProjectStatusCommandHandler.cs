@@ -9,28 +9,21 @@ namespace BudgetCivil.Application.Projects.Commands.ChangeProjectStatus;
 
 public sealed class ChangeProjectStatusCommand
 {
-    [JsonPropertyName("target_status")]
     public string? TargetStatus { get; init; }
 
-    [JsonPropertyName("reason")]
     public string? Reason { get; init; }
 }
 
 public sealed class ChangeProjectStatusResponse
 {
-    [JsonPropertyName("project_id")]
     public Guid ProjectId { get; init; }
 
-    [JsonPropertyName("previous_status")]
     public string PreviousStatus { get; init; } = string.Empty;
 
-    [JsonPropertyName("new_status")]
     public string NewStatus { get; init; } = string.Empty;
 
-    [JsonPropertyName("changed_at_utc")]
     public DateTime ChangedAtUtc { get; init; }
 
-    [JsonPropertyName("changed_by_user_id")]
     public Guid ChangedByUserId { get; init; }
 }
 
@@ -93,16 +86,6 @@ public sealed class ChangeProjectStatusCommandHandler(
             throw new ForbiddenAppException("Actor cannot perform this transition.", "PROJECT_STATUS_FORBIDDEN");
         }
 
-        if (targetStatus == ProjectStatus.Finalizado)
-        {
-            var hasActiveSignature = await projectRepository.HasActiveSignatureAsync(actor.Id, cancellationToken);
-            if (!hasActiveSignature)
-            {
-                throw new ConflictAppException(
-                    "Project finalization requires active signature.",
-                    "PROJECT_STATE_PRECONDITION_FAILED");
-            }
-        }
 
         var now = DateTime.UtcNow;
         project.Status = targetStatus;
@@ -176,7 +159,7 @@ public sealed class ChangeProjectStatusCommandHandler(
             throw new ForbiddenAppException("Authenticated actor is not operational.", "ACTOR_NOT_ENABLED");
         }
 
-        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.ProjectManagerRoleCode and not ProjectStatusTransitionPolicy.EstimatorRoleCode)
+        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.DirectorRoleCode and not ProjectStatusTransitionPolicy.EstimatorRoleCode)
         {
             throw new ForbiddenAppException("Actor cannot change project status.", "PROJECT_STATUS_FORBIDDEN");
         }

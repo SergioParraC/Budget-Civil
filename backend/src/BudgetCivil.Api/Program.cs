@@ -1,19 +1,25 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using BudgetCivil.Api.Auth;
 using BudgetCivil.Api.Middleware;
 using BudgetCivil.Application;
 using BudgetCivil.Infrastructure;
-using BudgetCivil.Infrastructure.Persistence;
 using BudgetCivil.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 const string LocalDevelopmentCorsPolicy = "LocalDevelopmentCorsPolicy";
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DictionaryKeyPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -233,6 +239,46 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
+// REQ-IDENTIDAD-06 / D-80: límite de intentos de autorregistro por dirección IP.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy(
+        RateLimitPolicies.Registration,
+        httpContext => RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(15),
+                QueueLimit = 0
+            }));
+
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        var httpContext = context.HttpContext;
+        httpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        httpContext.Response.ContentType = "application/problem+json";
+
+        await httpContext.Response.WriteAsJsonAsync(
+            new ProblemDetails
+            {
+                Status = StatusCodes.Status429TooManyRequests,
+                Title = "Too Many Requests",
+                Type = "https://httpstatuses.com/429",
+                Detail = "Registration attempts limit exceeded for this IP address.",
+                Instance = httpContext.Request.Path,
+                Extensions =
+                {
+                    ["code"] = "REGISTRATION_RATE_LIMIT_EXCEEDED",
+                    ["traceId"] = httpContext.TraceIdentifier
+                }
+            },
+            cancellationToken);
+    };
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -244,6 +290,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseMiddleware<CompanyContextMiddleware>();
 app.UseAuthorization();
@@ -253,13 +300,8 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<BudgetCivilDbContext>();
+    // D-40: el esquema se aplica manualmente con el runbook (docs/runbook-migraciones.md).
     var securityBaselineSeeder = scope.ServiceProvider.GetRequiredService<ISecurityBaselineSeeder>();
-
-    if (dbContext.Database.IsRelational())
-    {
-        await dbContext.Database.MigrateAsync();
-    }
 
     await securityBaselineSeeder.SeedAsync();
 }

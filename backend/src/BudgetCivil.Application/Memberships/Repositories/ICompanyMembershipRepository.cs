@@ -10,11 +10,22 @@ public interface ICompanyMembershipRepository
 
     Task<Company?> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default);
 
-    Task<UserCompanyMembership?> GetActiveMembershipByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Asigna la compañía al usuario solo si aún no tiene una (`D-98`). La condición se evalúa en la
+    /// misma sentencia, de modo que dos asignaciones simultáneas no dejan dos compañías efectivas.
+    /// </summary>
+    Task<bool> TryAssignCompanyAsync(
+        Guid userId,
+        Guid companyId,
+        DateTime utcNow,
+        CancellationToken cancellationToken = default);
 
-    Task<UserCompanyMembership?> GetActiveMembershipByIdAsync(Guid membershipId, CancellationToken cancellationToken = default);
-
-    Task AddMembershipAsync(UserCompanyMembership membership, CancellationToken cancellationToken = default);
-
-    Task SaveChangesAsync(CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Retira la compañía indicada al usuario si es la que tiene asignada.
+    /// </summary>
+    Task<bool> TryUnassignCompanyAsync(
+        Guid userId,
+        Guid companyId,
+        DateTime utcNow,
+        CancellationToken cancellationToken = default);
 }

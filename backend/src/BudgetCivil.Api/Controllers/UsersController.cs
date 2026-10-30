@@ -2,8 +2,8 @@ using System.Security.Claims;
 using BudgetCivil.Api.Auth;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Listings.Queries;
-using BudgetCivil.Application.Profile.Dtos;
-using BudgetCivil.Application.Profile.UseCases;
+using BudgetCivil.Application.Dtos;
+using BudgetCivil.Application.UseCases;
 using BudgetCivil.Application.Users.Administration.Dtos;
 using BudgetCivil.Application.Users.Administration.Guards;
 using BudgetCivil.Application.Users.Administration.UseCases;
@@ -74,7 +74,7 @@ public sealed class UsersController(
                 Search = search,
                 RoleCode = roleCode,
                 IsActive = isActive,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);
@@ -101,7 +101,7 @@ public sealed class UsersController(
                 Scope = ScopedUsersListingScope.MyCompanyEstimatorsAuditors,
                 Search = search,
                 IsActive = isActive,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);

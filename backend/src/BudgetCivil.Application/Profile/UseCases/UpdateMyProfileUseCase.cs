@@ -1,11 +1,11 @@
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Catalogs;
 using BudgetCivil.Application.Catalogs.Repositories;
-using BudgetCivil.Application.Profile.Dtos;
-using BudgetCivil.Application.Profile.Repositories;
+using BudgetCivil.Application.Dtos;
+using BudgetCivil.Application.Repositories;
 using FluentValidation;
 
-namespace BudgetCivil.Application.Profile.UseCases;
+namespace BudgetCivil.Application.UseCases;
 
 public sealed class UpdateMyProfileUseCase(
     IProfileRepository repository,
@@ -31,11 +31,6 @@ public sealed class UpdateMyProfileUseCase(
             throw new ForbiddenAppException("Authenticated user does not exist.", "AUTH_USER_NOT_FOUND");
         }
 
-        if (actor.Profile is null)
-        {
-            throw new ConflictAppException("User profile does not exist.", "PROFILE_NOT_FOUND");
-        }
-
         if (await repository.EmailExistsAsync(request.Email, actor.Id, cancellationToken))
         {
             throw new ConflictAppException("Email already exists.", "EMAIL_ALREADY_EXISTS");
@@ -46,30 +41,25 @@ public sealed class UpdateMyProfileUseCase(
             throw new ConflictAppException("Username already exists.", "USERNAME_ALREADY_EXISTS");
         }
 
-        if (await repository.DocumentExistsAsync(request.DocumentType, request.DocumentNumber, actor.Id, cancellationToken))
-        {
-            throw new ConflictAppException("Document already exists.", "DOCUMENT_ALREADY_EXISTS");
-        }
-
         var utcNow = DateTime.UtcNow;
 
         actor.Email = request.Email.Trim();
         actor.Username = request.Username.Trim();
         actor.UpdatedAtUtc = utcNow;
 
-        actor.Profile.FirstName = request.FirstName.Trim();
-        actor.Profile.MiddleName = NormalizeOptionalText(request.MiddleName);
-        actor.Profile.LastName = request.LastName.Trim();
-        actor.Profile.SecondLastName = NormalizeOptionalText(request.SecondLastName);
-        actor.Profile.DocumentType = request.DocumentType.Trim();
-        actor.Profile.DocumentNumber = request.DocumentNumber.Trim();
-        actor.Profile.BirthDate = request.BirthDate;
-        actor.Profile.CountryId = request.Residence.CountryId;
-        actor.Profile.DepartmentId = request.Residence.DepartmentId;
-        actor.Profile.MunicipalityId = request.Residence.MunicipalityId;
-        actor.Profile.ProfessionalCard = NormalizeOptionalText(request.ProfessionalCard);
-        actor.Profile.ProfessionalCardIssuedAt = request.ProfessionalCardIssuedAt;
-        actor.Profile.ProfessionalCardFilePath = NormalizeOptionalText(request.ProfessionalCardFilePath);
+        actor.FirstName = request.FirstName.Trim();
+        actor.MiddleName = NormalizeOptionalText(request.MiddleName);
+        actor.LastName = request.LastName.Trim();
+        actor.SecondLastName = NormalizeOptionalText(request.SecondLastName);
+        actor.DocumentType = request.DocumentType.Trim();
+        actor.DocumentNumber = request.DocumentNumber.Trim();
+        actor.BirthDate = request.BirthDate;
+        actor.CountryId = request.Residence.CountryId;
+        actor.DepartmentId = request.Residence.DepartmentId;
+        actor.MunicipalityId = request.Residence.MunicipalityId;
+        actor.ProfessionalCard = NormalizeOptionalText(request.ProfessionalCard);
+        actor.ProfessionalCardIssuedAt = request.ProfessionalCardIssuedAt;
+        actor.ProfessionalCardFilePath = NormalizeOptionalText(request.ProfessionalCardFilePath);
 
         await repository.SaveChangesAsync(cancellationToken);
 

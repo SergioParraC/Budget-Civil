@@ -7,8 +7,19 @@ public sealed class Project
     public const int DescriptionMaxLength = 1000;
     public const int ObjectiveMaxLength = 1000;
 
+    // D-03/D-90: tres modos de firma. El modo sin firma y los dos modos con firma del presupuestador.
+    public const string NoSignature = "SIN_FIRMA";
     public const string UniqueSignerByAssignedEstimator = "UNICA_POR_PRESUPUESTADOR_ASIGNADO";
     public const string IndependentSignerByResponsibleProfessional = "INDEPENDIENTE_POR_PROFESIONAL_RESPONSABLE";
+
+    public const string DefaultSignatureMode = UniqueSignerByAssignedEstimator;
+
+    public static readonly IReadOnlyList<string> SignatureModes =
+    [
+        NoSignature,
+        UniqueSignerByAssignedEstimator,
+        IndependentSignerByResponsibleProfessional
+    ];
 
     public Guid Id { get; set; }
 
@@ -28,21 +39,9 @@ public sealed class Project
 
     public Guid MunicipalityId { get; set; }
 
-    public Guid BaseCurrencyId { get; set; }
-
-    public decimal? AiuAdminPercent { get; set; }
-
-    public decimal? AiuUnforeseenPercent { get; set; }
-
-    public decimal? AiuProfitPercent { get; set; }
-
     public ProjectStatus Status { get; set; } = ProjectStatus.PorCotizar;
 
     public bool IsPublic { get; set; }
-
-    public string SigningMode { get; set; } = "UNICA_POR_PRESUPUESTADOR_ASIGNADO";
-
-    public Guid? SignerUserId { get; set; }
 
     public Guid DirectorOwnerUserId { get; set; }
 
@@ -54,7 +53,11 @@ public sealed class Project
 
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+
+    public ProjectConfiguration Configuration { get; set; } = null!;
 
     public static string NormalizeName(string name)
     {
@@ -82,43 +85,28 @@ public sealed class Project
         return NormalizeOptionalText(objective, ObjectiveMaxLength, "objective");
     }
 
-    public static bool IsValidSigningMode(string? signingMode)
+    public static bool IsValidSignatureMode(string? signatureMode)
     {
-        if (string.IsNullOrWhiteSpace(signingMode))
+        if (string.IsNullOrWhiteSpace(signatureMode))
         {
             return false;
         }
 
-        var normalized = signingMode.Trim().ToUpperInvariant();
-        return normalized is UniqueSignerByAssignedEstimator or IndependentSignerByResponsibleProfessional;
+        var normalized = signatureMode.Trim().ToUpperInvariant();
+        return SignatureModes.Contains(normalized, StringComparer.Ordinal);
     }
 
-    public static decimal? NormalizeAiuPercent(decimal? aiuPercent, string fieldName)
+    public static string NormalizeSignatureModeOrDefault(string? signatureMode)
     {
-        if (!aiuPercent.HasValue)
+        if (string.IsNullOrWhiteSpace(signatureMode))
         {
-            return null;
+            return DefaultSignatureMode;
         }
 
-        if (aiuPercent.Value is < 0m or > 100m)
+        var normalized = signatureMode.Trim().ToUpperInvariant();
+        if (!IsValidSignatureMode(normalized))
         {
-            throw new InvalidOperationException($"Project {fieldName} is invalid.");
-        }
-
-        return decimal.Round(aiuPercent.Value, 2, MidpointRounding.AwayFromZero);
-    }
-
-    public static string NormalizeSigningModeOrDefault(string? signingMode)
-    {
-        if (string.IsNullOrWhiteSpace(signingMode))
-        {
-            return UniqueSignerByAssignedEstimator;
-        }
-
-        var normalized = signingMode.Trim().ToUpperInvariant();
-        if (!IsValidSigningMode(normalized))
-        {
-            throw new InvalidOperationException("Project signing mode is invalid.");
+            throw new InvalidOperationException("Project signature mode is invalid.");
         }
 
         return normalized;

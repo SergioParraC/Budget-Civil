@@ -6,7 +6,7 @@ namespace BudgetCivil.Application.Users.Administration.UseCases;
 internal static class AdministrationAuthorizationRules
 {
     public const string AdministratorRoleCode = "ADMINISTRADOR";
-    public const string ProjectManagerRoleCode = "GERENTE_PROYECTOS";
+    public const string DirectorRoleCode = "DIRECTOR";
 
     public static void EnsureActorCanCreateUsers(UserAccount? actor)
     {
@@ -30,7 +30,7 @@ internal static class AdministrationAuthorizationRules
             return;
         }
 
-        if (resolvedActor.Role.Code == ProjectManagerRoleCode &&
+        if (resolvedActor.Role.Code == DirectorRoleCode &&
             resolvedActor.CompanyId.HasValue &&
             resolvedTarget.CompanyId.HasValue &&
             resolvedActor.CompanyId == resolvedTarget.CompanyId)
@@ -53,24 +53,24 @@ internal static class AdministrationAuthorizationRules
             return;
         }
 
-        if (resolvedActor.Role.Code != ProjectManagerRoleCode)
+        if (resolvedActor.Role.Code != DirectorRoleCode)
         {
             throw new ForbiddenAppException(
-                "Only Administrador and Gerente de proyectos can assign company.",
+                "Only Administrador and Director de proyectos can assign company.",
                 "COMPANY_ASSIGNMENT_FORBIDDEN");
         }
 
         if (!resolvedActor.CompanyId.HasValue)
         {
             throw new ForbiddenAppException(
-                "Gerente de proyectos requires an active company context.",
+                "Director de proyectos requires an active company context.",
                 "MANAGER_COMPANY_CONTEXT_REQUIRED");
         }
 
         if (destinationCompanyId != resolvedActor.CompanyId.Value)
         {
             throw new ForbiddenAppException(
-                "Gerente de proyectos can only assign users to their own company.",
+                "Director de proyectos can only assign users to their own company.",
                 "MANAGER_COMPANY_SCOPE_VIOLATION");
         }
 
@@ -84,10 +84,10 @@ internal static class AdministrationAuthorizationRules
 
     public static void EnsureManagerCannotElevateToAdministrator(UserAccount actor, string requestedRoleCode)
     {
-        if (actor.Role.Code == ProjectManagerRoleCode && requestedRoleCode == AdministratorRoleCode)
+        if (actor.Role.Code == DirectorRoleCode && requestedRoleCode == AdministratorRoleCode)
         {
             throw new ForbiddenAppException(
-                "Gerente de proyectos cannot elevate users to Administrador.",
+                "Director de proyectos cannot elevate users to Administrador.",
                 "MANAGER_ROLE_ELEVATION_FORBIDDEN");
         }
     }

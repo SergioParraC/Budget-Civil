@@ -7,52 +7,38 @@ namespace BudgetCivil.Application.Listings.Queries;
 
 public sealed class GetScopedProjectsQuery
 {
-    [JsonPropertyName("company_id")]
     public Guid? CompanyId { get; init; }
 
-    [JsonPropertyName("status")]
     public string? Status { get; init; }
 
-    [JsonPropertyName("search")]
     public string? Search { get; init; }
 
-    [JsonPropertyName("page_number")]
-    public int PageNumber { get; init; } = 1;
+    public int Page { get; init; } = 1;
 
-    [JsonPropertyName("page_size")]
     public int PageSize { get; init; } = 10;
 }
 
 public sealed class GetScopedProjectsResponse
 {
-    [JsonPropertyName("items")]
     public IReadOnlyList<ScopedProjectListItem> Items { get; init; } = [];
 
-    [JsonPropertyName("page_number")]
-    public int PageNumber { get; init; }
+    public int Page { get; init; }
 
-    [JsonPropertyName("page_size")]
     public int PageSize { get; init; }
 
-    [JsonPropertyName("total_items")]
     public int TotalItems { get; init; }
 }
 
 public sealed class ScopedProjectListItem
 {
-    [JsonPropertyName("project_id")]
     public Guid ProjectId { get; init; }
 
-    [JsonPropertyName("company_id")]
     public Guid CompanyId { get; init; }
 
-    [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 
-    [JsonPropertyName("status")]
     public string Status { get; init; } = string.Empty;
 
-    [JsonPropertyName("is_public")]
     public bool IsPublic { get; init; }
 }
 
@@ -61,7 +47,7 @@ public sealed class GetScopedProjectsQueryHandler(
     ListingQueryPipeline listingQueryPipeline)
 {
     private const string AdministratorRoleCode = "ADMINISTRADOR";
-    private const string ProjectManagerRoleCode = "GERENTE_PROYECTOS";
+    private const string DirectorRoleCode = "DIRECTOR";
     private const string EstimatorRoleCode = "PRESUPUESTADOR";
     private const string AuditorRoleCode = "AUDITOR";
 
@@ -73,7 +59,7 @@ public sealed class GetScopedProjectsQueryHandler(
         var actor = await listingRepository.GetActorSnapshotAsync(actorUserId, cancellationToken);
         var resolvedActor = EnsureActorCanReadProjects(actor);
 
-        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.PageNumber, query.PageSize, cancellationToken);
+        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.Page, query.PageSize, cancellationToken);
 
         ProjectStatus? statusFilter = null;
         if (!string.IsNullOrWhiteSpace(query.Status))
@@ -87,7 +73,7 @@ public sealed class GetScopedProjectsQueryHandler(
         }
 
         var scopedCompanyId = ResolveScopedCompanyId(resolvedActor, query.CompanyId);
-        var includeInhabilitado = resolvedActor.RoleCode is AdministratorRoleCode or ProjectManagerRoleCode;
+        var includeInhabilitado = resolvedActor.RoleCode is AdministratorRoleCode or DirectorRoleCode;
 
         var totalItems = await listingRepository.CountProjectsAsync(
             scopedCompanyId,
@@ -100,7 +86,7 @@ public sealed class GetScopedProjectsQueryHandler(
             scopedCompanyId,
             statusFilter,
             query.Search,
-            pagination.PageNumber,
+            pagination.Page,
             pagination.PageSize,
             includeInhabilitado,
             cancellationToken);
@@ -115,7 +101,7 @@ public sealed class GetScopedProjectsQueryHandler(
                 Status = ProjectStatusTransitionPolicy.ToStatusCode(project.Status),
                 IsPublic = project.IsPublic
             }).ToArray(),
-            PageNumber = pagination.PageNumber,
+            Page = pagination.Page,
             PageSize = pagination.PageSize,
             TotalItems = totalItems
         };
@@ -130,7 +116,7 @@ public sealed class GetScopedProjectsQueryHandler(
             throw new ForbiddenAppException("Authenticated actor is not operational.", "ACTOR_NOT_ENABLED");
         }
 
-        if (resolvedActor.RoleCode is not AdministratorRoleCode and not ProjectManagerRoleCode and not EstimatorRoleCode and not AuditorRoleCode)
+        if (resolvedActor.RoleCode is not AdministratorRoleCode and not DirectorRoleCode and not EstimatorRoleCode and not AuditorRoleCode)
         {
             throw new ForbiddenAppException("Actor cannot read projects.", "PROJECT_READ_FORBIDDEN");
         }

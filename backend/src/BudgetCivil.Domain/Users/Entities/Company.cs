@@ -42,8 +42,6 @@ public sealed class Company
 
     public ICollection<UserAccount> UserAccounts { get; set; } = new List<UserAccount>();
 
-    public ICollection<UserCompanyMembership> Memberships { get; set; } = new List<UserCompanyMembership>();
-
     public Country? Country { get; set; }
 
     public Department? Department { get; set; }

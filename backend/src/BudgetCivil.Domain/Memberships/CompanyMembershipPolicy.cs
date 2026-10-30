@@ -3,13 +3,13 @@ namespace BudgetCivil.Domain.Memberships;
 public static class CompanyMembershipPolicy
 {
     public const string AdministratorRoleCode = "ADMINISTRADOR";
-    public const string ProjectManagerRoleCode = "GERENTE_PROYECTOS";
+    public const string DirectorRoleCode = "DIRECTOR";
     public const string EstimatorRoleCode = "PRESUPUESTADOR";
     public const string AuditorRoleCode = "AUDITOR";
 
     private static readonly HashSet<string> AllowedCompanyRoles =
     [
-        ProjectManagerRoleCode,
+        DirectorRoleCode,
         EstimatorRoleCode,
         AuditorRoleCode
     ];
@@ -43,7 +43,7 @@ public static class CompanyMembershipPolicy
             return;
         }
 
-        if (normalizedActorRoleCode == ProjectManagerRoleCode && actorCompanyId == companyId)
+        if (normalizedActorRoleCode == DirectorRoleCode && actorCompanyId == companyId)
         {
             return;
         }
@@ -59,7 +59,7 @@ public static class CompanyMembershipPolicy
     public static bool RequiresSingleActiveCompanyConstraint(string roleCode)
     {
         var normalizedRoleCode = NormalizeRoleCode(roleCode);
-        return normalizedRoleCode is ProjectManagerRoleCode or EstimatorRoleCode or AuditorRoleCode;
+        return normalizedRoleCode is DirectorRoleCode or EstimatorRoleCode or AuditorRoleCode;
     }
 
     private static string NormalizeRoleCode(string roleCode)

@@ -2,6 +2,7 @@ using BudgetCivil.Application.Memberships.Repositories;
 using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Users.Entities;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetCivil.Infrastructure.Persistence.Repositories;
@@ -29,47 +30,55 @@ public sealed class ProjectMembershipRepository(BudgetCivilDbContext dbContext)
             .SingleOrDefaultAsync(project => project.Id == projectId, cancellationToken);
     }
 
-    public async Task<bool> IsUserAffiliatedToCompanyAsync(Guid userId, Guid companyId, CancellationToken cancellationToken = default)
+    public Task<bool> IsUserAffiliatedToCompanyAsync(Guid userId, Guid companyId, CancellationToken cancellationToken = default)
     {
-        var userCompanyLink = await DbContext.UserAccounts.AnyAsync(
+        return DbContext.UserAccounts.AnyAsync(
             user => user.Id == userId && user.CompanyId == companyId,
-            cancellationToken);
-
-        if (userCompanyLink)
-        {
-            return true;
-        }
-
-        return await DbContext.UserCompanyMemberships.AnyAsync(
-            membership => membership.UserId == userId && membership.CompanyId == companyId && membership.IsActive,
             cancellationToken);
     }
 
-    public Task<ProjectUserMembership?> GetActiveMembershipByProjectAndUserAsync(
+    public Task<ProjectMember?> GetMembershipByProjectAndUserAsync(
         Guid projectId,
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        return DbContext.ProjectUserMemberships.SingleOrDefaultAsync(
-            membership => membership.ProjectId == projectId && membership.UserId == userId && membership.IsActive,
+        return DbContext.ProjectMembers.SingleOrDefaultAsync(
+            member => member.ProjectId == projectId && member.UserId == userId,
             cancellationToken);
     }
 
-    public Task<ProjectUserMembership?> GetActiveMembershipByIdAsync(Guid membershipId, CancellationToken cancellationToken = default)
+    public Task<ProjectMember?> GetMembershipByIdAsync(Guid membershipId, CancellationToken cancellationToken = default)
     {
-        return DbContext.ProjectUserMemberships.SingleOrDefaultAsync(
-            membership => membership.Id == membershipId && membership.IsActive,
+        return DbContext.ProjectMembers.SingleOrDefaultAsync(
+            member => member.Id == membershipId,
             cancellationToken);
     }
 
-    public Task AddMembershipAsync(ProjectUserMembership membership, CancellationToken cancellationToken = default)
+    public async Task<bool> TryAddMembershipAsync(ProjectMember member, CancellationToken cancellationToken = default)
     {
-        DbContext.ProjectUserMemberships.Add(membership);
-        return Task.CompletedTask;
+        DbContext.ProjectMembers.Add(member);
+
+        try
+        {
+            await DbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException exception) when (IsUniqueViolation(exception))
+        {
+            // La unicidad (project_id, user_id) la garantiza la base; la carrera se traduce en conflicto.
+            DbContext.Entry(member).State = EntityState.Detached;
+            return false;
+        }
     }
 
-    public new Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async Task RemoveMembershipAsync(ProjectMember member, CancellationToken cancellationToken = default)
     {
-        return base.SaveChangesAsync(cancellationToken);
+        DbContext.ProjectMembers.Remove(member);
+        await DbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static bool IsUniqueViolation(DbUpdateException exception)
+    {
+        return exception.InnerException is SqlException { Number: 2601 or 2627 };
     }
 }

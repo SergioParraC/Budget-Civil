@@ -31,8 +31,7 @@ public sealed class ChangeUserCompanyUseCase(
             throw new ValidationAppException("Company does not exist or is inactive.", "COMPANY_NOT_AVAILABLE");
         }
 
-        var activeMembership = await repository.GetActiveMembershipAsync(targetUserId, cancellationToken);
-        if (activeMembership is not null || targetUser!.CompanyId.HasValue)
+        if (targetUser!.CompanyId.HasValue)
         {
             throw new ConflictAppException(
                 "User already belongs to an active company.",
@@ -41,18 +40,6 @@ public sealed class ChangeUserCompanyUseCase(
 
         targetUser.CompanyId = destinationCompany.Id;
         targetUser.UpdatedAtUtc = DateTime.UtcNow;
-
-        await repository.AddMembershipAsync(
-            new UserCompanyMembership
-            {
-                Id = Guid.NewGuid(),
-                UserId = targetUserId,
-                CompanyId = destinationCompany.Id,
-                IsActive = true,
-                AssignedByUserId = actor!.Id,
-                AssignedAtUtc = DateTime.UtcNow
-            },
-            cancellationToken);
 
         await repository.SaveChangesAsync(cancellationToken);
 

@@ -27,26 +27,37 @@ public sealed class CompanyMembershipRepository(BudgetCivilDbContext dbContext)
             .SingleOrDefaultAsync(company => company.Id == companyId, cancellationToken);
     }
 
-    public Task<UserCompanyMembership?> GetActiveMembershipByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<bool> TryAssignCompanyAsync(
+        Guid userId,
+        Guid companyId,
+        DateTime utcNow,
+        CancellationToken cancellationToken = default)
     {
-        return DbContext.UserCompanyMemberships
-            .SingleOrDefaultAsync(membership => membership.UserId == userId && membership.IsActive, cancellationToken);
+        var affectedRows = await DbContext.UserAccounts
+            .Where(user => user.Id == userId && user.CompanyId == null)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(user => user.CompanyId, (Guid?)companyId)
+                    .SetProperty(user => user.UpdatedAtUtc, utcNow),
+                cancellationToken);
+
+        return affectedRows == 1;
     }
 
-    public Task<UserCompanyMembership?> GetActiveMembershipByIdAsync(Guid membershipId, CancellationToken cancellationToken = default)
+    public async Task<bool> TryUnassignCompanyAsync(
+        Guid userId,
+        Guid companyId,
+        DateTime utcNow,
+        CancellationToken cancellationToken = default)
     {
-        return DbContext.UserCompanyMemberships
-            .SingleOrDefaultAsync(membership => membership.Id == membershipId && membership.IsActive, cancellationToken);
-    }
+        var affectedRows = await DbContext.UserAccounts
+            .Where(user => user.Id == userId && user.CompanyId == companyId)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(user => user.CompanyId, (Guid?)null)
+                    .SetProperty(user => user.UpdatedAtUtc, utcNow),
+                cancellationToken);
 
-    public Task AddMembershipAsync(UserCompanyMembership membership, CancellationToken cancellationToken = default)
-    {
-        DbContext.UserCompanyMemberships.Add(membership);
-        return Task.CompletedTask;
-    }
-
-    public new Task SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        return base.SaveChangesAsync(cancellationToken);
+        return affectedRows == 1;
     }
 }

@@ -115,18 +115,14 @@ public sealed class BootstrapRepository(
                 FailedLoginAttempts = 0,
                 CreatedAtUtc = utcNow,
                 UpdatedAtUtc = utcNow,
-                Profile = new UserProfile
-                {
-                    UserId = administratorId,
-                    FirstName = request.AdminProfile.FirstName.Trim(),
-                    LastName = request.AdminProfile.LastName.Trim(),
-                    DocumentType = request.AdminProfile.DocumentType.Trim(),
-                    DocumentNumber = request.AdminProfile.DocumentNumber.Trim(),
-                    BirthDate = new DateOnly(2000, 1, 1),
-                    CountryId = request.AdminProfile.CountryId,
-                    DepartmentId = request.AdminProfile.DepartmentId,
-                    MunicipalityId = request.AdminProfile.MunicipalityId
-                }
+                FirstName = request.AdminProfile.FirstName.Trim(),
+                LastName = request.AdminProfile.LastName.Trim(),
+                DocumentType = request.AdminProfile.DocumentType.Trim(),
+                DocumentNumber = request.AdminProfile.DocumentNumber.Trim(),
+                BirthDate = new DateOnly(2000, 1, 1),
+                CountryId = request.AdminProfile.CountryId,
+                DepartmentId = request.AdminProfile.DepartmentId,
+                MunicipalityId = request.AdminProfile.MunicipalityId
             };
 
             var auditEventId = Guid.NewGuid();

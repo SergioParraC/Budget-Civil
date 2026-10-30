@@ -1,6 +1,6 @@
 # Arquitectura general
 
-> Documento actualizado el 27/10/2026. Detalle y justificación en el capítulo 3 de `PLAN_INGENIERIA.md` (v0.26).
+> Documento actualizado el 30/10/2026 (reconciliación `E-1b`, `D-74`…`D-111`). Detalle y justificación en el capítulo 3 de `PLAN_INGENIERIA.md`.
 
 ## 1. Resumen arquitectónico
 Plataforma web con **monolito modular** y **Clean Architecture**, SPA desacoplada en Angular 20, API REST en ASP.NET Core sobre .NET 10, persistencia en SQL Server 2022 con EF Core 10 y despliegue con Docker Compose y Nginx.
@@ -17,6 +17,8 @@ La separación por módulos se sostiene por convención y pruebas de arquitectur
 | Presentación | Angular, guardias, servicios y componentes | Replicar fórmulas o reglas |
 
 **Regla de dependencia:** `API → Aplicación → Dominio`; Infraestructura implementa los contratos y la composición se hace en la API.
+
+Las consultas que necesita el middleware o un manejador de autorización se exponen como **puertos de Aplicación** (por ejemplo `IActorAccessReader` para la foto de autorización del actor) y los implementa Infraestructura; así la API no toca `DbContext` (`§3.4.6`). Las reglas de capas se verifican con `NetArchTest` en `BudgetCivil.Tests.Architecture` (`T-A-02`).
 
 ## 3. Módulos
 | ID | Módulo | Responsabilidad |
@@ -41,6 +43,10 @@ La separación por módulos se sostiene por convención y pruebas de arquitectur
 ## 5. Consultas de lectura
 El conteo de uso de insumos y el catálogo público se resuelven con **proyecciones de EF Core** en la capa de aplicación, sin duplicar la fórmula del APU (`D-47`). El catálogo omite autoría y empresa, pero publica precios y contactos (`D-28`).
 
+La **configuración del proyecto** es una entidad propia 1:1 (`ProjectConfiguration`) con divisa base, AIU, tope, modo de firma, firmante y requisito de auditor (`D-93`); el proyecto no repite esos campos. La lectura de proyectos y su configuración valida el alcance de compañía y, para Presupuestador y Auditor, la pertenencia al proyecto.
+
+La decisión de autorización se resuelve con el `permission_key` activo del rol vigente y política **fail-closed**: sin permiso sembrado, la operación se deniega y se registra el evento de seguridad (`D-82`, `D-111`).
+
 ## 6. Despliegue
 | Contenedor | Contenido | Exposición |
 |---|---|---|
@@ -53,14 +59,19 @@ El conteo de uso de insumos y el catálogo público se resuelven con **proyeccio
 ## 7. Seguridad
 | Control | Estado |
 |---|---|
-| JWT + ASP.NET Identity | Vigente |
-| RBAC de cuatro roles y asignación por proyecto | Vigente |
-| Aislamiento por compañía y proyecto | Vigente con verificación manual |
+| JWT + ASP.NET Identity para el hash | Vigente (`D-81`) |
+| Autorización por `permission_key` con semilla versionada e idempotente y política fail-closed | Vigente (`D-82`) |
+| Cuatro roles base inmutables | Vigente (`D-82`) |
+| Bloqueo de la cuenta a los cinco intentos fallidos consecutivos | Vigente (`D-82`, `REQ-IDENTIDAD-22`) |
+| Rehash perezoso al siguiente inicio de sesión correcto | Vigente (`D-81`) |
+| Autorregistro con identidad completa, límite por IP y verificación de correo | Vigente (`D-73`, `D-80`) |
+| Recuperación de contraseña por correo con respaldo asistido del Administrador | Vigente (`D-79`, `RF-18`) |
+| Aislamiento por compañía y proyecto | Vigente con verificación manual (`T-S-09`) |
 | Aprobación única por APU | Vigente (`D-52`) |
-| Edición de APU aprobado elimina la aprobación | Vigente (`D-53`) |
+| Firma persistida en `UserSignature` y nunca expuesta en DTO públicos, catálogo ni logs | Vigente (`D-91`, `R-28`) |
 | Catálogo público anónimo con precios y contactos | Vigente (`D-28`, `D-38`) |
 | HTTPS | Postergado (`D-39`) |
-| Política de contraseñas, bloqueo, refresh tokens, CORS y rate limiting | No documentado |
+| Refresh tokens y CORS | CORS local documentado; refresh tokens fuera del MVP |
 
 ## 8. Observabilidad
 - Logs estructurados JSON con Serilog e identificador de correlación.

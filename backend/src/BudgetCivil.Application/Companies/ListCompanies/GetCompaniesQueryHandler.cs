@@ -18,7 +18,7 @@ public sealed class GetCompaniesQueryHandler(
         CompanyAdministrationAuthorizationRules.EnsureActorCanReadCompanies(actor);
 
         var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(
-            query.PageNumber,
+            query.Page,
             query.PageSize,
             cancellationToken);
 
@@ -26,7 +26,7 @@ public sealed class GetCompaniesQueryHandler(
         var items = await companyRepository.GetCompaniesAsync(
             query.Search,
             query.IsActive,
-            pagination.PageNumber,
+            pagination.Page,
             pagination.PageSize,
             cancellationToken);
 
@@ -55,7 +55,7 @@ public sealed class GetCompaniesQueryHandler(
                     LastModifiedAtUtc = company.LastModifiedAtUtc
                 })
                 .ToArray(),
-            PageNumber = pagination.PageNumber,
+            Page = pagination.Page,
             PageSize = pagination.PageSize,
             TotalItems = totalItems
         };

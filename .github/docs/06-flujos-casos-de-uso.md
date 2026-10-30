@@ -1,18 +1,22 @@
 # Flujos y casos de uso
 
-> Documento actualizado el 27/10/2026. Actores y reglas según `PLAN_INGENIERIA.md` (v0.26).
+> Documento actualizado el 30/10/2026 (reconciliación `E-1b`, `D-74`…`D-111`). Actores y reglas según `PLAN_INGENIERIA.md`.
 
 ## 1. Actores
-| Actor | Ámbito | Responsabilidad |
+| Actor (`role_code`) | Ámbito | Responsabilidad |
 |---|---|---|
-| Administrador | Plataforma, sin compañía | Usuarios, roles y compañías; lectura de proyectos e insumos |
-| Director de proyectos | Una compañía y sus proyectos | Configuración, asignaciones, modo de firma y cierre |
-| Presupuestador | Proyectos asignados | EDT, insumos, APUs, matrices y cotización |
-| Auditor | Proyectos asignados | Lectura y aprobación de APUs cuando el proyecto lo exige |
+| Administrador (`ADMINISTRADOR`) | Plataforma, sin compañía | Usuarios, roles y compañías; edita y desactiva cuentas; lectura de proyectos |
+| Director de proyectos (`DIRECTOR`) | Una compañía y sus proyectos | Configuración, asignaciones, modo de firma y cierre; inhabilita y reactiva proyectos |
+| Presupuestador (`PRESUPUESTADOR`) | Compañía y proyectos asignados | EDT, insumos, APUs, matrices, cotización y firma de APUs |
+| Auditor (`AUDITOR`) | Proyectos asignados | Lectura y visto bueno de APUs cuando el proyecto lo exige |
+| Ciudadano (anónimo) | Plataforma | Autorregistro público (`RF-23`) y consulta del catálogo público |
+
+Los roles base son inmutables y la autorización se decide por `permission_key` con política fail-closed (`D-82`).
 
 ## 2. Casos de uso
 | ID | Caso de uso | Actores |
 |---|---|---|
+| UC-00 | Autorregistrarse | Ciudadano (anónimo) |
 | UC-01 | Administrar usuarios, roles y compañías | Administrador, Director |
 | UC-02 | Configurar proyecto | Director |
 | UC-03 | Estructurar la EDT | Director, Presupuestador |
@@ -22,31 +26,39 @@
 | UC-07 | Aprobar y cerrar el presupuesto | Director, Presupuestador, Auditor |
 | UC-08 | Consultar el catálogo público | Cualquiera (anónimo) |
 
+## 2.1 UC-00 Autorregistrarse
+- **Objetivo:** crear una cuenta propia sin sesión previa.
+- **Actor:** ciudadano anónimo.
+- **Precondiciones:** ninguna; el endpoint está limitado por IP.
+- **Postcondiciones:** cuenta habilitada tras verificar el correo, con rol Presupuestador y sin compañía.
+- **Flujo:** el usuario envía tipo y número de documento, primer y segundo nombre, primer y segundo apellido, fecha de nacimiento, correo, nombre de usuario y contraseña; el sistema valida unicidad de correo y usuario, crea la cuenta y envía el correo de verificación (`D-72`, `D-73`, `D-76`, `D-80`).
+- **Errores:** correo o usuario duplicado; dato obligatorio ausente; intento de fijar rol, compañía o proyecto en el cuerpo.
+
 ## 3. UC-01 Administrar usuarios, roles y compañías
-- **Objetivo:** gestionar cuentas, roles y pertenencia a compañías.
+- **Objetivo:** gestionar cuentas, roles, pertenencia a compañías y su ciclo de vida.
 - **Actor principal:** Administrador; el Director participa en su compañía.
-- **Precondiciones:** sesión con JWT válido.
+- **Precondiciones:** sesión con JWT válido y permiso activo.
 - **Postcondiciones:** usuario creado, rol cambiado o compañía asignada.
 - **Flujo principal:**
-  1. El Administrador crea la compañía o selecciona una existente.
-  2. Crea el usuario con correo, nombre y rol.
-  3. El sistema valida correo único y `companyId` (nulo solo para Administrador).
-  4. El Director busca usuarios y los asigna a su compañía o a sus proyectos.
+  1. El Administrador crea la compañía o selecciona una existente; el Director puede crear la propia si no tiene compañía.
+  2. El Administrador crea el usuario con identidad completa, correo, usuario y rol.
+  3. El sistema valida correo y usuario únicos y `companyId` nulo solo para Administrador.
+  4. El Administrador edita o desactiva cuentas y cambia el rol global; el Director solo asigna a su compañía y proyecto y cambia el rol sin elevar a Administrador (`DEC-21`).
   5. Se envían los correos de creación y recuperación.
-- **Alternos:** cambio de rol global por el Administrador; retiro de un usuario de la compañía por el Director.
-- **Errores:** correo duplicado; usuario ya asignado a otra compañía; rol inexistente.
+- **Alternos:** retiro de un usuario de la compañía; rehabilitación por recuperación asistida.
+- **Errores:** correo duplicado; usuario ya asignado a otra compañía; rol inexistente; actor sin permiso (fail-closed).
 
 ## 4. UC-02 Configurar proyecto
-- **Objetivo:** definir divisa, AIU, tope, modo de firma, requisito de auditor y visibilidad.
+- **Objetivo:** definir la configuración única del proyecto: divisa base, AIU, tope, modo de firma, requisito de auditor y visibilidad.
 - **Actor:** Director.
-- **Precondiciones:** compañía propia creada.
-- **Postcondiciones:** proyecto con configuración única.
+- **Precondiciones:** compañía propia creada y con un Director activo.
+- **Postcondiciones:** proyecto con su configuración 1:1 (`ProjectConfiguration`).
 - **Flujo:**
   1. El Director crea el proyecto.
-  2. Define `currency` ISO, `aiuAdmin`, `aiuContingency`, `aiuProfit`, `budgetLimit`, `signatureMode`, `requiresAuditor` e `isPublic`.
-  3. El sistema valida rangos y guarda la configuración.
+  2. Define `baseCurrencyId`, `aiuAdmin`, `aiuUnforeseen`, `aiuProfit`, `budgetLimit`, `signingMode`, `requiresAuditor` e `isPublic`.
+  3. El sistema valida rangos y guarda la configuración; `GET /projects/{id}/configuration` la devuelve.
 - **Alternos:** cambio de modo de firma antes de la primera aprobación.
-- **Errores:** divisa inválida; AIU fuera de 0–100; configuración duplicada.
+- **Errores:** divisa o ubicación inválidas; AIU fuera de 0–100; tope no positivo; `signingMode` desconocido; compañía sin Director activo (`DEC-24`).
 
 ## 5. UC-03 Estructurar la EDT
 - **Objetivo:** crear capítulos e ítems con códigos únicos.
@@ -114,10 +126,10 @@
   1. El Presupuestador firma los APUs que le corresponden, según el modo.
   2. En el modo con auditor, el Auditor aprueba cada APU.
   3. El Director verifica que todos los APUs tengan la aprobación exigida.
-  4. Si todo está cotizado y aprobado, ejecuta el cierre.
-  5. El sistema registra la aprobación final y cambia el estado.
-- **Alternos:** edición de un APU aprobado, que elimina su aprobación y exige una nueva.
-- **Errores:** insumos sin cotizar; APUs sin aprobación; actor de otra compañía; falta de firma cuando el modo la exige.
+  4. El Director ejecuta el cierre desde `COTIZADO` sin firmar APUs (`D-90`).
+  5. El sistema registra la transición en el historial de estado y cambia a `FINALIZADO`.
+- **Alternos:** edición de un APU aprobado, que elimina su aprobación y exige una nueva; reapertura de `FINALIZADO` hacia `FALTA_INFORMACION` solo por el Director (`D-88`).
+- **Errores:** insumos sin cotizar; APUs sin aprobación; actor de otra compañía; rol distinto del Director para cerrar.
 
 ## 10. UC-08 Consultar el catálogo público
 - **Objetivo:** consultar y copiar composiciones de proyectos públicos.
@@ -135,24 +147,26 @@
 ## 11. Mapeo a requerimientos
 | UC | RF | BR |
 |---|---|---|
+| UC-00 | RF-23 | BR-001 |
 | UC-01 | RF-01, RF-02, RF-18 | BR-001 |
-| UC-02 | RF-03 | BR-019, BR-020 |
+| UC-02 | RF-03 | BR-011, BR-019, BR-020 |
 | UC-03 | RF-04 | BR-015 |
 | UC-04 | RF-05, RF-06, RF-16, RF-20 | BR-009, BR-010 |
 | UC-05 | RF-07, RF-08, RF-09, RF-22 | BR-008, BR-016, BR-017, BR-018, BR-021 |
 | UC-06 | RF-10, RF-11, RF-14, RF-17 | BR-003, BR-007 |
-| UC-07 | RF-12, RF-13, RF-21 | BR-011, BR-012, BR-013 |
+| UC-07 | RF-12, RF-13, RF-21 | BR-011, BR-013 |
 | UC-08 | RF-15 | BR-005, BR-006, BR-013 |
 
 ## 12. Mapeo a pruebas
 | UC | Verificación |
 |---|---|
-| UC-01 | T-I-01, T-S-01, T-S-04 |
-| UC-02 | T-I-03 |
+| UC-00 | T-I-21, T-S-07 |
+| UC-01 | T-I-01, T-I-26, T-I-27, T-I-28, T-I-29, T-I-31, T-S-01, T-S-04, T-S-09, T-S-10 |
+| UC-02 | T-I-03, T-I-30, T-I-32, T-U-12 |
 | UC-03 | T-U-01, T-I-04 |
 | UC-04 | T-U-02, T-I-05, T-I-06, T-I-18, T-U-08 |
 | UC-05 | T-U-03, T-U-04, T-U-11, T-I-07, T-I-08, T-I-09, T-I-20 |
 | UC-06 | T-U-05, T-U-06, T-U-09, T-I-10, T-I-16 |
-| UC-07 | T-U-07, T-U-10, T-I-11, T-I-12, T-I-13, T-I-19 |
+| UC-07 | T-U-07, T-U-10, T-I-11, T-I-12, T-I-13, T-I-19, T-U-12 |
 | UC-08 | T-I-14, T-S-02, T-S-06 |
 

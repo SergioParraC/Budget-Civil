@@ -6,13 +6,13 @@ namespace BudgetCivil.Application.Companies.UseCases;
 internal static class CompanyAdministrationAuthorizationRules
 {
     public const string AdministratorRoleCode = "ADMINISTRADOR";
-    public const string ProjectManagerRoleCode = "GERENTE_PROYECTOS";
+    public const string DirectorRoleCode = "DIRECTOR";
 
     public static UserAccount EnsureActorCanCreateCompany(UserAccount? actor)
     {
         var resolvedActor = EnsureActorIsOperational(actor);
 
-        if (resolvedActor.Role.Code == AdministratorRoleCode || resolvedActor.Role.Code == ProjectManagerRoleCode)
+        if (resolvedActor.Role.Code == AdministratorRoleCode || resolvedActor.Role.Code == DirectorRoleCode)
         {
             return resolvedActor;
         }
@@ -29,7 +29,7 @@ internal static class CompanyAdministrationAuthorizationRules
             return resolvedActor;
         }
 
-        if (resolvedActor.Role.Code == ProjectManagerRoleCode && resolvedActor.CompanyId == companyId)
+        if (resolvedActor.Role.Code == DirectorRoleCode && resolvedActor.CompanyId == companyId)
         {
             return resolvedActor;
         }

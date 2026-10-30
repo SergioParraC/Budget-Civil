@@ -8,7 +8,7 @@ public sealed class UserAccountConfiguration : IEntityTypeConfiguration<UserAcco
 {
     public void Configure(EntityTypeBuilder<UserAccount> builder)
     {
-        builder.ToTable("user_accounts");
+        builder.ToTable("users");
 
         builder.HasKey(userAccount => userAccount.Id);
 
@@ -63,11 +63,66 @@ public sealed class UserAccountConfiguration : IEntityTypeConfiguration<UserAcco
             .HasColumnName("updated_at_utc")
             .IsRequired();
 
+        builder.Property(userAccount => userAccount.FirstName)
+            .HasColumnName("first_name")
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder.Property(userAccount => userAccount.MiddleName)
+            .HasColumnName("middle_name")
+            .HasMaxLength(100);
+
+        builder.Property(userAccount => userAccount.LastName)
+            .HasColumnName("last_name")
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder.Property(userAccount => userAccount.SecondLastName)
+            .HasColumnName("second_last_name")
+            .HasMaxLength(100);
+
+        builder.Property(userAccount => userAccount.DocumentType)
+            .HasColumnName("document_type")
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(userAccount => userAccount.DocumentNumber)
+            .HasColumnName("document_number")
+            .HasMaxLength(50)
+            .IsRequired();
+
+        builder.Property(userAccount => userAccount.BirthDate)
+            .HasColumnName("birth_date")
+            .IsRequired();
+
+        builder.Property(userAccount => userAccount.CountryId)
+            .HasColumnName("country_id");
+
+        builder.Property(userAccount => userAccount.DepartmentId)
+            .HasColumnName("department_id");
+
+        builder.Property(userAccount => userAccount.MunicipalityId)
+            .HasColumnName("municipality_id");
+
+        builder.Property(userAccount => userAccount.ProfessionalCard)
+            .HasColumnName("professional_card")
+            .HasMaxLength(80);
+
+        builder.Property(userAccount => userAccount.ProfessionalCardIssuedAt)
+            .HasColumnName("professional_card_issued_at");
+
+        builder.Property(userAccount => userAccount.ProfessionalCardFilePath)
+            .HasColumnName("professional_card_file_path")
+            .HasMaxLength(255);
+
         builder.HasIndex(userAccount => userAccount.Email)
             .IsUnique();
 
         builder.HasIndex(userAccount => userAccount.Username)
             .IsUnique();
+
+        // D-77: el numero de documento no es unico; solo se indexa para busqueda.
+        builder.HasIndex(userAccount => userAccount.DocumentNumber);
 
         builder.HasOne(userAccount => userAccount.Company)
             .WithMany(company => company.UserAccounts)
@@ -79,9 +134,19 @@ public sealed class UserAccountConfiguration : IEntityTypeConfiguration<UserAcco
             .HasForeignKey(userAccount => userAccount.RoleId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(userAccount => userAccount.Profile)
-            .WithOne(profile => profile.UserAccount)
-            .HasForeignKey<UserProfile>(profile => profile.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(userAccount => userAccount.Country)
+            .WithMany()
+            .HasForeignKey(userAccount => userAccount.CountryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(userAccount => userAccount.Department)
+            .WithMany()
+            .HasForeignKey(userAccount => userAccount.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(userAccount => userAccount.Municipality)
+            .WithMany()
+            .HasForeignKey(userAccount => userAccount.MunicipalityId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

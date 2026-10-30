@@ -6,7 +6,7 @@ public sealed class PaginationValidator : AbstractValidator<PaginationQuery>
 {
     public PaginationValidator()
     {
-        RuleFor(query => query.PageNumber)
+        RuleFor(query => query.Page)
             .GreaterThanOrEqualTo(1);
 
         RuleFor(query => query.PageSize)

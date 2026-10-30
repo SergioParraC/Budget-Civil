@@ -3,13 +3,13 @@ namespace BudgetCivil.Domain.Memberships;
 public static class ProjectMembershipPolicy
 {
     public const string AdministratorRoleCode = "ADMINISTRADOR";
-    public const string ProjectManagerRoleCode = "GERENTE_PROYECTOS";
+    public const string DirectorRoleCode = "DIRECTOR";
     public const string EstimatorRoleCode = "PRESUPUESTADOR";
     public const string AuditorRoleCode = "AUDITOR";
 
     private static readonly HashSet<string> AllowedProjectRoles =
     [
-        ProjectManagerRoleCode,
+        DirectorRoleCode,
         EstimatorRoleCode,
         AuditorRoleCode
     ];
@@ -33,7 +33,7 @@ public static class ProjectMembershipPolicy
 
         if (normalizedActorRoleCode == AdministratorRoleCode)
         {
-            if (normalizedTargetRoleCode != ProjectManagerRoleCode)
+            if (normalizedTargetRoleCode != DirectorRoleCode)
             {
                 throw new InvalidOperationException("Administrador can only assign project managers to projects.");
             }
@@ -41,7 +41,7 @@ public static class ProjectMembershipPolicy
             return;
         }
 
-        if (normalizedActorRoleCode == ProjectManagerRoleCode)
+        if (normalizedActorRoleCode == DirectorRoleCode)
         {
             EnsureActorInCompany(projectCompanyId, actorCompanyId);
             EnsureRoleAllowedForProjectAssignment(normalizedTargetRoleCode);
@@ -72,7 +72,7 @@ public static class ProjectMembershipPolicy
         var normalizedActorRoleCode = NormalizeRoleCode(actorRoleCode);
         var normalizedTargetRoleCode = NormalizeRoleCode(targetRoleCode);
 
-        if (normalizedActorRoleCode == ProjectManagerRoleCode)
+        if (normalizedActorRoleCode == DirectorRoleCode)
         {
             EnsureActorInCompany(projectCompanyId, actorCompanyId);
             EnsureRoleAllowedForProjectAssignment(normalizedTargetRoleCode);

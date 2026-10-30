@@ -5,11 +5,13 @@ namespace BudgetCivil.Application.Users.Auth.Validators;
 
 public sealed class RegisterUserRequestValidator : AbstractValidator<RegisterUserRequest>
 {
+    // Claves normalizadas (minúsculas, sin separadores) del payload que el cliente no puede fijar.
     private static readonly HashSet<string> ForbiddenFields =
     [
-        "rol_asignado",
-        "company_id",
-        "project_id"
+        "rolecode",
+        "companyid",
+        "projectid",
+        "rolasignado"
     ];
 
     public RegisterUserRequestValidator()
@@ -21,6 +23,16 @@ public sealed class RegisterUserRequestValidator : AbstractValidator<RegisterUse
         RuleFor(request => request.LastName)
             .NotEmpty()
             .MaximumLength(100);
+
+        RuleFor(request => request.MiddleName)
+            .MaximumLength(100);
+
+        RuleFor(request => request.SecondLastName)
+            .MaximumLength(100);
+
+        RuleFor(request => request.BirthDate)
+            .NotEmpty()
+            .WithMessage("BirthDate is required.");
 
         RuleFor(request => request.Email)
             .NotEmpty()
@@ -69,7 +81,16 @@ public sealed class RegisterUserRequestValidator : AbstractValidator<RegisterUse
         }
 
         return extensionData.Keys
-            .Select(key => key.Trim().ToLowerInvariant())
+            .Select(NormalizeFieldName)
             .All(normalizedKey => !ForbiddenFields.Contains(normalizedKey));
+    }
+
+    private static string NormalizeFieldName(string key)
+    {
+        return key
+            .Trim()
+            .Replace("_", string.Empty, StringComparison.Ordinal)
+            .Replace("-", string.Empty, StringComparison.Ordinal)
+            .ToLowerInvariant();
     }
 }

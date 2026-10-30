@@ -14,7 +14,7 @@ using BudgetCivil.Application.Projects.Commands.ChangeProjectVisibility;
 using BudgetCivil.Application.Projects.Commands.CreateProject;
 using BudgetCivil.Application.Projects.Commands.UpdateProject;
 using BudgetCivil.Application.Projects.Queries;
-using BudgetCivil.Application.Profile.UseCases;
+using BudgetCivil.Application.UseCases;
 using BudgetCivil.Application.Users.Administration.Guards;
 using BudgetCivil.Application.Users.Administration.UseCases;
 using BudgetCivil.Application.Users.Auth.UseCases;
@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<RejectProjectAssignmentGuard>();
         services.AddScoped<RegisterUserUseCase>();
         services.AddScoped<LoginUseCase>();
+        services.AddScoped<ConfirmEmailVerificationUseCase>();
         services.AddScoped<BootstrapFirstAdministratorUseCase>();
         services.AddScoped<GetBootstrapAuditUseCase>();
         services.AddScoped<CreateUserUseCase>();
@@ -64,11 +65,15 @@ public static class DependencyInjection
         services.AddScoped<DeactivateProjectMemberCommandHandler>();
         services.AddScoped<GetProjectsQueryHandler>();
         services.AddScoped<GetProjectByIdQueryHandler>();
+        services.AddScoped<GetProjectConfigurationQueryHandler>();
         services.AddScoped<GetMyProfileUseCase>();
         services.AddScoped<UpdateMyProfileUseCase>();
         services.AddScoped<ChangeMyPasswordUseCase>();
         services.AddScoped<EnableUserPasswordRecoveryUseCase>();
         services.AddScoped<SearchUsersUseCase>();
+
+        services.AddScoped<RequestPasswordRecoveryUseCase>();
+        services.AddScoped<ConfirmPasswordRecoveryUseCase>();
 
         return services;
     }

@@ -97,17 +97,17 @@ public sealed class CompaniesController(
         return StatusCode(StatusCodes.Status201Created, response);
     }
 
-    [HttpPatch("{companyId:guid}/memberships/{membershipId:guid}/deactivate")]
+    [HttpPatch("{companyId:guid}/memberships/{userId:guid}/deactivate")]
     [Authorize(Policy = AuthorizationPolicies.CompanyMembersDeactivate)]
     [ProducesResponseType(typeof(DeactivateCompanyMemberResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<DeactivateCompanyMemberResponse>> DeactivateCompanyMember(
         [FromRoute] Guid companyId,
-        [FromRoute] Guid membershipId,
+        [FromRoute] Guid userId,
         [FromBody] DeactivateCompanyMemberCommand command,
         CancellationToken cancellationToken)
     {
         var actorUserId = GetActorUserId();
-        var response = await deactivateCompanyMemberCommandHandler.ExecuteAsync(actorUserId, companyId, membershipId, command, cancellationToken);
+        var response = await deactivateCompanyMemberCommandHandler.ExecuteAsync(actorUserId, companyId, userId, command, cancellationToken);
 
         return Ok(response);
     }
@@ -129,7 +129,7 @@ public sealed class CompaniesController(
             {
                 Search = search,
                 IsActive = isActive,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);
@@ -160,7 +160,7 @@ public sealed class CompaniesController(
                 Search = search,
                 RoleCode = roleCode,
                 IsActive = isActive,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);

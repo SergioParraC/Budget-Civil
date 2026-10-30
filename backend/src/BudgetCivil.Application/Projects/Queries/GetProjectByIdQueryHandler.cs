@@ -8,49 +8,42 @@ namespace BudgetCivil.Application.Projects.Queries;
 
 public sealed class GetProjectByIdResponse
 {
-    [JsonPropertyName("project_id")]
     public Guid ProjectId { get; init; }
 
-    [JsonPropertyName("company_id")]
     public Guid CompanyId { get; init; }
 
-    [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 
-    [JsonPropertyName("code")]
     public string? Code { get; init; }
 
-    [JsonPropertyName("description")]
     public string? Description { get; init; }
 
-    [JsonPropertyName("objective")]
     public string? Objective { get; init; }
 
-    [JsonPropertyName("country_id")]
     public Guid CountryId { get; init; }
 
-    [JsonPropertyName("department_id")]
     public Guid DepartmentId { get; init; }
 
-    [JsonPropertyName("municipality_id")]
     public Guid MunicipalityId { get; init; }
 
-    [JsonPropertyName("base_currency_id")]
     public Guid BaseCurrencyId { get; init; }
 
-    [JsonPropertyName("aiu_admin_percent")]
+    public decimal? BudgetLimit { get; init; }
+
     public decimal? AiuAdminPercent { get; init; }
 
-    [JsonPropertyName("aiu_unforeseen_percent")]
     public decimal? AiuUnforeseenPercent { get; init; }
 
-    [JsonPropertyName("aiu_profit_percent")]
     public decimal? AiuProfitPercent { get; init; }
 
-    [JsonPropertyName("status")]
+    public string SignatureMode { get; init; } = string.Empty;
+
+    public Guid? SignerUserId { get; init; }
+
+    public bool RequiresAuditor { get; init; }
+
     public string Status { get; init; } = string.Empty;
 
-    [JsonPropertyName("is_public")]
     public bool IsPublic { get; init; }
 }
 
@@ -70,10 +63,13 @@ public sealed class GetProjectByIdQueryHandler(IProjectRepository projectReposit
             throw new ConflictAppException("Project was not found.", "PROJECT_NOT_FOUND");
         }
 
+        var configuration = project.Configuration
+            ?? throw new ConflictAppException("Project configuration was not found.", "PROJECT_CONFIGURATION_NOT_FOUND");
+
         EnsureCompanyScope(actor, project.CompanyId);
 
         if (project.Status == ProjectStatus.Inhabilitado &&
-            actor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.ProjectManagerRoleCode)
+            actor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.DirectorRoleCode)
         {
             throw new ForbiddenAppException("Project is not visible for this role.", "PROJECT_STATUS_HIDDEN");
         }
@@ -89,10 +85,14 @@ public sealed class GetProjectByIdQueryHandler(IProjectRepository projectReposit
             CountryId = project.CountryId,
             DepartmentId = project.DepartmentId,
             MunicipalityId = project.MunicipalityId,
-            BaseCurrencyId = project.BaseCurrencyId,
-            AiuAdminPercent = project.AiuAdminPercent,
-            AiuUnforeseenPercent = project.AiuUnforeseenPercent,
-            AiuProfitPercent = project.AiuProfitPercent,
+            BaseCurrencyId = configuration.BaseCurrencyId,
+            BudgetLimit = configuration.BudgetLimit,
+            AiuAdminPercent = configuration.AiuAdminPercent,
+            AiuUnforeseenPercent = configuration.AiuUnforeseenPercent,
+            AiuProfitPercent = configuration.AiuProfitPercent,
+            SignatureMode = configuration.SignatureMode,
+            SignerUserId = configuration.SignerUserId,
+            RequiresAuditor = configuration.RequiresAuditor,
             Status = ProjectStatusTransitionPolicy.ToStatusCode(project.Status),
             IsPublic = project.IsPublic
         };
@@ -107,7 +107,7 @@ public sealed class GetProjectByIdQueryHandler(IProjectRepository projectReposit
             throw new ForbiddenAppException("Authenticated actor is not operational.", "ACTOR_NOT_ENABLED");
         }
 
-        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.ProjectManagerRoleCode and not ProjectStatusTransitionPolicy.EstimatorRoleCode and not "AUDITOR")
+        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.DirectorRoleCode and not ProjectStatusTransitionPolicy.EstimatorRoleCode and not "AUDITOR")
         {
             throw new ForbiddenAppException("Actor cannot read projects.", "PROJECT_READ_FORBIDDEN");
         }

@@ -9,52 +9,38 @@ namespace BudgetCivil.Application.Projects.Queries;
 
 public sealed class GetProjectsQuery
 {
-    [JsonPropertyName("company_id")]
     public Guid? CompanyId { get; init; }
 
-    [JsonPropertyName("status")]
     public string? Status { get; init; }
 
-    [JsonPropertyName("search")]
     public string? Search { get; init; }
 
-    [JsonPropertyName("page_number")]
-    public int PageNumber { get; init; } = 1;
+    public int Page { get; init; } = 1;
 
-    [JsonPropertyName("page_size")]
     public int PageSize { get; init; } = 10;
 }
 
 public sealed class GetProjectsResponse
 {
-    [JsonPropertyName("items")]
     public IReadOnlyList<ProjectListItem> Items { get; init; } = [];
 
-    [JsonPropertyName("page_number")]
-    public int PageNumber { get; init; }
+    public int Page { get; init; }
 
-    [JsonPropertyName("page_size")]
     public int PageSize { get; init; }
 
-    [JsonPropertyName("total_items")]
     public int TotalItems { get; init; }
 }
 
 public sealed class ProjectListItem
 {
-    [JsonPropertyName("project_id")]
     public Guid ProjectId { get; init; }
 
-    [JsonPropertyName("company_id")]
     public Guid CompanyId { get; init; }
 
-    [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 
-    [JsonPropertyName("status")]
     public string Status { get; init; } = string.Empty;
 
-    [JsonPropertyName("is_public")]
     public bool IsPublic { get; init; }
 }
 
@@ -71,7 +57,7 @@ public sealed class GetProjectsQueryHandler(
         actor = EnsureActorCanReadProjects(actor);
 
         var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(
-            query.PageNumber,
+            query.Page,
             query.PageSize,
             cancellationToken);
 
@@ -95,7 +81,7 @@ public sealed class GetProjectsQueryHandler(
             throw new ForbiddenAppException("Company context is required for this role.", "COMPANY_CONTEXT_REQUIRED");
         }
 
-        var includeInhabilitado = actor.Role.Code is ProjectStatusTransitionPolicy.AdministratorRoleCode or ProjectStatusTransitionPolicy.ProjectManagerRoleCode;
+        var includeInhabilitado = actor.Role.Code is ProjectStatusTransitionPolicy.AdministratorRoleCode or ProjectStatusTransitionPolicy.DirectorRoleCode;
 
         var totalItems = await projectRepository.CountProjectsAsync(
             scopedCompanyId,
@@ -108,7 +94,7 @@ public sealed class GetProjectsQueryHandler(
             scopedCompanyId,
             statusFilter,
             query.Search,
-            pagination.PageNumber,
+            pagination.Page,
             pagination.PageSize,
             includeInhabilitado,
             cancellationToken);
@@ -125,7 +111,7 @@ public sealed class GetProjectsQueryHandler(
                     IsPublic = project.IsPublic
                 })
                 .ToArray(),
-            PageNumber = pagination.PageNumber,
+            Page = pagination.Page,
             PageSize = pagination.PageSize,
             TotalItems = totalItems
         };
@@ -140,7 +126,7 @@ public sealed class GetProjectsQueryHandler(
             throw new ForbiddenAppException("Authenticated actor is not operational.", "ACTOR_NOT_ENABLED");
         }
 
-        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.ProjectManagerRoleCode and not ProjectStatusTransitionPolicy.EstimatorRoleCode and not "AUDITOR")
+        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.DirectorRoleCode and not ProjectStatusTransitionPolicy.EstimatorRoleCode and not "AUDITOR")
         {
             throw new ForbiddenAppException("Actor cannot read projects.", "PROJECT_READ_FORBIDDEN");
         }

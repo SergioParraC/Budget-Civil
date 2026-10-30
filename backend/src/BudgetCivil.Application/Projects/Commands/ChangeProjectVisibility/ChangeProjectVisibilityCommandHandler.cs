@@ -9,25 +9,19 @@ namespace BudgetCivil.Application.Projects.Commands.ChangeProjectVisibility;
 
 public sealed class ChangeProjectVisibilityCommand
 {
-    [JsonPropertyName("is_public")]
     public bool IsPublic { get; init; }
 
-    [JsonPropertyName("reason")]
     public string? Reason { get; init; }
 }
 
 public sealed class ChangeProjectVisibilityResponse
 {
-    [JsonPropertyName("project_id")]
     public Guid ProjectId { get; init; }
 
-    [JsonPropertyName("previous_is_public")]
     public bool PreviousIsPublic { get; init; }
 
-    [JsonPropertyName("new_is_public")]
     public bool NewIsPublic { get; init; }
 
-    [JsonPropertyName("changed_at_utc")]
     public DateTime ChangedAtUtc { get; init; }
 }
 
@@ -104,7 +98,7 @@ public sealed class ChangeProjectVisibilityCommandHandler(
             throw new ForbiddenAppException("Authenticated actor is not operational.", "ACTOR_NOT_ENABLED");
         }
 
-        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.ProjectManagerRoleCode)
+        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.DirectorRoleCode)
         {
             throw new ForbiddenAppException("Actor cannot change project visibility.", "PROJECT_VISIBILITY_FORBIDDEN");
         }

@@ -45,7 +45,7 @@ public sealed class SecurityBaselineSeeder(
     private static readonly (string Code, string Name, bool IsBaseRole)[] Roles =
     {
         ("ADMINISTRADOR", "Administrador", true),
-        ("GERENTE_PROYECTOS", "Gerente de proyectos", true),
+        ("DIRECTOR", "Director de proyectos", true),
         ("PRESUPUESTADOR", "Presupuestador", true),
         ("AUDITOR", "Auditor", true)
     };
@@ -68,24 +68,17 @@ public sealed class SecurityBaselineSeeder(
             "COMPANIES_READ",
             "COMPANY_MEMBERS_ASSIGN",
             "COMPANY_MEMBERS_DEACTIVATE",
-            "PROJECTS_CREATE",
-            "PROJECTS_UPDATE",
-            "PROJECTS_STATUS_CHANGE",
-            "PROJECTS_VISIBILITY_CHANGE",
             "PROJECTS_READ",
-            "PROJECT_MEMBERS_ASSIGN",
             "USERS_PASSWORD_RECOVERY_ENABLE",
             "AUDIT_BOOTSTRAP_READ",
             "PROFILE_READ_SELF",
             "PROFILE_UPDATE_SELF",
             "PROFILE_CHANGE_PASSWORD_SELF"
         ],
-        ["GERENTE_PROYECTOS"] =
+        ["DIRECTOR"] =
         [
             "APU_PUBLIC_READ",
             "CATALOGS_READ",
-            "USERS_UPDATE",
-            "USERS_DEACTIVATE",
             "USERS_ROLE_CHANGE",
             "USERS_COMPANY_CHANGE",
             "USERS_READ",
@@ -108,7 +101,6 @@ public sealed class SecurityBaselineSeeder(
         [
             "APU_PUBLIC_READ",
             "CATALOGS_READ",
-            "USERS_READ",
             "PROJECTS_CREATE",
             "PROJECTS_UPDATE",
             "PROJECTS_STATUS_CHANGE",

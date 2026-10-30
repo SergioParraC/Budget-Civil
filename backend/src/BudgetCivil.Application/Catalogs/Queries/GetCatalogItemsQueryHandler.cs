@@ -5,106 +5,80 @@ namespace BudgetCivil.Application.Catalogs.Queries;
 
 public class CatalogListingQuery
 {
-    [JsonPropertyName("search")]
     public string? Search { get; init; }
 
-    [JsonPropertyName("page_number")]
-    public int PageNumber { get; init; } = 1;
+    public int Page { get; init; } = 1;
 
-    [JsonPropertyName("page_size")]
     public int PageSize { get; init; } = 10;
 }
 
 public sealed class DepartmentCatalogListingQuery : CatalogListingQuery
 {
-    [JsonPropertyName("country_id")]
     public Guid? CountryId { get; init; }
 }
 
 public sealed class MunicipalityCatalogListingQuery : CatalogListingQuery
 {
-    [JsonPropertyName("department_id")]
     public Guid? DepartmentId { get; init; }
 }
 
 public sealed class CatalogListingResponse<TItem>
 {
-    [JsonPropertyName("items")]
     public IReadOnlyList<TItem> Items { get; init; } = [];
 
-    [JsonPropertyName("page_number")]
-    public int PageNumber { get; init; }
+    public int Page { get; init; }
 
-    [JsonPropertyName("page_size")]
     public int PageSize { get; init; }
 
-    [JsonPropertyName("total_items")]
     public int TotalItems { get; init; }
 }
 
 public sealed class CountryCatalogItem
 {
-    [JsonPropertyName("id")]
     public Guid Id { get; init; }
 
-    [JsonPropertyName("code")]
     public string Code { get; init; } = string.Empty;
 
-    [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 }
 
 public sealed class DepartmentCatalogItem
 {
-    [JsonPropertyName("id")]
     public Guid Id { get; init; }
 
-    [JsonPropertyName("country_id")]
     public Guid CountryId { get; init; }
 
-    [JsonPropertyName("code")]
     public string Code { get; init; } = string.Empty;
 
-    [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 }
 
 public sealed class MunicipalityCatalogItem
 {
-    [JsonPropertyName("id")]
     public Guid Id { get; init; }
 
-    [JsonPropertyName("department_id")]
     public Guid DepartmentId { get; init; }
 
-    [JsonPropertyName("code")]
     public string Code { get; init; } = string.Empty;
 
-    [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 }
 
 public sealed class CurrencyCatalogItem
 {
-    [JsonPropertyName("id")]
     public Guid Id { get; init; }
 
-    [JsonPropertyName("iso_code")]
     public string IsoCode { get; init; } = string.Empty;
 
-    [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 }
 
 public sealed class DocumentTypeCatalogItem
 {
-    [JsonPropertyName("id")]
     public Guid Id { get; init; }
 
-    [JsonPropertyName("code")]
     public string Code { get; init; } = string.Empty;
 
-    [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 }
 
@@ -150,7 +124,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
         CatalogListingQuery query,
         CancellationToken cancellationToken = default)
     {
-        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.PageNumber, query.PageSize, cancellationToken);
+        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.Page, query.PageSize, cancellationToken);
 
         var filtered = Countries
             .Where(country => MatchesSearch(country.Code, country.Name, query.Search))
@@ -160,7 +134,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
         return new CatalogListingResponse<CountryCatalogItem>
         {
             Items = filtered
-                .Skip((pagination.PageNumber - 1) * pagination.PageSize)
+                .Skip((pagination.Page - 1) * pagination.PageSize)
                 .Take(pagination.PageSize)
                 .Select(country => new CountryCatalogItem
                 {
@@ -169,7 +143,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
                     Name = country.Name
                 })
                 .ToArray(),
-            PageNumber = pagination.PageNumber,
+            Page = pagination.Page,
             PageSize = pagination.PageSize,
             TotalItems = filtered.Length
         };
@@ -179,7 +153,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
         DepartmentCatalogListingQuery query,
         CancellationToken cancellationToken = default)
     {
-        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.PageNumber, query.PageSize, cancellationToken);
+        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.Page, query.PageSize, cancellationToken);
 
         var filtered = Departments
             .Where(department =>
@@ -191,7 +165,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
         return new CatalogListingResponse<DepartmentCatalogItem>
         {
             Items = filtered
-                .Skip((pagination.PageNumber - 1) * pagination.PageSize)
+                .Skip((pagination.Page - 1) * pagination.PageSize)
                 .Take(pagination.PageSize)
                 .Select(department => new DepartmentCatalogItem
                 {
@@ -201,7 +175,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
                     Name = department.Name
                 })
                 .ToArray(),
-            PageNumber = pagination.PageNumber,
+            Page = pagination.Page,
             PageSize = pagination.PageSize,
             TotalItems = filtered.Length
         };
@@ -211,7 +185,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
         MunicipalityCatalogListingQuery query,
         CancellationToken cancellationToken = default)
     {
-        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.PageNumber, query.PageSize, cancellationToken);
+        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.Page, query.PageSize, cancellationToken);
 
         var filtered = Municipalities
             .Where(municipality =>
@@ -223,7 +197,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
         return new CatalogListingResponse<MunicipalityCatalogItem>
         {
             Items = filtered
-                .Skip((pagination.PageNumber - 1) * pagination.PageSize)
+                .Skip((pagination.Page - 1) * pagination.PageSize)
                 .Take(pagination.PageSize)
                 .Select(municipality => new MunicipalityCatalogItem
                 {
@@ -233,7 +207,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
                     Name = municipality.Name
                 })
                 .ToArray(),
-            PageNumber = pagination.PageNumber,
+            Page = pagination.Page,
             PageSize = pagination.PageSize,
             TotalItems = filtered.Length
         };
@@ -243,7 +217,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
         CatalogListingQuery query,
         CancellationToken cancellationToken = default)
     {
-        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.PageNumber, query.PageSize, cancellationToken);
+        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.Page, query.PageSize, cancellationToken);
 
         var filtered = Currencies
             .Where(currency => MatchesSearch(currency.IsoCode, currency.Name, query.Search))
@@ -253,7 +227,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
         return new CatalogListingResponse<CurrencyCatalogItem>
         {
             Items = filtered
-                .Skip((pagination.PageNumber - 1) * pagination.PageSize)
+                .Skip((pagination.Page - 1) * pagination.PageSize)
                 .Take(pagination.PageSize)
                 .Select(currency => new CurrencyCatalogItem
                 {
@@ -262,7 +236,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
                     Name = currency.Name
                 })
                 .ToArray(),
-            PageNumber = pagination.PageNumber,
+            Page = pagination.Page,
             PageSize = pagination.PageSize,
             TotalItems = filtered.Length
         };
@@ -272,7 +246,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
         CatalogListingQuery query,
         CancellationToken cancellationToken = default)
     {
-        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.PageNumber, query.PageSize, cancellationToken);
+        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.Page, query.PageSize, cancellationToken);
 
         var filtered = DocumentTypes
             .Where(documentType => MatchesSearch(documentType.Code, documentType.Name, query.Search))
@@ -282,7 +256,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
         return new CatalogListingResponse<DocumentTypeCatalogItem>
         {
             Items = filtered
-                .Skip((pagination.PageNumber - 1) * pagination.PageSize)
+                .Skip((pagination.Page - 1) * pagination.PageSize)
                 .Take(pagination.PageSize)
                 .Select(documentType => new DocumentTypeCatalogItem
                 {
@@ -291,7 +265,7 @@ public sealed class GetCatalogItemsQueryHandler(ListingQueryPipeline listingQuer
                     Name = documentType.Name
                 })
                 .ToArray(),
-            PageNumber = pagination.PageNumber,
+            Page = pagination.Page,
             PageSize = pagination.PageSize,
             TotalItems = filtered.Length
         };

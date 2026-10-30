@@ -3,7 +3,7 @@ namespace BudgetCivil.Domain.Projects;
 public static class ProjectStatusTransitionPolicy
 {
     public const string AdministratorRoleCode = "ADMINISTRADOR";
-    public const string ProjectManagerRoleCode = "GERENTE_PROYECTOS";
+    public const string DirectorRoleCode = "DIRECTOR";
     public const string EstimatorRoleCode = "PRESUPUESTADOR";
 
     public static ProjectTransitionKind EnsureTransitionAllowed(
@@ -46,6 +46,11 @@ public static class ProjectStatusTransitionPolicy
             return ProjectTransitionKind.Ordinary;
         }
 
+        if (currentStatus == ProjectStatus.Cotizado && targetStatus == ProjectStatus.FaltaInformacion)
+        {
+            return ProjectTransitionKind.Ordinary;
+        }
+
         if (currentStatus == ProjectStatus.Cotizado && targetStatus == ProjectStatus.Finalizado)
         {
             return ProjectTransitionKind.Ordinary;
@@ -67,27 +72,27 @@ public static class ProjectStatusTransitionPolicy
     {
         if (isReactivationEndpoint)
         {
-            return roleCode == ProjectManagerRoleCode || roleCode == AdministratorRoleCode;
+            return roleCode == DirectorRoleCode;
         }
 
         if (targetStatus == ProjectStatus.Inhabilitado)
         {
-            return roleCode == ProjectManagerRoleCode;
+            return roleCode == DirectorRoleCode;
         }
 
         if (currentStatus == ProjectStatus.Finalizado && targetStatus == ProjectStatus.FaltaInformacion)
         {
-            return roleCode == ProjectManagerRoleCode;
+            return roleCode == DirectorRoleCode;
         }
 
         if (currentStatus == ProjectStatus.Cotizado && targetStatus == ProjectStatus.Finalizado)
         {
-            return roleCode == ProjectManagerRoleCode;
+            return roleCode == DirectorRoleCode;
         }
 
         if (targetStatus is ProjectStatus.FaltaInformacion or ProjectStatus.Cotizado)
         {
-            return roleCode == ProjectManagerRoleCode || roleCode == EstimatorRoleCode;
+            return roleCode == DirectorRoleCode || roleCode == EstimatorRoleCode;
         }
 
         return false;

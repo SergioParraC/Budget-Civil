@@ -49,8 +49,8 @@ public sealed class ListingRepository(BudgetCivilDbContext dbContext)
         CancellationToken cancellationToken = default)
     {
         return await BuildUsersQuery(companyId, search, roleCode, isActive, restrictedRoleCodes)
-            .OrderBy(user => user.Profile != null ? user.Profile.FirstName : string.Empty)
-            .ThenBy(user => user.Profile != null ? user.Profile.LastName : string.Empty)
+            .OrderBy(user => user.FirstName)
+            .ThenBy(user => user.LastName)
             .ThenBy(user => user.Username)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
@@ -61,11 +61,11 @@ public sealed class ListingRepository(BudgetCivilDbContext dbContext)
                 user.Username,
                 user.Role.Code,
                 user.AccountEnabled,
-                user.Profile != null ? user.Profile.FirstName : string.Empty,
-                user.Profile != null ? user.Profile.MiddleName : null,
-                user.Profile != null ? user.Profile.LastName : string.Empty,
-                user.Profile != null ? user.Profile.SecondLastName : null,
-                user.Profile != null ? user.Profile.DocumentNumber : string.Empty))
+                user.FirstName,
+                user.MiddleName,
+                user.LastName,
+                user.SecondLastName,
+                user.DocumentNumber))
             .ToListAsync(cancellationToken);
     }
 
@@ -111,7 +111,6 @@ public sealed class ListingRepository(BudgetCivilDbContext dbContext)
         var query = DbContext.UserAccounts
             .AsNoTracking()
             .Include(user => user.Role)
-            .Include(user => user.Profile)
             .AsQueryable();
 
         if (companyId.HasValue)
@@ -125,12 +124,12 @@ public sealed class ListingRepository(BudgetCivilDbContext dbContext)
             query = query.Where(user =>
                 user.Email.ToUpper().Contains(normalizedSearch) ||
                 user.Username.ToUpper().Contains(normalizedSearch) ||
-                (user.Profile != null &&
-                 ((user.Profile.FirstName + " " +
-                   (user.Profile.MiddleName ?? string.Empty) + " " +
-                   user.Profile.LastName + " " +
-                   (user.Profile.SecondLastName ?? string.Empty)).ToUpper().Contains(normalizedSearch) ||
-                  user.Profile.DocumentNumber.ToUpper().Contains(normalizedSearch))));
+                (
+                 ((user.FirstName + " " +
+                   (user.MiddleName ?? string.Empty) + " " +
+                   user.LastName + " " +
+                   (user.SecondLastName ?? string.Empty)).ToUpper().Contains(normalizedSearch) ||
+                  user.DocumentNumber.ToUpper().Contains(normalizedSearch))));
         }
 
         if (!string.IsNullOrWhiteSpace(roleCode))

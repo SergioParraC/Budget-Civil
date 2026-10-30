@@ -3,7 +3,6 @@ using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Catalogs;
 using BudgetCivil.Infrastructure.Persistence.Configurations;
-using BudgetCivil.Infrastructure.Persistence.SchemaRules;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetCivil.Infrastructure.Persistence;
@@ -29,12 +28,11 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
     public DbSet<Company> Companies => Set<Company>();
 
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
+    public DbSet<PasswordRecoveryToken> PasswordRecoveryTokens => Set<PasswordRecoveryToken>();
+
+    public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
 
     public DbSet<UserSignature> UserSignatures => Set<UserSignature>();
-
-    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
-
-    public DbSet<UserCompanyMembership> UserCompanyMemberships => Set<UserCompanyMembership>();
 
     public DbSet<PasswordRecoveryGrant> PasswordRecoveryGrants => Set<PasswordRecoveryGrant>();
 
@@ -42,11 +40,13 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
 
     public DbSet<Project> Projects => Set<Project>();
 
+    public DbSet<ProjectConfiguration> ProjectConfigurations => Set<ProjectConfiguration>();
+
     public DbSet<ProjectStatusTransition> ProjectStatusTransitions => Set<ProjectStatusTransition>();
 
     public DbSet<ProjectVisibilityTransition> ProjectVisibilityTransitions => Set<ProjectVisibilityTransition>();
 
-    public DbSet<ProjectUserMembership> ProjectUserMemberships => Set<ProjectUserMembership>();
+    public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -54,37 +54,34 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
 
         ConfigureSchemaMappings(modelBuilder);
         SchemaNamingConventions.Apply(modelBuilder);
-        ForeignKeyDirectionValidator.Validate(modelBuilder);
 
         base.OnModelCreating(modelBuilder);
     }
 
     private static void ConfigureSchemaMappings(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema(DatabaseSchemas.Dbo);
-        modelBuilder.HasAnnotation("Feature002:SchemaMap", string.Join(',', DatabaseSchemas.All));
 
-        modelBuilder.Entity<Permission>().ToTable("permissions", DatabaseSchemas.Iam);
-        modelBuilder.Entity<Role>().ToTable("roles", DatabaseSchemas.Iam);
-        modelBuilder.Entity<RolePermission>().ToTable("role_permissions", DatabaseSchemas.Iam);
-        modelBuilder.Entity<UserSignature>().ToTable("user_signatures", DatabaseSchemas.Iam);
+        modelBuilder.Entity<Permission>().ToTable("permissions");
+        modelBuilder.Entity<Role>().ToTable("roles");
+        modelBuilder.Entity<RolePermission>().ToTable("role_permissions");
+        modelBuilder.Entity<UserSignature>().ToTable("user_signatures");
 
-        modelBuilder.Entity<DocumentType>().ToTable("document_types", DatabaseSchemas.Param);
-        modelBuilder.Entity<Country>().ToTable("countries", DatabaseSchemas.Param);
-        modelBuilder.Entity<Department>().ToTable("departments", DatabaseSchemas.Param);
-        modelBuilder.Entity<Municipality>().ToTable("municipalities", DatabaseSchemas.Param);
-        modelBuilder.Entity<BaseCurrency>().ToTable("base_currencies", DatabaseSchemas.Param);
+        modelBuilder.Entity<DocumentType>().ToTable("document_types");
+        modelBuilder.Entity<Country>().ToTable("countries");
+        modelBuilder.Entity<Department>().ToTable("departments");
+        modelBuilder.Entity<Municipality>().ToTable("municipalities");
+        modelBuilder.Entity<BaseCurrency>().ToTable("base_currencies");
 
-        modelBuilder.Entity<Company>().ToTable("companies", DatabaseSchemas.Dbo);
-        modelBuilder.Entity<UserAccount>().ToTable("user_accounts", DatabaseSchemas.Dbo);
-        modelBuilder.Entity<UserProfile>().ToTable("user_profiles", DatabaseSchemas.Dbo);
-        modelBuilder.Entity<UserCompanyMembership>().ToTable("user_company_memberships", DatabaseSchemas.Dbo);
-        modelBuilder.Entity<ProjectUserMembership>().ToTable("project_user_memberships", DatabaseSchemas.Dbo);
-        modelBuilder.Entity<PasswordRecoveryGrant>().ToTable("password_recovery_grants", DatabaseSchemas.Dbo);
-        modelBuilder.Entity<Project>().ToTable("projects", DatabaseSchemas.Dbo);
+        modelBuilder.Entity<Company>().ToTable("companies");
+        modelBuilder.Entity<UserAccount>().ToTable("users");
+        modelBuilder.Entity<ProjectMember>().ToTable("project_members");
+        modelBuilder.Entity<PasswordRecoveryGrant>().ToTable("password_recovery_grants");
+        modelBuilder.Entity<EmailVerificationToken>().ToTable("email_verification_tokens");
+        modelBuilder.Entity<Project>().ToTable("projects");
+        modelBuilder.Entity<ProjectConfiguration>().ToTable("project_configurations");
 
-        modelBuilder.Entity<SecurityAuditEvent>().ToTable("security_audit_events", DatabaseSchemas.Audit);
-        modelBuilder.Entity<ProjectStatusTransition>().ToTable("project_status_transitions", DatabaseSchemas.Audit);
-        modelBuilder.Entity<ProjectVisibilityTransition>().ToTable("project_visibility_transitions", DatabaseSchemas.Audit);
+        modelBuilder.Entity<SecurityAuditEvent>().ToTable("security_audit_events");
+        modelBuilder.Entity<ProjectStatusTransition>().ToTable("project_status_transitions");
+        modelBuilder.Entity<ProjectVisibilityTransition>().ToTable("project_visibility_transitions");
     }
 }

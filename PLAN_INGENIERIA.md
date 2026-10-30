@@ -3,12 +3,12 @@
 **Proyecto:** Budget Civil — Gestión de presupuestos de obra civil (APU / EDT)
 **Tipo de documento:** Especificaciones iniciales de ingeniería (problema, requisitos, arquitectura y plan)
 **Metodología:** Spec-Driven Development (SDD) con OpenSpec
-**Versión:** 0.28 — Autorregistro público incorporado al alcance
-**Fecha:** 29/10/2026
+**Versión:** 0.30 — Reconciliación de la línea base (`D-74`…`D-111`), etapa `E-1b` y cierre de la implementación
+**Fecha:** 30/10/2026
 **Autor:** [POR COMPLETAR]
-**Estado:** Documento completo (v0.28). Los seis capítulos están redactados y los documentos base `00`–`06` y `09` actualizados. La v0.28 incorpora el autorregistro público de usuarios (`D-72`, `D-73`).
+**Estado:** Documento completo (v0.30). Los seis capítulos están redactados y los documentos base `00`–`06` y `09` actualizados. La v0.28 incorporó el autorregistro público (`D-72`, `D-73`); la v0.29 cierra las 38 decisiones de reconciliación con las especificaciones ya implementadas (`D-74`…`D-111`), declara `specs/001` y `specs/002` como evidencia histórica no normativa y define la etapa `E-1b`. La v0.30 registra las modificaciones decididas al ejecutar `E-1b`: `D-76` modificada (autorregistro con identidad completa), cierre de `D-95`, `D-98` y `D-105` sin migración de datos y con purga y reconstrucción de la suite de pruebas, y la baseline única con la convención `D-107`.
 
-> **Regla de trazabilidad.** Todo enunciado debe poder rastrearse a una fuente: los documentos base `.github/docs/00`–`06` y `09`, o una decisión explícita `D-01`…`D-73`. Lo que no tenga fuente se marca `POR CONFIRMAR` o `DERIVADO` y **no se convierte en requisito** hasta ser validado. No se recicla texto ambiguo de los documentos base.
+> **Regla de trazabilidad.** Todo enunciado debe poder rastrearse a una fuente: los documentos base `.github/docs/00`–`06` y `09`, una decisión explícita `D-01`…`D-111`, o la evidencia histórica de `specs/001` y `specs/002` cuando el PLAN la adopte de forma expresa. Lo que no tenga fuente se marca `POR CONFIRMAR` o `DERIVADO` y **no se convierte en requisito** hasta ser validado. No se recicla texto ambiguo de los documentos base.
 
 ## 0. Control del documento
 
@@ -18,21 +18,24 @@ Producir, de forma incremental y verificable, el documento único de ingeniería
 ### 0.2 Alcance de esta versión
 | Elemento | Estado |
 |---|---|
-| Capítulo 1 — Análisis del problema | Cerrado (v0.5); registros en 0.5 y 0.6 |
+| Capítulo 1 — Análisis del problema | Cerrado (v0.29); registros en 0.5 y 0.6 |
 | Capítulo 2 — Propuesta de solución | Cerrado (v0.28): 23 funcionalidades, 9 módulos y 8 incrementos |
 | Capítulo 3 — Arquitectura y tecnología | Cerrado (v0.19): 3.1–3.5 completos |
-| Capítulo 4 — Estrategia de desarrollo | Cerrado (v0.21) |
+| Capítulo 4 — Estrategia de desarrollo | Cerrado (v0.29); incluye la etapa `E-1b` en `4.8` |
 | Capítulo 5 — Estrategia de calidad | Cerrado (v0.24) |
 | Capítulo 6 — SDD e inteligencia artificial | Cerrado (v0.26) |
 | Actualización de `.github/docs/00`–`09` | Completada el 27/10/2026: `00`–`06` y `09`; `07` y `08` no existen |
 | Autorregistro público de usuarios | Incorporado al alcance el 29/10/2026 (`D-72`, `D-73`): registro anónimo, sin sesión y con nombre de usuario obligatorio |
-| Especificaciones y cambios en OpenSpec | Listos para iniciar; el plan está completo |
+| Especificaciones y cambios en OpenSpec | Reconciliación cerrada el 29/10/2026 (`D-74`…`D-111`); el próximo paso es `E-1b` y después el cambio OpenSpec de `E-2` |
+| `specs/001` y `specs/002` (Spec Kit) | Declaradas **evidencia histórica no normativa** el 29/10/2026 (`D-108`): no se editan, no se citan como requisito y solo se usan para el registro de brechas |
+| Etapa `E-1b` (reconciliación) | Definida en `4.8`; cierra brechas de `E-1` y produce la línea base de OpenSpec antes de abrir `E-2` |
 
 ### 0.3 Fuentes utilizadas
 - `.github/docs/00-idea-problema.md` … `06-flujos-casos-de-uso.md`
-- `.github/docs/09-operacion-copilot-spec-kit.md`
-- Aclaraciones del autor: `D-01` a `D-10` (registradas en 0.5) y `D-72`–`D-73` (registradas el 29/10/2026)
-- **Excluidos por instrucción:** código implementado, `.github/spec/`, `specs/`, `docs/`.
+- `.github/docs/09-operacion-openspec.md` (reemplaza al antiguo `09-operacion-copilot-spec-kit.md`, `D-09`)
+- Aclaraciones del autor: `D-01` a `D-10` (registradas en 0.5), `D-72`–`D-73` (29/10/2026) y `D-74`–`D-111` (encuesta de reconciliación, 29/10/2026)
+- **Evidencia histórica (no normativa, `D-108`):** `specs/001-gestion-usuarios-companias/` y `specs/002-gestion-companias-proyectos/`, generadas con Spec Kit y congeladas el 29/10/2026
+- **Excluidos por instrucción:** código implementado, `.github/spec/`, `docs/`
 
 ### 0.4 Convenciones
 | Marca | Significado |
@@ -51,11 +54,11 @@ Prefijos de identificadores: `P` problema, `H` hipótesis, `N` necesidad, `ACT` 
 | D-01 | Plataforma SaaS multiempresa. El Administrador designa directores de proyecto; el Administrador o un Director sin compañía crean compañías; un Director no puede tener más de una compañía. | Tenancy, onboarding, RBAC | CONFIRMADO |
 | D-02 | Cuatro roles: Administrador (plataforma, sin compañía), Director de proyectos, Presupuestador y Auditor. Reemplazan `PROJECT_MANAGER`, `ESTIMATOR` y `READ_ONLY`. | Actores, autorización, modelo de datos | CONFIRMADO (`D-15`, `D-21`) |
 | D-03 | Firma configurable **por proyecto**, editable solo por el Director: (1) sin firma; (2) firma de presupuestador (firmante único o firma por cada APU modificado/creado); (3) firma de presupuestador + aprobación de auditor por APU. | Flujo de aprobación, estados, modelo de datos | MODIFICADO por `D-52` (aprobación única por APU) |
-| D-04 | Un presupuesto solo pasa a `FINALIZADO` si todos los insumos están `COTIZADO`; el cambio de estado puede ser masivo. | Regla de cierre | CONFIRMADO |
+| D-04 | Un presupuesto solo pasa a `FINALIZADO` si todos los insumos están `COTIZADO`; el cambio de estado puede ser masivo. | Regla de cierre | REFORMULADO por `D-89`: la precondición se valida al pasar a `COTIZADO` y `FINALIZADO` solo se alcanza desde allí |
 | D-05 | Un APU pertenece a un solo proyecto. Se crea desde cero, o se copia desde un APU de la empresa o desde el catálogo abierto. Los insumos son por proyecto y al copiar se detectan similitudes para que el usuario decida. La Matriz es un insumo compuesto reutilizable en varios APUs. | Modelo APU/insumo, copia, catálogo | CONFIRMADO (`D-12`, `D-13`, `D-16`) |
 | D-06 | Fórmulas: insumo → cantidad requerida = cantidad unitaria × rendimiento en APU; mano de obra → valor total = unidad de esfuerzo (hora-hombre o día-hombre, configurable) × rendimiento en APUs. | Motor de cálculo | PARCIAL (X-15) |
 | D-07 | El AIU se parametriza únicamente por proyecto. | Configuración de proyecto | CONFIRMADO |
-| D-08 | Control de cambios reducido: solo se guarda el último usuario que modificó un APU o un insumo. Sin historial de valores ni de acciones. | Alcance de auditoría | CONFIRMADO (X-01) |
+| D-08 | Control de cambios reducido: solo se guarda el último usuario que modificó un APU o un insumo. Sin historial de valores ni de acciones. | Alcance de auditoría | CONFIRMADO (X-01); MODIFICADO por `D-92` (se admite historial de eventos de estado y visibilidad) |
 | D-09 | OpenSpec reemplaza por completo a Spec Kit. Los documentos `00`–`09` siguen vigentes como documentación y se actualizan gradualmente. | Proceso SDD y documentación | CONFIRMADO |
 | D-10 | El proyecto es académico. | Contexto, plan y evaluación | CONFIRMADO (`D-20`) |
 | D-11 | Autoría y aprobación (deriva de Q-01 = A): último usuario modificador por APU e insumo; un registro de aprobación por APU con usuario, rol, fecha y modo; estado del presupuesto. Sin historial de valores ni congelamiento de versión. | Modelo de datos, flujo de aprobación | MODIFICADO por `D-52` (registro único de aprobación) |
@@ -99,7 +102,7 @@ Prefijos de identificadores: `P` problema, `H` hipótesis, `N` necesidad, `ACT` 
 | D-49 | Borrado lógico (`is_active`/`deleted_at`) en `Project`, `Apu` y `Resource`, con `RESTRICT` en registros referenciados. | Persistencia, integridad | CONFIRMADO (Q-42 = A) |
 | D-50 | Control de concurrencia optimista con `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource`; la API responde `409 Conflict`. | Persistencia, concurrencia | CONFIRMADO (Q-43 = A) |
 | D-51 | El EDT se modela con `WbsChapter` y `WbsItem` separados y una tabla `WbsCode` (`project_id`, `code`, `node_type`) con índice único (`project_id`, `code`) que garantiza la unicidad entre capítulos e ítems. | EDT, persistencia | CONFIRMADO (Q-39 = B) |
-| D-52 | Aprobación única por APU: un registro por APU con el último usuario que aprobó, su rol, fecha, modo y evidencia capturada. No se conserva historial por usuario ni se valida la aprobación de múltiples auditores; el modo 3 se limita a una aprobación por APU. | Aprobaciones, alcance | CONFIRMADO (Q-41 = C) |
+| D-52 | Aprobación única por APU: un registro por APU con el último usuario que aprobó, su rol, fecha, modo y evidencia capturada. No se conserva historial por usuario ni se valida la aprobación de múltiples auditores; el modo 3 se limita a una aprobación por APU. | Aprobaciones, alcance | CONFIRMADO (Q-41 = C); MODIFICADO por `D-91` (la evidencia se persiste en `UserSignature`) |
 | D-53 | Toda edición de un APU aprobado elimina su registro de aprobación y exige una nueva aprobación. | Aprobaciones, integridad | CONFIRMADO (Q-44 = A) |
 | D-54 | El backend se organiza en proyectos por capa (`Domain`, `Application`, `Infrastructure`, `Api`) con carpetas por módulo dentro de cada capa. | Organización de componentes | CONFIRMADO (Q-45 = A) |
 | D-55 | Los contratos JSON usan `camelCase`; los ejemplos con `snake_case` de `02 §5` quedan obsoletos. | Contratos de API | CONFIRMADO (Q-47 = B) |
@@ -121,15 +124,53 @@ Prefijos de identificadores: `P` problema, `H` hipótesis, `N` necesidad, `ACT` 
 | D-71 | La IA puede redactar especificaciones y código; el estudiante revisa y aprueba cada cambio. | Proceso, IA | CONFIRMADO (Q-62 = A) |
 | D-72 | El autorregistro de usuarios **sí existe**: cualquier persona crea su propia cuenta desde un endpoint público, **sin sesión iniciada** y sin pertenecer previamente a ninguna compañía. La cuenta nace sin compañía y sin proyecto, con el rol inicial que fije el sistema, y su asignación posterior se rige por `D-02`, `D-21` y `D-34`. Sustituye a `E-11` y a `A-03`. | Alcance, identidad, seguridad | CONFIRMADO (Q-63 = A; aclaración del autor, 29/10/2026) |
 | D-73 | El **nombre de usuario** (`username`) es un atributo obligatorio y único de la cuenta, además del correo electrónico; sirve para iniciar sesión y se declara en el autorregistro. | Identidad, modelo de datos, contratos | CONFIRMADO (aclaración del autor, 29/10/2026) |
+| D-74 | El nombre canónico del rol es **Director de proyectos** (`role_code = DIRECTOR`); "Gerente de proyectos" queda `OBSOLETO` como término normativo y se conserva solo como evidencia histórica de `specs/001`. | Actores, `role_code`, semillas, JWT, contratos | CONFIRMADO (Q-64.1 = A) |
+| D-75 | El usuario creado por autorregistro nace con el rol **Presupuestador**, sin compañía y sin proyecto; el rol inicial deja de ser `DERIVADO`. | `D-72`, identidad | CONFIRMADO (Q-64.2 = A) |
+| D-76 | **MODIFICADA en v0.30 (autor, 29/10/2026).** El autorregistro pide la **identidad completa**: tipo y número de documento, primer y segundo nombre (el segundo es opcional), primer y segundo apellido (el segundo es opcional), fecha de nacimiento, correo, nombre de usuario y contraseña. La residencia y la tarjeta profesional se completan en el perfil antes de que la cuenta opere dentro de una compañía. Ya no se piden solo `username`, correo y contraseña. | `D-72`, `D-73`, `D-78`, `D-80`, contratos, modelo | MODIFICADO (INT-06) |
+| D-77 | El número de documento de identidad **no** es único; la unicidad de cuenta se garantiza con `email` y `username`. | Modelo, validaciones | CONFIRMADO (Q-64.4 = B) |
+| D-78 | `User` absorbe el perfil: nombres, tipo y número de documento, fecha de nacimiento, residencia (país/departamento/municipio) y datos de tarjeta profesional. Desaparece la separación `UserAccount`/`UserProfile` de `specs/001`. | `3.3.2`, modelo | CONFIRMADO (Q-64.5 = A) |
+| D-79 | La recuperación de contraseña es por correo (`D-17`, `RF-18`) con **respaldo asistido por el Administrador** cuando el correo no esté disponible. | `RF-18`, `D-45`, `D-17` | CONFIRMADO (Q-64.6 = A) |
+| D-80 | El autorregistro exige **límite de intentos por IP** y **verificación de correo** antes de habilitar la cuenta; sin ambos controles el despliegue queda limitado a local o demo (`D-39`). | Seguridad, `RT-22` | CONFIRMADO (Q-64.7 = A) |
+| D-81 | El hash de contraseña lo provee **ASP.NET Core Identity** (PBKDF2); Argon2id de `specs/001` queda `OBSOLETO` y, si existiera un hash previo, se migra por rehash en el siguiente inicio de sesión. | Seguridad, `3.2.2` | CONFIRMADO (Q-64.8 = A) |
+| D-82 | La autorización de endpoints privados se decide por **`permission_key` activo** (`Permission` + `RolePermission` con `seed` versionado e idempotente); la matriz `1.3.2` es **referencia funcional**, no control hardcodeado. Política **fail-closed**: rol inactivo o permiso ausente ⇒ `403` + evento de seguridad. Los cuatro roles base son inmutables. | Autorización, modelo, seguridad | CONFIRMADO (Q-64.9 = B; modifica `D-02` y `D-34`) |
+| D-83 | El Administrador **lee** APUs e insumos, sin editarlos; el `BR-006` de `specs/001` que se lo prohibía queda `OBSOLETO`. | Matriz `1.3.2` | CONFIRMADO (Q-64.10 = A) |
+| D-84 | El Auditor puede **buscar y listar usuarios de su propia compañía en solo lectura**; no crea, edita ni asigna. | Matriz `1.3.2`, `RF-01` | CONFIRMADO (Q-64.11 = B) |
+| D-85 | El Presupuestador puede **crear proyectos** —con asignación automática del Director activo más antiguo como responsable cuando el creador no sea Director— y **asignar o deshabilitar en proyecto** solo a Presupuestadores y Auditores ya afiliados a su compañía. | Matriz `1.3.2`, `RF-01`, `RF-03` | CONFIRMADO (Q-64.12 = B; criterio de `specs/002`) |
+| D-86 | El Administrador **no crea ni edita proyectos**: solo consulta (`R-08`). | Matriz `1.3.2` | CONFIRMADO (Q-64.13 = A) |
+| D-87 | `Company` adopta el modelo ampliado de `specs/002`: tipo (`PUBLICA`/`PRIVADA`), nivel territorial, país/departamento/municipio, representante legal (por referencia de usuario o datos manuales) y trazabilidad de creación/modificación. El **Administrador inhabilita o reactiva cualquier compañía**; el **Director, únicamente la propia**. | `3.3.2`, matriz `1.3.2`, `S-02` | CONFIRMADO (Q-64.14 = B; reescribe `X-08`) |
+| D-88 | El proyecto tiene cinco estados: `POR_COTIZAR` (inicial), `FALTA_INFORMACION`, `COTIZADO`, `FINALIZADO` e `INHABILITADO`. Todo cambio posterior a la creación es un comando explícito. Un proyecto `INHABILITADO` solo es visible para Administrador y Director. | `RF-03`, estados, `3.3` | CONFIRMADO (Q-64.15 = A; formaliza `specs/002`) |
+| D-89 | La precondición "**100 % de insumos en `COTIZADO`**" se valida al pasar a `COTIZADO`; `FINALIZADO` solo se alcanza desde `COTIZADO` y añade las reglas de firma. `D-04`, `R-06` y `X-03` quedan **REFORMULADOS**. | `D-04`, `R-06`, cierre | CONFIRMADO (Q-64.16 = B) |
+| D-90 | Se mantienen los **tres modos de firma** de `D-03`; el Director **ejecuta el cierre sin firmar APUs**. La exigencia de `specs/002` de una firma cargada del Director queda `OBSOLETA`. | `D-03`, `D-14`, `D-34` | CONFIRMADO (Q-64.17 = A) |
+| D-91 | La evidencia de firma **se persiste** en `UserSignature` (una por usuario: nombre e imagen digital, `is_active`) y `ApuApproval` referencia al firmante; no se persiste hash ni token de firma certificada. El `signature_captured` de `D-52` y el `BR-012` que negaban la persistencia quedan `OBSOLETOS`. La imagen nunca se expone en endpoints públicos. | `D-52`, `BR-012`, modelo, privacidad | CONFIRMADO (Q-64.18 = B; abre `RT-27`) |
+| D-92 | Se admite **historial de eventos de estado y de visibilidad** del proyecto (`ProjectStatusTransition`, `ProjectVisibilityTransition`, solo inserción) como **excepción explícita** a `D-08`/`E-05`; sigue prohibido el historial de valores de APU e insumo. | `D-08`, `E-05`, `D-11` | CONFIRMADO (Q-64.19 = A) |
+| D-93 | `ProjectConfiguration` es una entidad **separada** (1:1) con `budget_limit`, AIU, `signature_mode` y `requires_auditor`; no se embebe en `Project`. | `3.3.2`, `RF-03` | CONFIRMADO (Q-64.20 = A) |
+| D-94 | `requires_auditor` y `signature_mode` se especifican e implementan en `E-2`; el **tope presupuestal** se configura en `E-2` pero su verificación y alerta (`RF-17`) se implementan en `E-4a`. | `RF-03`, `RF-17`, etapas | CONFIRMADO (Q-64.21 = B) |
+| D-95 | Se mantiene **un único esquema** con `company_id`/`project_id`; la segregación `param`/`iam`/`dbo`/`audit`/`log` de `specs/002` (incluidos `FR-048`, `FR-049` y `FR-050`) queda `OBSOLETA`. La gobernanza de datos se cubre con el runbook y la convención de nombres (`D-107`). **Cierre en `E-1b` (v0.30): no se mueven objetos porque la base está vacía (DEC-19); la baseline única nace con un solo esquema.** | `3.3.1`, migraciones | CONFIRMADO (Q-64.22 = A); cierre sin migración de datos |
+| D-96 | Los catálogos son `DocumentType`, `Country`, `Department`, `Municipality` y `BaseCurrency`; `City` de `05` se sustituye por `Municipality`. | `3.3.2`, `RF-04` | CONFIRMADO (Q-64.23 = A) |
+| D-97 | `rowversion` se incorpora a `Project` en `E-1b` y a `WbsChapter`, `WbsItem`, `Apu` y `Resource` cuando se creen en su etapa (`D-50`). | Persistencia, concurrencia | CONFIRMADO (Q-64.24 = A) |
+| D-98 | La pertenencia se modela con `User.company_id` y `ProjectMember` única por (`project_id`, `user_id`), sin historial de asignaciones. `CompanyUserMembership` y `ProjectUserMembership` quedan `OBSOLETAS`. **Cierre en `E-1b` (v0.30): sin migración de datos, porque la base está vacía (DEC-19); las tablas se eliminan del modelo y la baseline se genera sobre el modelo reconciliado.** | Modelo, `D-08` | CONFIRMADO (Q-64.25 = A); cierre sin migración de datos |
+| D-99 | Los contratos JSON usan `camelCase` en todos los endpoints; los ejemplos `snake_case` de `specs/001` quedan `OBSOLETOS` (`D-55`). | Contratos | CONFIRMADO (Q-64.26 = A) |
+| D-100 | Todos los errores usan `ProblemDetails` (RFC 7807) con el código de negocio en `extensions.code`; el sobre `{error, meta}` de `specs/002` queda `OBSOLETO`. | Contratos | CONFIRMADO (Q-64.27 = A) |
+| D-101 | La paginación usa `page` y `pageSize`, con `{10, 50, 100}` como conjunto por defecto y límite máximo configurable; `page_size` y `pageNumber` quedan `OBSOLETOS`. | Contratos | CONFIRMADO (Q-64.28 = A) |
+| D-102 | `M-01` es el único dueño de `/auth`, `/profile`, `/users`, `/companies` y `/catalogs`; `M-02` solo expone `/projects`. Se elimina la duplicidad de contratos entre `specs/001` y `specs/002`. | `3.4.3`, `X-41` | CONFIRMADO (Q-64.29 = A) |
+| D-103 | La ruta de asignaciones de proyecto es `/projects/{id}/memberships`; `/members` de `3.4.3` queda `OBSOLETO`. | `3.4.3` | CONFIRMADO (Q-64.30 = B) |
+| D-104 | Se prohíben `AutoMapper`, `Mapster` y `FluentValidation.AspNetCore`: mapeo manual y `FluentValidation` + `DependencyInjectionExtensions` (`D-41`, `3.2.2`); EF Core 10. | Stack | CONFIRMADO (Q-64.31 = A) |
+| D-105 | Las pruebas se organizan en `BudgetCivil.Tests.Unit`, `BudgetCivil.Tests.Integration` y `BudgetCivil.Tests.Architecture`, con `NetArchTest` y cobertura mínima (`D-61`, `D-63`); el proyecto único `BlackBoxTests` queda `OBSOLETO`. **Cierre en `E-1b` (v0.30): el proyecto se elimina completo (39 archivos y 85 casos) y la suite se reconstruye (DEC-20); no se redistribuyen los casos antiguos porque dependen del arnés prohibido por `D-106`.** | Calidad | CONFIRMADO (Q-64.32 = A); purga y reconstrucción |
+| D-106 | La integración se verifica manualmente contra SQL Server local; se prohíben `EF Core InMemory` y `WebApplicationFactory` (`D-66`). | Calidad | CONFIRMADO (Q-64.33 = A) |
+| D-107 | Las migraciones siguen el formato `YYYYMMDDHHMM_<scope>_<change>` y la convención `PK_`/`FK_`/`IX_`/`UQ_`/`CK_`, sobre el runbook manual de `D-40`. | Operación | CONFIRMADO (Q-64.34 = A) |
+| D-108 | `specs/001` y `specs/002` quedan **congeladas como evidencia histórica no normativa**: no se editan, no se citan como requisito y su contenido se traduce a `openspec/specs` y al registro de brechas `GAP`. | Proceso, `D-09`, `6.1.1` | CONFIRMADO (Q-64.35 = A) |
+| D-109 | El frontend queda **fuera del alcance** de `E-1b` y `E-2`: el contrato v1 se congela, el impacto se registra en `4.8.6` (`IF-01`…`IF-06`) y el cliente Angular se regenera al abrir la etapa de interfaz (`D-56`). No se mantienen contratos paralelos. | Frontend, contrato | CONFIRMADO (Q-64.36 = A) |
+| D-110 | El primer Administrador se crea por **semilla** en local y por **bootstrap idempotente y auditado** en demo, con bandera de entorno; ambos caminos se excluyen entre sí y el bootstrap se cierra al existir un Administrador. | Operación, seguridad | CONFIRMADO (Q-64.37 = C) |
+| D-111 | Se mantiene `SecurityAuditEvent` para un **conjunto cerrado** de eventos de seguridad (inicio de sesión fallido, bloqueo, denegación de autorización, bootstrap y cambio de rol), como excepción explícita a `D-08`; no registra valores de negocio. | Auditoría, seguridad | CONFIRMADO (Q-64.38 = A) |
 
 ### 0.6 Contradicciones y vacíos vigentes
 Este registro es la lista de trabajo para los siguientes capítulos. Ningún punto marcado como `PENDIENTE` puede convertirse en requisito.
 
-| ID | Contradicción o vacío | Fuentes en conflicto | Estado tras D-01…D-73 | Afecta a |
+| ID | Contradicción o vacío | Fuentes en conflicto | Estado tras D-01…D-111 | Afecta a |
 |---|---|---|---|---|
 | X-01 | Trazabilidad: "log inmutable de cada acción y de los cambios de costo" frente a "solo último modificador, sin valores ni historial". | `00 §5`, `NFR-004`, `BR-004` ↔ `D-08`, `D-11` | **RESUELTO por D-11 (Q-01 = A).** Último modificador + aprobaciones por APU + estado; sin historial de valores ni congelamiento de versión | P-01, S-11, E-05 |
 | X-02 | Firma: "no se persiste token/hash", "aprobación única" y "solo ADMIN/ESTIMATOR firman" frente a tres modos de firma con firmas por APU y aprobación de auditores. | `00 §9`, `05 §4`, `BR-011`, `02 §4` ↔ `D-03`, `D-11`, `D-14` | **RESUELTO:** se persisten aprobaciones por APU, el Director ejecuta el cierre y el firmante único quedó definido en `D-26` | S-10, ACT-03, ACT-04 |
-| X-03 | Cierre: bastaba con ausencia de `FALTA_INFORMACION`; ahora se exige el 100 % de insumos `COTIZADO`. | `05 §4`, `BR-007`, `BR-011` ↔ `D-04` | **Resuelto por D-04.** Los documentos `02` y `05` quedan `OBSOLETO` en ese punto | S-10, criterios de aceptación |
+| X-03 | Cierre: bastaba con ausencia de `FALTA_INFORMACION`; ahora se exige el 100 % de insumos `COTIZADO`. | `05 §4`, `BR-007`, `BR-011` ↔ `D-04` | **Resuelto por D-04 y REFORMULADO por `D-89`:** la precondición se valida al pasar a `COTIZADO`. Los documentos `02` y `05` quedan `OBSOLETO` en ese punto | S-10, criterios de aceptación |
 | X-04 | APU por proyecto: el modelo lo define a nivel compañía y con relación 1:1 con el ítem; la decisión lo hace pertenecer a un proyecto y ser copiable. | `05 §2/§3` ↔ `D-05`, `D-16` | **Resuelto por Q-15 = B:** relación 1:1 entre APU e ítem; para reutilizar hay que copiar | S-06 |
 | X-05 | Insumos por proyecto: el modelo los define a nivel compañía y `FR-007` habla de una tabla unificada por empresa. | `05 §3`, `FR-007` ↔ `D-05`, `D-12` | **Resuelto por `D-05`, `D-28` y `D-29`:** insumos propios de cada proyecto, copiables, y catálogo global con todos los campos | S-05, S-14 |
 | X-06 | Catálogo abierto: no existe en ningún documento base; la decisión lo introduce como fuente de APUs. | `00`–`06` ↔ `D-05`, `D-12` | **Resuelto por `D-12`, `D-22` y `D-28`:** global, automático, sin curaduría, publicación por proyecto y todos los campos del insumo | S-08 |
@@ -154,6 +195,22 @@ Este registro es la lista de trabajo para los siguientes capítulos. Ningún pun
 | X-25 | `BR-001` exige que todo usuario tenga compañía; `D-02` define al Administrador sin compañía y `D-72` admite usuarios autorregistrados sin compañía. | `BR-001` ↔ `D-02`, `D-72` | **Resuelto por `D-02`, `D-34` y `D-72`:** `company_id` es nullable para el rol Administrador y para el usuario autorregistrado pendiente de asignación; `02 §3` debe actualizarse | 3.3, `05` |
 | X-26 | El modo 3 exigía que uno o más auditores aprobaran cada APU; con `D-52` solo se conserva la última aprobación. | `D-03` ↔ `D-52` | **Resuelto por D-52:** el modo 3 se limita a una aprobación por APU; no se valida la aprobación de varios auditores | S-10, RF-12 |
 | X-27 | Autorregistro: `E-11` lo excluía del alcance y `A-03` suponía que solo el Administrador creaba usuarios, mientras la aclaración del autor lo exige como capacidad del sistema. | `E-11`, `A-03` ↔ `D-72` | **Resuelto por `D-72` y `D-73`:** el autorregistro entra en alcance; `E-11` queda `OBSOLETO` y `A-03` se reescribe como confirmado | S-01, RF-23, capítulo 3 |
+| X-28 | Nombre del rol: "Gerente de proyectos" en `specs/001` frente a "Director de proyectos" en `D-02` y `specs/002`. | `specs/001` ↔ `D-02` | **Resuelto por `D-74`:** el nombre canónico es Director de proyectos; el anterior queda como evidencia histórica | 1.3, semillas, contratos |
+| X-29 | Rol inicial del autorregistrado: `D-72` lo dejaba `DERIVADO` y `specs/001` fijaba Presupuestador. | `D-72` ↔ `specs/001` | **Resuelto por `D-75`:** rol Presupuestador | S-01, RF-23 |
+| X-30 | Superficie del autorregistro y del perfil: `D-72` pide tres datos y `specs/001` exige siete campos más un perfil rico. | `D-72`, `3.3.2` ↔ `specs/001` | **Resuelto por `D-76` y `D-78`:** registro mínimo y perfil obligatorio antes de operar; `User` absorbe el perfil | 3.3.2, contratos |
+| X-31 | Unicidad del documento de identidad: `specs/001` devuelve conflicto y el PLAN no lo definía. | `specs/001` ↔ `3.3.3` | **Resuelto por `D-77`:** el documento no es único | 3.3.3 |
+| X-32 | Autorización: RBAC por rol (`D-02`) frente a `Permission`/`RolePermission` con fail-closed (`specs/001` y `specs/002`). | `D-02` ↔ `specs/001`, `specs/002` | **Resuelto por `D-82`:** `permission_key` con la matriz como referencia; `D-02` y `D-34` quedan matizados | 1.3, 3.3.2 |
+| X-33 | Matriz de capacidades frente a lo implementado: Administrador sin lectura de APUs, Auditor sin búsqueda y Presupuestador sin crear proyectos ni asignar. | `1.3.2` ↔ `specs/001`, `specs/002` | **Resuelto por `D-83`, `D-84`, `D-85` y `D-86`:** se actualiza la matriz `1.3.2` | 1.3 |
+| X-34 | Compañía: campos editables y autoridad para inhabilitar (`D-15`/`X-08` frente a `specs/002`; `specs/001` niega al Director). | `D-15`, `X-08` ↔ `specs/001`, `specs/002` | **Resuelto por `D-87`:** modelo ampliado; el Administrador inhabilita cualquiera y el Director la propia | 1.3, 3.3.2 |
+| X-35 | Estados del proyecto y precondición de cotización: el PLAN nombraba tres estados y exigía el 100 % cotizado para `FINALIZADO`. | `D-04`, `R-06` ↔ `specs/002` | **Resuelto por `D-88` y `D-89`:** cinco estados y precondición en `COTIZADO`; `D-04`, `R-06` y `X-03` quedan reformulados | 2.2, 4.8 |
+| X-36 | Firma: tres modos y un Director que no firma (`D-03`, `D-14`, `D-34`) frente a dos modos y firma del Director (`specs/002`); y evidencia no persistida (`D-52`, `BR-012`) frente a imagen persistida. | `D-03`, `D-14`, `D-52`, `BR-012` ↔ `specs/002` | **Resuelto por `D-90` y `D-91`:** tres modos, cierre sin firma del Director y `UserSignature` persistida; `D-52` y `BR-012` quedan modificados | S-10, RF-12, RF-13 |
+| X-37 | Historial de eventos de estado y visibilidad (`specs/002`) frente a "sin historial" (`D-08`, `E-05`). | `D-08`, `E-05` ↔ `specs/002` | **Resuelto por `D-92`:** excepción acotada a eventos de estado y visibilidad | S-11, 3.3.2 |
+| X-38 | Pertenencia usuario–compañía y usuario–proyecto con historial (`specs/001`, `specs/002`) frente a `User.company_id` más `ProjectMember` (`3.3.2`). | `3.3.2` ↔ `specs/001`, `specs/002` | **Resuelto por `D-98`:** modelo simple; las tablas de membresía quedan obsoletas y se migran en `E-1b` | 3.3.2 |
+| X-39 | Persistencia: segregación por esquemas y `FR-048`…`FR-050` (`specs/002`) frente a esquema compartido (`3.3.1`). | `3.3.1` ↔ `specs/002` | **Resuelto por `D-95`:** esquema único y gobernanza por runbook y convención (`D-107`) | 3.3.1, 4.8 |
+| X-40 | Identidad de contraseña: Argon2id (`specs/001`) frente a ASP.NET Identity (`3.2.2`). | `3.2.2` ↔ `specs/001` | **Resuelto por `D-81`:** Identity/PBKDF2, con rehash si existiera un hash Argon2 | 3.2.2 |
+| X-41 | Duplicidad de endpoints: `POST/PUT/PATCH /companies` y `GET /users` definidos a la vez en `specs/001` y `specs/002` con permisos distintos. | `specs/001` ↔ `specs/002` | **Resuelto por `D-102`:** `M-01` es el único dueño; `M-02` solo `/projects` | 3.4.3, 4.8 |
+| X-42 | Contratos: `snake_case` y ausencia o sobre propio de errores (`specs/001`, `specs/002`) frente a `camelCase` y `ProblemDetails` (`D-55`, `3.4.5`). | `D-55`, `3.4.5` ↔ `specs/001`, `specs/002` | **Resuelto por `D-99`, `D-100` y `D-101`:** casing, errores y paginación unificados | 3.4.5 |
+| X-43 | Estatus normativo de `specs/001` y `specs/002` frente a `D-09` y la jerarquía de `6.1.1`. | `D-09`, `6.1.1` ↔ `specs/` | **Resuelto por `D-108`:** evidencia histórica congelada, sin autoridad normativa | 0.3, 6.1.1 |
 
 ### 0.7 Impacto sobre los documentos base
 Actualización realizada el 27/10/2026 (`D-09`). El apartado de Spec Kit de `04 §5` y el antiguo documento `09` quedaron reemplazados por `09-operacion-openspec.md`.
@@ -170,13 +227,15 @@ Actualización realizada el 27/10/2026 (`D-09`). El apartado de Spec Kit de `04 
 
 > **v0.28 (29/10/2026):** el autorregistro (`D-72`, `D-73`) obliga a revisar `00 §3`, `02 §1/§4` (RF-01 y matriz de autorización), `05 §3` (agregar `User.username` y `company_id` nullable) y `06 §1` (caso de uso de autorregistro). Queda `PENDIENTE` de aplicar en los documentos narrativos.
 
+> **v0.29 (29/10/2026):** la reconciliación con las especificaciones implementadas (`D-74`–`D-111`) amplía el impacto documental. `00 §3/§8` (roles y autorregistro con perfil), `02 §1/§4/§5` (matriz, `permission_key`, contratos `camelCase` y `ProblemDetails`), `03 §2/§5` (modelo de autorización y firma persistida), `04 §2` (stack sin `AutoMapper`/`Mapster`), `05 §1–§5` (modelo ampliado de `User` y `Company`, `Permission`/`RolePermission`, `UserSignature`, historial de estados, retiro de tablas de membresía y de la segregación por esquemas) y `06 §1/§2` (estados del proyecto y cierre). Todo ello queda `PENDIENTE` de aplicar en los documentos narrativos y se ejecuta dentro de `E-1b` (`4.8`).
+
 ### 0.8 Estructura del documento
 | Capítulo | Contenido | Estado |
 |---|---|---|
-| 1 | Análisis del problema | Cerrado (v0.5) |
-| 2 | Propuesta de solución | Cerrado (v0.8) |
+| 1 | Análisis del problema | Cerrado (v0.29) |
+| 2 | Propuesta de solución | Cerrado (v0.28) |
 | 3 | Decisiones de arquitectura y tecnología | Cerrado (v0.19) |
-| 4 | Estrategia de desarrollo | Cerrado (v0.21) |
+| 4 | Estrategia de desarrollo | Cerrado (v0.29); incluye `4.8` (etapa `E-1b`) |
 | 5 | Estrategia de calidad | Cerrado (v0.24) |
 | 6 | Uso de SDD e inteligencia artificial (OpenSpec) | Cerrado (v0.26) |
 | Anexos | A) Registro de decisiones · B) Preguntas abiertas · C) Trazabilidad requisito↔prueba · D) Glosario | Pendiente |
@@ -259,7 +318,7 @@ El término no está definido en los documentos base. Con `D-01` y `D-10` se ide
 | ID | Necesidad | Fuente | Requisito candidato | Estado |
 |---|---|---|---|---|
 | N-01 | Aislar la información entre empresas y entre proyectos de una misma empresa. | `00 §8`, `D-05` | Multitenancy + alcance por proyecto | CONFIRMADO |
-| N-02 | Controlar el alta de empresas y de usuarios sin autoservicio. | `D-01`, `D-02` | Gestión de usuarios por Administrador | DERIVADO |
+| N-02 | Controlar el alta de empresas y del alta administrativa de usuarios; el autorregistro público es una vía separada y anónima. | `D-01`, `D-02`, `D-72` | Gestión administrativa de usuarios + autorregistro con controles (`D-80`) | CONFIRMADO |
 | N-03 | Operar con bajo costo de infraestructura en la fase MVP. | `01 §3` | Despliegue contenedorizado | CONFIRMADO |
 
 ### 1.2.3 Necesidades de las empresas clientes
@@ -307,23 +366,24 @@ El término no está definido en los documentos base. Con `D-01` y `D-10` se ide
 ### 1.3.2 Matriz de capacidades
 `sí` = permitido explícitamente · `no` = denegado explícitamente · `lectura` = solo consulta.
 
-Las celdas se cerraron con la revisión de capítulos 1 y 2 (`D-34`); ya no quedan valores indeterminados. El **autorregistro no es una capacidad por rol**: es una acción **anónima**, disponible **sin sesión** (`D-72`, `ACT-07`), y por eso no figura en la matriz.
+Las celdas se cerraron con la revisión de capítulos 1 y 2 (`D-34`) y se ajustaron en la reconciliación v0.29 (`D-82`…`D-87`). El **autorregistro no es una capacidad por rol**: es una acción **anónima**, disponible **sin sesión** (`D-72`, `ACT-07`), y por eso no figura en la matriz. La matriz es **referencia funcional**: la decisión efectiva de autorización se evalúa por `permission_key` activo (`D-82`).
 
 | Capacidad | ACT-01 Administrador | ACT-02 Director | ACT-03 Presupuestador | ACT-04 Auditor |
 |---|---|---|---|---|
 | Crear usuarios (alta administrativa) | sí (global) | no | no | no |
-| Buscar usuarios | sí | sí (para gestionar su compañía y sus proyectos) | no | no |
+| Buscar usuarios | sí | sí (para gestionar su compañía y sus proyectos) | no | sí (solo lectura, su compañía, `D-84`) |
 | Cambiar rol de un usuario | sí (global) | sí, solo en su compañía y entre Director / Presupuestador / Auditor | no | no |
 | Crear compañía | sí (ilimitadas) | sí (una sola, solo si no tiene) | no | no |
-| Editar datos de la compañía | sí (solo registro: razón social, NIT) | sí (solo la propia) | no | no |
+| Editar datos de la compañía | sí (registro de cualquier compañía, `D-87`) | sí (solo la propia) | no | no |
+| Inhabilitar / reactivar compañía | sí (cualquiera) | sí (solo la propia, `D-87`) | no | no |
 | Leer compañía | sí | sí (la propia) | sí (solo lectura) | sí (la de sus proyectos) |
-| Crear / editar proyecto | no (lectura) | sí | no | no |
-| Configurar proyecto (divisa, AIU, topes, firma, requisito de auditor) | no | sí | no | no |
+| Crear / editar proyecto | no (lectura, `D-86`) | sí | sí (crea y edita donde está asignado, `D-85`) | no |
+| Configurar proyecto (divisa, AIU, topes, firma, requisito de auditor) | no | sí (todos los parámetros) | sí, salvo modo de firma y requisito de auditor (`D-03`, `D-85`) | no |
 | Crear / editar EDT | no | sí | sí (todas las características) | no (lectura) |
 | Crear / editar APU | no (lectura) | sí | sí | no (lectura) |
 | Crear / editar insumos | no (lectura) | sí | sí | no (lectura) |
 | Añadir insumos a un APU | no | sí | sí | no |
-| Asignar usuarios a proyectos | no | sí (solo usuarios de su compañía) | no | no |
+| Asignar usuarios a proyectos | no | sí (solo usuarios de su compañía) | sí (solo Presupuestador/Auditor de su compañía, `D-85`) | no |
 | Añadir / eliminar usuarios de una compañía | sí (asignación a compañías, salvo rol Administrador) | sí (su compañía, si el usuario no está en otra) | no | no |
 | Configurar el modo de firma | no | sí | no | no |
 | Firmar APU | no | no | sí en modos 2b y 3 (`D-03`, `D-34`) | no |
@@ -355,7 +415,8 @@ Las celdas se cerraron con la revisión de capítulos 1 y 2 (`D-34`); ya no qued
 | Documento base | Actor o rol previo | Tratamiento |
 |---|---|---|
 | `00 §3`, `02 §4` | `ADMIN` | Reemplazado por ACT-01, con permisos reducidos a lectura sobre el contenido técnico (`D-02`) |
-| `00 §3` | `PROJECT_MANAGER` / Gerente de proyectos | Reemplazado por ACT-02 Director de proyectos |
+| `00 §3` | `PROJECT_MANAGER` / Gerente de proyectos | Reemplazado por ACT-02 Director de proyectos (`D-02`, `D-74`) |
+| `specs/001` | "Gerente de proyectos" | Término histórico, sin autoridad normativa: el nombre canónico es Director de proyectos (`D-74`, `D-108`) |
 | `02 §4`, `06 §1` | `ESTIMATOR` | Reemplazado por ACT-03 Presupuestador |
 | `00 §3` | `READ_ONLY` | Reemplazado por ACT-04 Auditor |
 | `00 §3` | "usuario firmador configurable" | Reemplazado por la configuración de firma por proyecto (`D-03`) |
@@ -393,7 +454,7 @@ No quedan vacíos abiertos de actores. Permanecen `X-21` (contenido publicado de
 | E-02 | Scraping o comparación de precios de proveedores en tiempo real. | `00 §6` | CONFIRMADO |
 | E-03 | Ejecución de obra: inventarios, compras, facturación y control de materiales en obra. | `00 §6` | CONFIRMADO |
 | E-04 | Visores 3D e integración CAD/BIM. | `00 §6` | CONFIRMADO |
-| E-05 | Historial de cambios y de valores anteriores (auditoría detallada). | `D-08`, `D-11` | CONFIRMADO |
+| E-05 | Historial de cambios y de valores anteriores (auditoría detallada). | `D-08`, `D-11`, `D-92` | CONFIRMADO con excepción: se admiten eventos de estado y de visibilidad (`D-92`) |
 | E-06 | Conversión automática de divisas. | `05 §4` | CONFIRMADO |
 | E-07 | Aplicación móvil y operación sin conexión. Fuera de alcance por defecto. | No documentado | DERIVADO |
 | E-08 | Integraciones con ERP o contabilidad. Fuera de alcance por defecto. | No documentado | DERIVADO |
@@ -411,7 +472,7 @@ No quedan vacíos abiertos de actores. Permanecen `X-21` (contenido publicado de
 | R-03 | La copia de un APU es independiente de su origen, salvo cuando proviene del catálogo abierto, donde conserva un vínculo de procedencia. | `D-16`, `Q-16` | CONFIRMADO (`X-19`) |
 | R-04 | El AIU se define únicamente a nivel de proyecto. | `D-07` | CONFIRMADO |
 | R-05 | Una sola divisa por proyecto, sin conversión de valores. | `05 §4` | CONFIRMADO |
-| R-06 | La transición a `FINALIZADO` exige el 100 % de insumos en `COTIZADO`. | `D-04` | CONFIRMADO |
+| R-06 | La transición a `COTIZADO` exige el 100 % de insumos en `COTIZADO`; `FINALIZADO` solo se alcanza desde `COTIZADO` y añade las reglas de firma. | `D-04`, `D-89` | CONFIRMADO (REFORMULADO en v0.29) |
 | R-07 | Solo se conserva el último usuario modificador; no hay historial de acciones ni de valores. | `D-08` | CONFIRMADO |
 | R-08 | El Administrador no modifica contenido técnico (proyectos, APUs, insumos). | `D-02` | CONFIRMADO |
 | R-09 | Un Director de proyectos no puede tener más de una compañía. | `D-01` | CONFIRMADO |
@@ -431,6 +492,12 @@ No quedan vacíos abiertos de actores. Permanecen `X-21` (contenido publicado de
 | R-23 | El catálogo público es anónimo y no permite exportación masiva. | `D-38` | CONFIRMADO |
 | R-24 | El autorregistro es público y anónimo: no requiere sesión ni pertenencia previa y crea la cuenta sin compañía y sin proyecto. | `D-72` | CONFIRMADO |
 | R-25 | El nombre de usuario (`username`) es obligatorio y único en toda la plataforma. | `D-73` | CONFIRMADO |
+| R-26 | El proyecto tiene cinco estados y solo cambia por comando explícito de un actor autorizado por la matriz. | `D-88` | CONFIRMADO |
+| R-27 | Un proyecto `INHABILITADO` solo es visible para Administrador y Director; los demás roles reciben rechazo. | `D-88` | CONFIRMADO |
+| R-28 | La evidencia de firma se persiste como imagen en `UserSignature` y nunca se devuelve en endpoints públicos ni en el catálogo. | `D-91` | CONFIRMADO |
+| R-29 | Se registra historial de eventos de estado y de visibilidad del proyecto; no se registra historial de valores de APU ni de insumo. | `D-92` | CONFIRMADO |
+| R-30 | El documento de identidad no es único; `email` y `username` sí lo son. | `D-73`, `D-77` | CONFIRMADO |
+| R-31 | El contrato v1 usa `camelCase`, `ProblemDetails` y paginación `page`/`pageSize`; el frontend queda fuera de alcance hasta regenerar el cliente. | `D-99`, `D-100`, `D-101`, `D-109` | CONFIRMADO |
 
 ### 1.4.4 Supuestos
 | ID | Supuesto | Fuente | Estado |
@@ -444,6 +511,7 @@ No quedan vacíos abiertos de actores. Permanecen `X-21` (contenido publicado de
 | A-07 | Cada proyecto opera con una única moneda. | `05 §4` | CONFIRMADO |
 | A-08 | No existen requisitos legales de firma electrónica certificada. | `X-02` | POR CONFIRMAR |
 | A-09 | El volumen inicial es bajo (una empresa piloto o pocas). | DERIVADO | POR CONFIRMAR |
+| A-10 | El cliente Angular existente (`v0.0.1`) no se mantiene compatible durante `E-1b`; se regenera al abrir la etapa de interfaz. | `D-109` | CONFIRMADO |
 
 ### 1.4.5 Frontera del MVP (provisional)
 | Capacidad | ¿MVP? | Fundamento | Estado |
@@ -469,8 +537,8 @@ El capítulo se considera cerrado cuando:
 2. Cada necesidad (`N`) se mapea a una capacidad incluida (`S`), a una exclusión (`E`) o queda marcada como no requisito.
 3. Cada actor (`ACT`) tiene ámbito, pertenencia, capacidades y restricciones, **sin contradicciones abiertas de autorización**.
 4. El alcance tiene capacidades incluidas, exclusiones y frontera de MVP decidida.
-5. `X-01` a `X-27` están resueltos o aceptados explícitamente como riesgo.
-6. `Q-01` a `Q-63` están respondidas o diferidas con impacto declarado.
+5. `X-01` a `X-43` están resueltos o aceptados explícitamente como riesgo.
+6. `Q-01` a `Q-64` están respondidas o diferidas con impacto declarado.
 7. Los requisitos académicos están incorporados (`N-18`, `D-20`).
 
 ## 1.5 Riesgos del capítulo
@@ -517,6 +585,7 @@ El capítulo se considera cerrado cuando:
 | Q-22 | ¿"Todos los campos del insumo" incluye el precio unitario y los datos de distribuidor y contacto? | `X-21` | **Respondida (A) → `D-28`** |
 | Q-23 | ¿La reutilización de insumos de la compañía en un proyecto nuevo copia el insumo o referencia el registro de la compañía? | `X-22` | **Respondida (A) → `D-29`** |
 | Q-63 | ¿El autorregistro de usuarios forma parte del sistema? ¿Se exige un nombre de usuario? ¿Se requiere sesión previa para registrarse? | S-01, `X-27` | **Respondida (A, 29/10/2026) → `D-72` y `D-73`:** el autorregistro existe, es anónimo y exige nombre de usuario |
+| Q-64 | ¿Cómo se reconcilian `specs/001` y `specs/002` (implementadas con Spec Kit) con el PLAN? | `X-28`…`X-43`, etapa `E-1b` | **Respondida (encuesta de 38 puntos, 29/10/2026) → `D-74`…`D-111`** |
 
 > Las preguntas `Q-24` a `Q-26` se registran y responden en 2.5.
 
@@ -551,6 +620,12 @@ El capítulo se considera cerrado cuando:
 | 0.26 | 27/10/2026 | Q-59 = C (`D-68`), Q-60 = A (`D-69`), Q-61 = C (`D-70`) y Q-62 = A (`D-71`). Capítulo 6 cerrado; documento completo. |
 | 0.27 | 27/10/2026 | Documentos base actualizados: `00`–`06` reescritos y `09` reemplazado por `09-operacion-openspec.md`. |
 | 0.28 | 29/10/2026 | Autorregistro incorporado al alcance: se agregan `D-72` y `D-73`, se resuelve `X-27`, se registra `Q-63`, `E-11` queda `OBSOLETO` y `A-03` se confirma en su forma nueva. Se añaden `S-01` ampliada, `R-24`, `R-25`, `ACT-07`, `RF-23` y su trazabilidad en capítulos 2 a 6. |
+| 0.29 | 29/10/2026 | Reconciliación con las especificaciones implementadas: encuesta de 38 puntos (`Q-64`) respondida y registrada como `D-74`…`D-111`; se resuelven `X-28`…`X-43`; se declaran `specs/001` y `specs/002` evidencia histórica no normativa (`D-108`); se reformulan `D-04`, `R-06` y `X-03` (`D-89`); se modifican `D-52` y `BR-012` (`D-91`) y se acota `D-08` (`D-92`); se actualiza la matriz `1.3.2`, el modelo de `3.3.2`, los contratos de `3.4.5` y se define la etapa `E-1b` en `4.8`. |
+| 0.30 | 30/10/2026 | Cierre de la implementación de `E-1b`: `D-76` **modificada** (autorregistro con identidad completa y residencia en el perfil); `D-95`, `D-98` y `D-105` cerradas **sin migración de datos** y con **purga y reconstrucción** de la suite (`DEC-19`, `DEC-20`); baseline única con la convención `D-107` y arranque sin migraciones automáticas; `§4.8.4` deja de hablar de migrar datos y `§5.6.1`/`§5.6.5` incorporan los doce identificadores nuevos de prueba. |
+
+> **Notas de interpretación de la v0.29 (requieren confirmación si no reflejan la intención):**
+> 1. `D-85` (pregunta 12 = B) se interpreta en el sentido de `specs/002`: el Presupuestador **crea** proyectos y **asigna** Presupuestadores/Auditores en proyecto. Si solo se quería habilitar la asignación, se ajusta la fila "Crear / editar proyecto" de `1.3.2`.
+> 2. `D-87` (pregunta 14 = B) fijaba los campos de la compañía; la autoridad para inhabilitar se resolvió como **Administrador sobre cualquiera y Director sobre la propia**, por coherencia con `D-01`. Si se prefiere que solo el Administrador inhabilite, se corrige esa fila de `1.3.2`.
 
 ---
 
@@ -635,7 +710,7 @@ La frontera del MVP está fijada por `D-18` (alertas sí; importación/exportaci
 |---|---|---|---|---|---|
 | RF-01 | Usuarios, roles y asignación a compañías y proyectos | M-01 | Alta | Sí | `S-01`, `D-15`, `D-21` |
 | RF-02 | Compañías: creación y datos de registro | M-01 | Alta | Sí | `S-02` |
-| RF-03 | Configuración del proyecto: divisa, AIU, tope, modo de firma, requisito de auditor y visibilidad | M-02 | Alta | Sí | `S-03`, `D-03`, `D-07`, `D-18` |
+| RF-03 | Configuración del proyecto: divisa, AIU, tope, modo de firma, requisito de auditor y visibilidad | M-02 | Alta | Sí | `S-03`, `D-03`, `D-07`, `D-18`, `D-93`, `D-94` |
 | RF-04 | EDT recursiva con numeración automática editable, códigos únicos y búsqueda parcial por código de ítem o nombre de capítulo | M-03 | Alta | Sí | `S-04`, `D-30`, `D-31` |
 | RF-05 | Insumos del proyecto: siete tipos, estados de cotización y sugerencia de unicidad | M-04 | Alta | Sí | `S-05`, `D-05`, `Q-09` |
 | RF-06 | Reutilización de insumos de la compañía mediante copia independiente | M-04 | Media | Sí | `S-05`, `D-27`, `D-29` |
@@ -644,8 +719,8 @@ La frontera del MVP está fijada por `D-18` (alertas sí; importación/exportaci
 | RF-09 | Matrices reutilizables dentro del proyecto y copiables | M-05 | Alta | Sí | `S-07`, `D-16` |
 | RF-10 | Motor de cálculo: consumos, costo directo, AIU y redondeo | M-06 | Alta | Sí | `S-09`, `D-06`, `D-07` |
 | RF-11 | Cotización de insumos y cambio masivo a `COTIZADO` | M-07 | Alta | Sí | `S-10`, `D-04`, `D-15` |
-| RF-12 | Firma y aprobación por APU según los tres modos configurados | M-07 | Alta | Sí | `S-10`, `D-03`, `D-26` |
-| RF-13 | Registro único de aprobación por APU (último aprobador, rol y fecha) | M-07 | Alta | Sí | `S-11`, `D-52` |
+| RF-12 | Firma y aprobación por APU según los tres modos configurados | M-07 | Alta | Sí | `S-10`, `D-03`, `D-26`, `D-90`, `D-91` |
+| RF-13 | Registro único de aprobación por APU (último aprobador, rol, fecha y evidencia de firma) | M-07 | Alta | Sí | `S-11`, `D-52`, `D-91` |
 | RF-14 | Autoría de la última modificación en APU e insumo | M-07 | Media | Sí | `S-11`, `D-08` |
 | RF-15 | Catálogo abierto: consulta y copia de APUs e insumos publicados, de forma independiente | M-08 | Media | Sí | `S-08`, `D-12`, `D-22`, `D-28`, `D-35` |
 | RF-16 | Búsqueda y sugerencia de similitud de insumos | M-04 | Media | Sí | `S-14`, `D-25` |
@@ -723,6 +798,7 @@ Los módulos se definen por **responsabilidad funcional y dato principal**, no p
 | ID | Objetivo | Módulos | Funcionalidades | Resultado demostrable | Depende de |
 |---|---|---|---|---|---|
 | I-1 | Base de acceso y organización | M-01 + catálogos maestros | RF-01, RF-02, RF-18, RF-23 | Autorregistro público, alta de compañía, usuarios y roles; correos de creación de cuenta y recuperación | — |
+| I-1b | Reconciliación de la línea base y cierre de brechas de identidad | M-01 + transversal | RF-18 (cierre), RF-23 (conformidad) | Contrato v1 congelado, especificaciones OpenSpec de `identidad` y `proyectos`, `RF-18` operativo y brechas `GAP` cerradas o aceptadas | I-1 |
 | I-2 | Proyecto y estructura | M-02, M-03 | RF-03, RF-04 | Proyecto configurado (divisa, AIU, tope, firma, visibilidad) con su EDT | I-1 |
 | I-3a | Insumos del proyecto | M-04 | RF-05, RF-06, RF-16, RF-20 | Vista de insumos con listado, filtros, estados y copia desde otros proyectos de la compañía | I-2 |
 | I-3b | APUs y matrices | M-05, M-06 (solo RF-22) | RF-07, RF-08, RF-09, RF-22 | APU 1:1 con matrices, copia desde proyectos de la compañía, reconciliación de insumos y conteo de uso | I-3a |
@@ -739,6 +815,7 @@ Los módulos se definen por **responsabilidad funcional y dato principal**, no p
 - **M-09 dentro de I-4a:** las alertas necesitan el costo calculado y el tope configurado (`RF-17`).
 - **RF-18 en I-1:** el alta de usuarios requiere el envío de credenciales (`D-17`).
 - **RF-23 en I-1:** el autorregistro es la vía de entrada de usuarios sin compañía y no depende de módulos posteriores (`D-72`).
+- **I-1b entre I-1 e I-2:** no se abre `E-2` mientras el contrato v1 no esté congelado, `RF-18` no esté operativo y la matriz de autorización, el modelo de usuario y los contratos no coincidan con el PLAN (`D-74`…`D-111`). `E-2` construye sobre `E-1`, y cualquier divergencia de identidad se propaga a todos los módulos.
 
 ### 2.4.4 Riesgos de la estrategia
 | Riesgo | Descripción | Mitigación propuesta |
@@ -748,7 +825,8 @@ Los módulos se definen por **responsabilidad funcional y dato principal**, no p
 | Exposición en I-5 | Publicar todos los campos del insumo es irreversible para la información ya publicada. | Advertencia explícita al publicar y registro de aceptación (`RT-11`). |
 | Sin validación con usuario real | No hay empresa piloto ni datos del proceso (`D-19`). | Pruebas con datos sintéticos y revisión del flujo con el Director. |
 | Alcance amplio para una persona | 22 funcionalidades en el MVP (`RT-07`). | Respetar la secuencia y no paralelizar módulos. |
-| Abuso del autorregistro | Un endpoint público permite crear cuentas masivas o falsas; el plan no define límite de intentos ni verificación de correo. | Decidir el control antes de abrir E-1 (`RT-22`); mientras no exista, el despliegue queda limitado a local o demo controlada (`D-39`). |
+| Abuso del autorregistro | Un endpoint público permite crear cuentas masivas o falsas. | Límite por IP y verificación de correo definidos en `D-80`; mientras no estén implementados, el despliegue queda limitado a local o demo controlada (`D-39`). |
+| Reconciliación mal delimitada | `E-1b` puede crecer sin control al absorber correcciones de todo el sistema. | Alcance cerrado en `4.8`: solo identidad, contrato v1, modelo de usuario/compañía, autorización, pruebas y `RF-18`; lo demás va al registro `GAP` con etapa asignada. |
 
 ### 2.4.5 Regla de avance
 Un incremento no inicia hasta que el anterior esté cerrado con: flujo demostrable, pruebas del módulo en verde, especificación actualizada y sin defectos abiertos que impidan el flujo del siguiente incremento. Los criterios detallados de terminado se definen en el capítulo 4.
@@ -763,6 +841,7 @@ No quedan puntos abiertos. El detalle de `X-23` y `X-24` consta en 0.6; aquí so
 | Q-24 | Reutilización de insumos | Respondida → `D-27`, `D-29` |
 | Q-25 | Prioridades e incrementos | Respondida → 2.2 y 2.4 |
 | Q-26 | Numeración de hijos con código personalizado | Respondida → `D-30` |
+| Q-64 | Reconciliación con las especificaciones implementadas | Respondida → `D-74`…`D-111`; etapa `E-1b` en `4.8` |
 
 ## 2.6 Criterios de aceptación del capítulo 2
 El capítulo se considera cerrado cuando:
@@ -821,6 +900,8 @@ Implementación decidida (`D-36`):
 
 **Descartado por ahora:** base de datos por compañía y Row-Level Security de SQL Server. Se comparan en 3.5.
 
+**Reafirmado en v0.29 (`D-95`):** se descarta la segregación por esquemas `param`/`iam`/`dbo`/`audit`/`log` propuesta en `specs/002`; la gobernanza se cubre con el runbook de migraciones y la convención de nombres (`D-107`).
+
 ### 3.1.4 Motor de cálculo
 Implementación decidida (`D-37`):
 
@@ -862,8 +943,12 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 | Firma como evidencia temporal, sin hash persistido | CONFIRMADO (`D-03`, `D-11`) |
 | Catálogo público anónimo | CONFIRMADO (`D-38`); exige límite por IP y prohibición de exportación masiva |
 | Política de contraseñas, bloqueo, refresh tokens, CORS, rate limiting y gestión de secretos | **NO DOCUMENTADO** |
-| Autorregistro anónimo (`/api/v1/auth/register`) | CONFIRMADO (`D-72`): público, sin sesión; rol inicial y ausencia de compañía `DERIVADO` (`R-24`) |
-| Protección del autorregistro (límite de intentos, verificación de correo, captcha) | **NO DOCUMENTADO** (`RT-22`) |
+| Autorregistro anónimo (`/api/v1/auth/register`) | CONFIRMADO (`D-72`, `D-75`): público, sin sesión, rol Presupuestador y sin compañía (`R-24`) |
+| Protección del autorregistro | CONFIRMADO (`D-80`): límite por IP y verificación de correo; sin ambos controles solo se admite entorno local o demo (`D-39`, `RT-22`) |
+| Hash de contraseña | CONFIRMADO (`D-81`): ASP.NET Core Identity (PBKDF2); Argon2id queda `OBSOLETO` |
+| Autorización de endpoints privados | CONFIRMADO (`D-82`): `permission_key` activo, política fail-closed y roles base inmutables |
+| Evidencia de firma | CONFIRMADO (`D-91`): imagen persistida en `UserSignature`, nunca expuesta en endpoints públicos (`R-28`) |
+| Eventos de seguridad | CONFIRMADO (`D-111`): conjunto cerrado registrado en `SecurityAuditEvent` |
 | HTTPS | POSTERGADO (`D-39`); prohibido exponer la aplicación sin TLS |
 
 ### 3.1.8 Observabilidad
@@ -920,6 +1005,10 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 | `Swashbuckle.AspNetCore` | Contrato OpenAPI y Swagger UI | CONFIRMADO (`D-42`) |
 | `xUnit`, `Moq`, `FluentAssertions` | Pruebas unitarias | CONFIRMADO |
 | `Coverlet` | Cobertura | No documentado; se define en el capítulo 5 |
+| `NetArchTest` | Reglas de capas y módulos en CI | CONFIRMADO (`D-63`, `D-105`) |
+| `AutoMapper` / `Mapster` | Mapeo entidad → DTO | **NO SE USAN**: mapeo manual (`D-41`, `D-104`) |
+| `FluentValidation.AspNetCore` | Validación de DTOs | **NO SE USA**: paquete discontinuado (`3.2.6`, `D-104`) |
+| `EF Core InMemory` / `WebApplicationFactory` | Integración automatizada | **NO SE USAN**: integración manual con SQL local (`D-66`, `D-106`) |
 
 ### 3.2.3 Frontend
 | Elemento | Estado |
@@ -928,7 +1017,7 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 | RxJS para flujos asíncronos | CONFIRMADO (`04 §2`) |
 | Angular Material | CONFIRMADO (`D-43`) |
 | `signature_pad` | CONFIRMADO (`D-44`) |
-| Gestión de estado (signals, servicios o NgRx) | **NO DEFINIDO** |
+| Gestión de estado (signals, servicios o NgRx) | CONFIRMADO (`D-57`): híbrido de signals y estado local |
 | Pruebas de frontend | Fuera de alcance en `00 §5`; se revisa en el capítulo 5 |
 
 ### 3.2.4 Servicios de infraestructura
@@ -983,7 +1072,7 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 2. `project_id` en toda entidad con alcance de proyecto, incluso cuando sea derivable por relación, para filtros e índices.
 3. EF Core 10 code-first; migraciones manuales con runbook (`D-40`).
 4. Claves primarias `uniqueidentifier`.
-5. Sin historial de cambios: solo `last_modified_by` y `last_modified_at` (`D-08`), más las aprobaciones (`D-11`).
+5. Sin historial de valores: solo `last_modified_by` y `last_modified_at` (`D-08`), más las aprobaciones (`D-11`). Se admiten las excepciones explícitas de `D-92` (eventos de estado y visibilidad) y `D-111` (eventos de seguridad).
 6. Sin `BudgetVersion` (`E-12`).
 7. Fechas almacenadas en UTC.
 8. Enumeraciones persistidas como `VARCHAR` con `CHECK`, no como enteros.
@@ -991,23 +1080,29 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 ### 3.3.2 Entidades
 | Entidad | Campos clave | Cambios y reglas |
 |---|---|---|
-| `Company` | `id`, `business_name`, `tax_id`, `is_active` | `tax_id` único |
-| `Role` | `id`, `code`, `name`, `is_active` | `code` único; catálogo editable |
-| `User` | `id`, `company_id`, `role_id`, `full_name`, `username`, `email`, `password_hash`, `is_active` | **Cambio:** `company_id` pasa a **nullable** porque el Administrador no tiene compañía (`D-02`) y porque el usuario autorregistrado nace sin compañía (`D-72`). `username` es obligatorio y único (`D-73`). Se agregan nombre y estado |
-| `Project` | `id`, `company_id`, `name`, `currency`, `status`, `is_public`, `created_at` | La visibilidad vive solo en el proyecto (`D-22`) |
-| `ProjectConfiguration` | `project_id` (único), `budget_limit`, `aiu_admin`, `aiu_contingency`, `aiu_profit`, `signature_mode`, `requires_auditor` | Se agregan AIU (`D-07`), modo de firma (`D-03`) y requisito de auditor (`D-34`) |
+| `Company` | `id`, `business_name`, `tax_id`, `company_type`, `territorial_level`, `country_id`, `department_id`, `municipality_id`, `representative_mode`, `representative_user_id`, `representative_full_name`, `representative_document_type_id`, `representative_document_number`, `is_active`, `created_by_user_id`, `created_at`, `last_modified_by_user_id`, `last_modified_at` | `tax_id` único; modelo ampliado (`D-87`, `D-96`); país, departamento y municipio deben ser coherentes con la jerarquía; sin borrado físico |
+| `Role` | `id`, `code`, `name`, `is_active`, `is_base_role` | `code` único; los cuatro roles base son inmutables y no admiten CRUD (`D-82`) |
+| `Permission` | `id`, `permission_key`, `description`, `is_active`, `seed_version` | **Nueva (`D-82`)**: `permission_key` único; se puebla por `seed` versionado e idempotente, sin creación en runtime |
+| `RolePermission` | `id`, `role_id`, `permission_id`, `is_active`, `assigned_at`, `revoked_at`, `seed_version` | **Nueva (`D-82`)**: única por (`role_id`, `permission_id`); si está inactiva, no autoriza |
+| `User` | `id`, `company_id`, `role_id`, `full_name`, `username`, `email`, `password_hash`, `is_active`, `account_locked`, `failed_login_attempts`, `last_login_at`, `document_type_id`, `document_number`, `birth_date`, `country_id`, `department_id`, `municipality_id`, `professional_card`, `professional_card_issue_date`, `professional_card_file` | `company_id` **nullable** para el Administrador (`D-02`) y para el autorregistrado (`D-72`); `username` y `email` únicos (`D-73`); `document_number` **no** único (`D-77`); absorbe el perfil de `specs/001` (`D-78`); hash provisto por Identity (`D-81`) |
+| `UserSignature` | `id`, `user_id` (único), `signature_name`, `signature_image`, `is_active`, `updated_at` | **Nueva (`D-91`)**: una firma activa por usuario; la imagen nunca se expone en endpoints públicos (`R-28`) |
+| `Project` | `id`, `company_id`, `name`, `code`, `description`, `objective`, `country_id`, `department_id`, `municipality_id`, `status`, `is_public`, `director_owner_user_id`, `created_by_user_id`, `created_at`, `last_modified_by_user_id`, `last_modified_at`, `row_version` | Cinco estados (`D-88`); la visibilidad vive solo en el proyecto (`D-22`); `rowversion` (`D-50`, `D-97`); la divisa y el AIU viven en `ProjectConfiguration` (`D-93`) |
+| `ProjectConfiguration` | `project_id` (único), `base_currency_id`, `budget_limit`, `aiu_admin`, `aiu_contingency`, `aiu_profit`, `signature_mode`, `signer_user_id`, `requires_auditor`, `row_version` | Entidad **separada** (`D-93`); divisa y AIU por proyecto (`D-07`, `R-04`, `R-05`); tres modos de firma (`D-03`, `D-90`); `requires_auditor` en `E-2`; tope configurado en `E-2` y verificado en `E-4a` (`D-94`) |
 | `ProjectMember` | `id`, `project_id`, `user_id`, `role_in_project` | **Nueva:** asignación de usuarios a proyectos (`D-02`, `D-34`); única por (`project_id`, `user_id`) |
 | `WbsCode` | `id`, `project_id`, `code`, `node_type` | **Nueva (`D-51`)**: registro único de códigos; índice único (`project_id`, `code`) |
 | `WbsChapter` | `id`, `project_id`, `parent_chapter_id`, `code_id`, `name`, `order_index` | Capítulo o subcapítulo; `code_id` referencia `WbsCode` |
 | `WbsItem` | `id`, `wbs_chapter_id`, `apu_id`, `code_id`, `quantity_work`, `order_index` | Ítem de obra; `apu_id` único (1:1); `code_id` referencia `WbsCode` |
 
 | `Apu` | `id`, `project_id`, `description`, `unit`, `yield`, `status`, `last_modified_by`, `last_modified_at` | Se eliminan `code` (`D-31`) e `is_public` (`D-22`). Sin tabla de versiones |
-| `Resource` | `id`, `project_id`, `resource_type_id`, `city_id`, `description`, `unit`, `unit_price`, `brand`, `distributor`, `user_key`, `details`, `contact_number`, `quotation_status`, `origin_resource_id`, `last_modified_by`, `last_modified_at` | Se elimina `is_public`; `origin_resource_id` solo registra procedencia del catálogo (`Q-16`); la unicidad es sugerida (`Q-09`) |
+| `Resource` | `id`, `project_id`, `resource_type_id`, `municipality_id`, `description`, `unit`, `unit_price`, `brand`, `distributor`, `user_key`, `details`, `contact_number`, `quotation_status`, `origin_resource_id`, `last_modified_by`, `last_modified_at` | Se elimina `is_public`; `origin_resource_id` solo registra procedencia del catálogo (`Q-16`); la unicidad es sugerida (`Q-09`); `municipality_id` sustituye a `city_id` (`D-96`) |
 | `ApuResource` | `id`, `apu_id`, `resource_id`, `consumption`, `waste_percentage` | Relación APU–insumo; sin cambio funcional |
 | `MatrixComponent` | `id`, `matrix_resource_id`, `component_resource_id`, `consumption`, `waste_percentage` | **CONFIRMADO (`D-48`)**: composición de la Matriz en tabla propia, sin FK polimórfica |
-| `ApuApproval` | `id`, `apu_id` (único), `user_id`, `role_code`, `approved_at`, `mode`, `signature_captured` | **CONFIRMADO (`D-52`, `D-53`)**: un registro por APU con el último aprobador; sin hash de firma; se elimina si el APU se edita |
-| `Country`, `City`, `ResourceType` | Catálogos de ubicación y tipo de insumo | Sin cambios respecto a `05` |
-| `AuditLog`, `BudgetVersion` | — | **Eliminadas**: `D-08` (sin historial) y `E-12` (sin congelamiento) |
+| `ApuApproval` | `id`, `apu_id` (único), `user_id`, `role_code`, `approved_at`, `mode`, `signature_id` | **CONFIRMADO (`D-52`, `D-53`, `D-91`)**: un registro por APU con el último aprobador; la evidencia se toma de `UserSignature`; sin hash ni token de firma certificada; se elimina si el APU se edita |
+| `DocumentType`, `Country`, `Department`, `Municipality`, `BaseCurrency`, `ResourceType` | Catálogos de referencia y tipo de insumo | `Municipality` sustituye a `City` (`D-96`); son de solo lectura para los módulos transaccionales |
+| `ProjectStatusTransition` | `id`, `project_id`, `previous_status`, `new_status`, `changed_by_user_id`, `changed_at`, `reason`, `transition_kind` | **Nueva (`D-92`)**: solo inserción; historial de eventos de estado |
+| `ProjectVisibilityTransition` | `id`, `project_id`, `previous_is_public`, `new_is_public`, `changed_by_user_id`, `changed_at`, `reason` | **Nueva (`D-92`)**: solo inserción; historial de cambios de visibilidad |
+| `AuditLog`, `BudgetVersion` | — | **Eliminadas**: `D-08` (sin historial de valores) y `E-12` (sin congelamiento) |
+| `CompanyUserMembership`, `ProjectUserMembership`, `UserProfile` | — | **OBSOLETAS (`D-98`, `D-78`)**: la pertenencia se resuelve con `User.company_id` y `ProjectMember`; el perfil se absorbe en `User`. Se migran en `E-1b` |
 
 ### 3.3.3 Reglas de integridad
 | Regla | Implementación |
@@ -1028,15 +1123,22 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 | Precio unitario | `unit_price >= 0` |
 | Tipo de nodo | `node_type IN ('CHAPTER','ITEM')` |
 | Coherencia | `WbsItem` exige `apu_id` y `quantity_work`; `WbsChapter` exige `name`; `WbsCode.node_type` coincide con la tabla que lo referencia |
+| Documento de identidad | No único; solo `email` y `username` son únicos (`D-73`, `D-77`) |
+| Estado del proyecto | `status IN ('POR_COTIZAR','FALTA_INFORMACION','COTIZADO','FINALIZADO','INHABILITADO')` con `CHECK` (`D-88`) |
+| Transición a `COTIZADO` | Regla de dominio: exige el 100 % de insumos cotizados (`D-89`); no se implementa como `CHECK` |
+| Permiso | `permission_key` único; `RolePermission` única por (`role_id`, `permission_id`) y solo autoriza si está activa (`D-82`) |
+| Firma | Una `UserSignature` activa por usuario; la imagen no se serializa en DTO públicos (`D-91`, `R-28`) |
+| Historial | `ProjectStatusTransition` y `ProjectVisibilityTransition` son de solo inserción (`D-92`) |
+| Esquema | Un único esquema; sin segregación `param`/`iam`/`dbo`/`audit`/`log` (`D-95`) |
 | Alcance | `company_id` obligatorio salvo `User` con rol Administrador y usuarios autorregistrados pendientes de asignación; `project_id` obligatorio en entidades de proyecto |
 | Integridad referencial | `RESTRICT` por defecto; cascada solo en hijos de composición (`D-49`) |
 | Concurrencia | `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource` (`D-50`) |
 
-**Nota:** las reglas de negocio de estados (`FALTA_INFORMACION`, `COTIZADO`, `FINALIZADO`) no se implementan como `CHECK`; se calculan en el dominio y se persisten en la columna correspondiente (`D-04`, `D-11`).
+**Nota:** las reglas de negocio de los estados (`POR_COTIZAR`, `FALTA_INFORMACION`, `COTIZADO`, `FINALIZADO`, `INHABILITADO`) no se implementan como `CHECK` más allá del conjunto cerrado; se calculan en el dominio y se persisten en la columna correspondiente (`D-04`, `D-88`, `D-89`).
 
 ### 3.3.4 Aprobaciones y autoría
-- `ApuApproval` guarda **un registro por APU**: APU, último usuario que aprobó, rol, fecha UTC, modo y un booleano `signature_captured`.
-- No se persiste imagen, token ni hash de firma; el booleano solo registra que la evidencia se capturó (`D-52`).
+- `ApuApproval` guarda **un registro por APU**: APU, último usuario que aprobó, rol, fecha UTC, modo y la referencia a la firma del usuario (`signature_id`).
+- La evidencia se persiste como imagen en `UserSignature` (una activa por usuario) y **no** se devuelve en endpoints públicos; no se persiste hash ni token de firma certificada (`D-91`, `R-28`).
 - No hay historial de aprobaciones: si otro usuario aprueba después, se sobrescribe el registro (`D-52`).
 - `Apu` y `Resource` llevan `last_modified_by` y `last_modified_at`; no existe historial (`D-08`).
 - Una copia de APU nace sin aprobación y con el usuario que copió como último modificador (`DERIVADO` de `D-13`).
@@ -1060,6 +1162,12 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 | Asignaciones | `ProjectMember(user_id, project_id)` | Authorization checks |
 | Usuarios por compañía | `User(company_id, role_id)` | Administración |
 | Nombre de usuario | `User(username)` único | Autorregistro y login por nombre de usuario o correo (`D-73`) |
+| Firma por usuario | `UserSignature(user_id)` único y activo | Evidencia de firma (`D-91`) |
+| Permiso | `Permission(permission_key)` único | Autorización (`D-82`) |
+| Asignación de permiso | `RolePermission(role_id, permission_id)` único | Autorización y fail-closed (`D-82`) |
+| Estado del proyecto | `Project(company_id, status, id)` | Listados y transiciones (`D-88`) |
+| Historial de estado | `ProjectStatusTransition(project_id, changed_at)` | Trazabilidad de estado (`D-92`) |
+| Historial de visibilidad | `ProjectVisibilityTransition(project_id, changed_at)` | Trazabilidad de visibilidad (`D-92`) |
 
 ### 3.3.6 Concurrencia y borrado
 - **Concurrencia (`D-50`):** `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource`; la API responde `409 Conflict` y el cliente recarga.
@@ -1074,12 +1182,14 @@ Runbook manual (`D-40`):
 3. Revisar el script SQL generado (`dotnet ef migrations script`).
 4. Aplicar en ventana de mantenimiento y verificar el esquema.
 5. Registrar la versión aplicada en el control de cambios.
+6. Nombrar la migración `YYYYMMDDHHMM_<scope>_<change>` y las restricciones `PK_`/`FK_`/`IX_`/`UQ_`/`CK_` (`D-107`).
 
 **Seed inicial obligatorio:**
 - Cuatro roles con GUID fijo: Administrador, Director de proyectos, Presupuestador y Auditor.
+- Catálogo `Permission` y asignaciones `RolePermission` con `seed_version`, idempotentes y versionadas (`D-82`).
 - Siete tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos y Matriz.
-- Catálogo base de países y ciudades.
-- Usuario Administrador inicial **sin compañía** y una empresa demo con usuarios de prueba.
+- Catálogo base de países, departamentos, municipios y monedas (`D-96`).
+- Usuario Administrador inicial **sin compañía**, creado por semilla en local y por bootstrap controlado en demo (`D-110`); una empresa demo con usuarios de prueba.
 
 ### 3.3.8 Decisiones de persistencia
 | ID | Tema | Opciones | Estado |
@@ -1115,8 +1225,9 @@ Runbook manual (`D-40`):
 | `BudgetCivil.Api` | Endpoints, composición de dependencias, autenticación, middleware, Swagger | `Application`, `Infrastructure` |
 | `BudgetCivil.Tests.Unit` | Pruebas de dominio y aplicación | `Domain`, `Application` |
 | `BudgetCivil.Tests.Integration` | Pruebas de API y persistencia | `Api` |
+| `BudgetCivil.Tests.Architecture` | Reglas de capas y módulos con `NetArchTest` (`D-63`, `D-105`) | `Api`, `Application`, `Domain` |
 
-Las pruebas se detallan en el capítulo 5.
+Las pruebas se detallan en el capítulo 5. El proyecto único `BlackBoxTests` de `specs/001`/`specs/002` queda `OBSOLETO` y su contenido se redistribuye en `E-1b` (`D-105`).
 
 ### 3.4.3 Carpetas por módulo
 Ejemplo para `M-05` (APUs y matrices):
@@ -1132,8 +1243,8 @@ Frontend/src/app/features/apus/
 
 | Módulo | Carpeta | Endpoints principales |
 |---|---|---|
-| M-01 Acceso y organización | `Identity`, `Companies` | `/auth/register` (anónimo), `/auth/login`, `/users`, `/companies` |
-| M-02 Proyectos | `Projects` | `/projects`, `/projects/{id}/configuration`, `/projects/{id}/members` |
+| M-01 Acceso y organización | `Identity`, `Companies`, `Users`, `Catalogs` | `/auth/register` (anónimo), `/auth/login`, `/profile`, `/users`, `/companies`, `/catalogs` — **dueño único** de compañías, usuarios y catálogos (`D-102`) |
+| M-02 Proyectos | `Projects` | `/projects`, `/projects/{id}/configuration`, `/projects/{id}/memberships` (`D-103`) |
 | M-03 EDT | `Wbs` | `/projects/{id}/wbs` |
 | M-04 Insumos | `Resources` | `/projects/{id}/resources` |
 | M-05 APUs y matrices | `Apus` | `/apus`, `/apus/{id}/resources`, `/apus/{id}/copy` |
@@ -1168,8 +1279,8 @@ Cada `feature` contiene sus componentes, rutas y servicio de datos. La lógica d
 | Endpoints anónimos | Solo `/api/v1/auth/register` y `/api/v1/auth/login` (`D-72`); el resto exige JWT |
 | Formato | JSON |
 | Nombres de campos | `camelCase` (`D-55`); los ejemplos con `snake_case` de `02 §5` deben actualizarse |
-| Errores | `ProblemDetails` (RFC 7807) con código de negocio |
-| Paginación | `page` y `page_size` con límite máximo; filtros por query string |
+| Errores | `ProblemDetails` (RFC 7807) con el código de negocio en `extensions.code` (`D-100`); prohibido el sobre propio `{error, meta}` |
+| Paginación | `page` y `pageSize`, con `{10, 50, 100}` como conjunto por defecto y límite máximo configurable (`D-101`); filtros por query string |
 | Documento | Swashbuckle en `/swagger` (`D-42`) |
 | DTOs | Solo DTOs en la frontera; mapeo manual (`D-41`); nunca se exponen entidades |
 | Cliente Angular | Generado desde OpenAPI (`D-56`); se regenera en CI (`D-46`) |
@@ -1359,7 +1470,8 @@ Cada cambio recorre este flujo:
 |---|---|---|---|---|---|
 | E-0 | Preparación técnica | Transversal | — | Repositorio, solución, `docker-compose` con SQL Server, CI en verde, OpenSpec inicializado y seeds | — |
 | E-1 | Base de acceso y organización | M-01 | RF-01, RF-02, RF-18, RF-23 | Autorregistro público, login, alta de compañía, usuarios y roles, correos de cuenta y recuperación | E-0 |
-| E-2 | Proyecto y estructura | M-02, M-03 | RF-03, RF-04 | Proyecto configurado (divisa, AIU, tope, firma, visibilidad) con su EDT y códigos | E-1 |
+| E-1b | Reconciliación de la línea base | M-01 + transversal | RF-18 (cierre), RF-23 (conformidad) | Contrato v1 congelado, especificaciones OpenSpec de `identidad` y `proyectos`, `RF-18` operativo, brechas `GAP` cerradas o aceptadas y roles/permisos alineados al PLAN | E-1 |
+| E-2 | Proyecto y estructura | M-02, M-03 | RF-03, RF-04 | Proyecto configurado (divisa, AIU, tope, firma, visibilidad) con su EDT y códigos | E-1b |
 | E-3a | Insumos del proyecto | M-04 | RF-05, RF-06, RF-16, RF-20 | Vista de insumos con listado, filtros, estados y copia desde otros proyectos | E-2 |
 | E-3b | APUs y matrices | M-05, M-06 (RF-22) | RF-07, RF-08, RF-09, RF-22 | APU 1:1 con matrices, copia desde proyectos de la compañía, reconciliación de insumos y conteo de uso | E-3a |
 | E-4a | Cálculo y cotización | M-06, M-09 | RF-10, RF-11, RF-14, RF-17 | Presupuesto calculado, insumos cotizados en masa, autoría y alerta de tope | E-3b |
@@ -1367,20 +1479,21 @@ Cada cambio recorre este flujo:
 | E-5 | Catálogo abierto | M-08 | RF-15 | Consulta y copia de APUs e insumos públicos; completa la copia pública de RF-07 y RF-08 | E-4b |
 | E-6 | Endurecimiento y entrega | Transversal | — | Seguridad, rendimiento, observabilidad, respaldo documentado, despliegue local y documentación final | E-5 |
 
-Las etapas `E-3a`/`E-3b` y `E-4a`/`E-4b` corresponden a la división de `I-3` e `I-4` aprobada en `Q-25`.
+Las etapas `E-3a`/`E-3b` y `E-4a`/`E-4b` corresponden a la división de `I-3` e `I-4` aprobada en `Q-25`. La etapa `E-1b` se añade en v0.29 (`D-74`…`D-111`) y es obligatoria: ninguna de sus funcionalidades es nueva salvo el cierre de `RF-18`; su propósito es que el código ya implementado y la especificación OpenSpec coincidan antes de abrir `E-2` (`4.8`).
 
 ## 4.3 Orden de desarrollo de funcionalidades
 | Orden | Etapa | Funcionalidades | Motivo del orden |
 |---|---|---|---|
 | 1 | E-0 | — | Sin pipeline ni base local no se puede verificar nada |
 | 2 | E-1 | RF-01, RF-02, RF-18, RF-23 | Todo lo demás requiere usuario, compañía y roles; el autorregistro es la vía de entrada sin intervención administrativa |
-| 3 | E-2 | RF-03, RF-04 | El proyecto y la EDT son el contenedor de insumos y APUs |
-| 4 | E-3a | RF-05, RF-06, RF-16, RF-20 | El APU no existe sin insumos (`R-02`) |
-| 5 | E-3b | RF-07, RF-08, RF-09, RF-22 | La composición y el conteo requieren insumos y cantidades de obra |
-| 6 | E-4a | RF-10, RF-11, RF-14, RF-17 | No se cotiza ni alerta sin costo calculado |
-| 7 | E-4b | RF-12, RF-13, RF-21 | No se aprueba ni cierra sin cálculo y cotización |
-| 8 | E-5 | RF-15 | El catálogo depende de proyectos públicos con APUs completos |
-| 9 | E-6 | — | Cierra calidad, seguridad y entrega |
+| 3 | E-1b | RF-18, RF-23 (conformidad) | Cierra las brechas de identidad y congela el contrato antes de que otro módulo dependa de él |
+| 4 | E-2 | RF-03, RF-04 | El proyecto y la EDT son el contenedor de insumos y APUs |
+| 5 | E-3a | RF-05, RF-06, RF-16, RF-20 | El APU no existe sin insumos (`R-02`) |
+| 6 | E-3b | RF-07, RF-08, RF-09, RF-22 | La composición y el conteo requieren insumos y cantidades de obra |
+| 7 | E-4a | RF-10, RF-11, RF-14, RF-17 | No se cotiza ni alerta sin costo calculado |
+| 8 | E-4b | RF-12, RF-13, RF-21 | No se aprueba ni cierra sin cálculo y cotización |
+| 9 | E-5 | RF-15 | El catálogo depende de proyectos públicos con APUs completos |
+| 10 | E-6 | — | Cierra calidad, seguridad y entrega |
 | — | — | RF-19 | Excluida del MVP (`D-18`) |
 
 **Notas de alcance:**
@@ -1450,6 +1563,7 @@ Las verificaciones de integración de esta tabla son manuales (`D-66`); las unit
 |---|---|---|
 | E-0 | Compose levanta API y base; `/health` responde | Pipeline en verde y contenedores arriba |
 | E-1 | Un visitante se autorregistra sin sesión y un Administrador crea compañía y usuario; llegan los dos correos | Prueba de autorización, de registro y de correo |
+| E-1b | Reconciliación demostrada: `RF-18` operativo, contrato v1 congelado, `openspec/specs/identidad` y `proyectos` validadas y brechas `GAP` cerradas o aceptadas | Checklist `4.8.7` firmado, Swagger versionado y registro `GAP` actualizado |
 | E-2 | Proyecto configurado con EDT, numeración y búsqueda por código | Pruebas de jerarquía y unicidad |
 | E-3a | Insumos listados, filtrados, cotizados y copiados entre proyectos | Pruebas de filtros y copia |
 | E-3b | APU con matriz, insumos reconciliados y conteo de uso | Pruebas de composición, matriz y conteo |
@@ -1479,7 +1593,12 @@ Las verificaciones de integración de esta tabla son manuales (`D-66`); las unit
 | Generación del cliente | Deriva entre contrato y UI | Regenerar en CI y fallar si hay diferencias (`D-56`) |
 | Crecimiento de alcance | Etapas que no cierran | Backlog separado y regla de control de cambios (4.1.2) |
 | Licenciamiento de SQL Server | Bloquea despliegue real | Definir edición antes de E-6 |
-| Autorregistro sin control de abuso | Cuentas falsas o masivas (`RT-22`) | Decidir límite de intentos y verificación de correo antes de abrir E-1 |
+| Autorregistro sin control de abuso | Cuentas falsas o masivas (`RT-22`) | Límite por IP y verificación de correo definidos en `D-80`; implementarlos en `E-1b` |
+| Contrato v1 cambiado sin registro | El cliente Angular `v0.0.1` deja de funcionar sin aceptación explícita | Congelar el contrato en `E-1b` y registrar `IF-01`…`IF-06` (`D-109`, `4.8.6`) |
+| Endpoints duplicados entre `specs/001` y `specs/002` | Dos implementaciones del mismo recurso con permisos distintos | Dueño único por recurso (`D-102`) y retiro del duplicado en `E-1b` |
+| Deuda de pruebas acumulada | Cobertura insuficiente y reglas sin verificar | Redistribuir en `Tests.Unit`/`Tests.Integration` y añadir `NetArchTest` (`D-105`) |
+| Migración de hash y de membresías | Pérdida de acceso o de asignaciones al cambiar el modelo | Rehash en el siguiente inicio de sesión (`D-81`) y migración con respaldo y verificación (`D-98`, `D-40`) |
+| Especificaciones heredadas citadas como norma | Se reabren decisiones ya cerradas | `D-108`: histórico no normativo y prohibición de citarlas como requisito |
 
 ## 4.7 Decisiones de estrategia
 | ID | Pregunta | Opciones | Estado |
@@ -1491,6 +1610,86 @@ Las verificaciones de integración de esta tabla son manuales (`D-66`); las unit
 | Q-53 | Revisión de cambios | A) Autoevaluación con checklist y CI · B) Revisión por par o docente · C) Sin revisión formal | **A → `D-62`** (B opcional) |
 
 ---
+
+## 4.8 Etapa E-1b — Reconciliación de la línea base
+
+> **Estado:** definida en v0.29 (`D-74`…`D-111`). Es **obligatoria** y bloquea `E-2`.
+
+### 4.8.1 Objetivo
+Alinear lo ya implementado con el PLAN y producir la línea base de OpenSpec antes de abrir `E-2`. La etapa **no añade funcionalidad nueva** salvo el cierre de `RF-18`; su resultado es que el comportamiento ya construido y la especificación digan lo mismo.
+
+### 4.8.2 Alcance incluido
+1. `openspec/project.md` con stack, convenciones y restricciones vigentes.
+2. `openspec/specs/identidad/spec.md` y `openspec/specs/proyectos/spec.md` con el comportamiento **as-built más objetivo**.
+3. `GAP-REGISTER.md` con cada brecha cerrada por código o aceptada con etapa asignada.
+4. `IMPACTO_FRONTEND.md` con `IF-01`…`IF-06` (`4.8.6`).
+5. Correcciones transversales: rol, contrato v1, autorización, modelo de usuario/compañía, persistencia, pruebas.
+6. `RF-18` operativo (correo de creación de cuenta y recuperación) y `RF-23` conforme a `D-73` y `D-80`.
+7. Actualización de `.github/docs/00`, `02`, `03`, `04`, `05` y `06` según `0.7`.
+
+### 4.8.3 Alcance excluido
+- `RF-04` (EDT) y todo `M-03`: se especifica en `E-2`.
+- `RF-17` (tope y alertas): se implementa en `E-4a` (`D-94`).
+- `M-04`…`M-09`: etapas `E-3a` a `E-5`.
+- Frontend y regeneración del cliente Angular (`D-109`).
+- Nuevas funcionalidades o cambios de alcance del MVP.
+
+### 4.8.4 Registro de brechas a cerrar
+| ID | Brecha | Origen | Cierre |
+|---|---|---|---|
+| GAP-01 | Rol "Gerente de proyectos" en código, semillas, claims y contratos | `D-74` | Renombrar a Director de proyectos (`role_code = DIRECTOR`) |
+| GAP-02 | Hash Argon2id sin decisión en el PLAN | `D-81` | Identity/PBKDF2 con rehash en el siguiente inicio de sesión |
+| GAP-03 | `UserAccount` + `UserProfile` separados | `D-78` | Un único `User` con perfil |
+| GAP-04 | `document_number` único con `409` | `D-77` | Retirar la unicidad del documento |
+| GAP-05 | Autorregistro con siete campos obligatorios | `D-76` | Identidad completa en el autorregistro (`D-76` modificada) y residencia obligatoria en el perfil antes de operar |
+| GAP-06 | Recuperación solo asistida por Administrador | `D-79`, `RF-18` | Correo de recuperación con respaldo asistido |
+| GAP-07 | Autorregistro sin límite de intentos ni verificación de correo | `D-80` | Rate limit por IP y verificación de correo |
+| GAP-08 | Autorización con roles fijos y sin `seed` de permisos | `D-82` | `Permission`/`RolePermission` con `seed` versionado y fail-closed |
+| GAP-09 | `/companies` y `/users` definidos e implementados dos veces | `D-102` | Dueño único `M-01`; retiro del duplicado en `M-02` |
+| GAP-10 | `snake_case`, sin `ProblemDetails` y paginación divergente | `D-99`, `D-100`, `D-101` | Contrato v1 unificado |
+| GAP-11 | Tablas de membresía con historial | `D-98` | `User.company_id` + `ProjectMember`; **sin migración de datos** porque la base está vacía (DEC-19) |
+| GAP-12 | Segregación por esquemas `param`/`iam`/`dbo`/`audit`/`log` | `D-95` | Esquema único, **sin mover objetos** (base vacía, DEC-19) |
+| GAP-13 | `UserSignature` con imagen sin reglas de exposición | `D-91` | Reglas de uso y prohibición en DTO públicos |
+| GAP-14 | `Project` sin `rowversion` y estados sin formalizar | `D-88`, `D-97` | `rowversion` y cinco estados con `CHECK` |
+| GAP-15 | Cierre con firma del Director y solo dos modos de firma | `D-90` | Tres modos y cierre sin firma del Director |
+| GAP-16 | Administrador creando y editando proyectos | `D-86` | Administrador solo lectura |
+| GAP-17 | Pruebas en un solo `BlackBoxTests` con `InMemory` y `WebApplicationFactory` | `D-105`, `D-106` | Purgar `BlackBoxTests` y reconstruir la suite en `Tests.Unit`, `Tests.Integration` y `Tests.Architecture`; SQL local manual |
+
+> **Modificaciones registradas en v0.30 (29–30/10/2026):** `D-76` queda **modificada** (autorregistro con identidad completa y residencia en el perfil); `D-98` y `D-95` se cierran **sin migración de datos** porque la base está vacía (DEC-19); `D-105` se cierra con **purga y reconstrucción** de la suite (DEC-20). La baseline única se genera al final con la convención `D-107` y el arranque deja de aplicar migraciones (`D-40`).
+
+### 4.8.5 Orden de trabajo
+1. **Congelar el contrato v1** (documento y Swagger) con `camelCase`, `ProblemDetails` y paginación unificada.
+2. **Redactar la línea base OpenSpec**: `project.md` y las capacidades `identidad` y `proyectos`.
+3. **Ajustar modelo y migraciones**: `User` con perfil, `Company` ampliada, `Permission`/`RolePermission`, `UserSignature`, retiro de membresías y de la segregación por esquemas, `rowversion` en `Project`; **sin migración de datos ni movimiento de objetos**, porque la base está vacía (DEC-19).
+4. **Ajustar autorización**: `permission_key`, `seed` versionado, fail-closed y renombrado del rol a Director de proyectos.
+5. **Implementar `RF-18`** y los controles del autorregistro (`D-79`, `D-80`).
+6. **Purgar `BlackBoxTests` y reconstruir la suite** en `Tests.Unit`, `Tests.Integration` y `Tests.Architecture`, con `NetArchTest` (DEC-20).
+7. **Cerrar las `GAP`** con evidencia y actualizar `.github/docs`.
+8. **Generar la baseline única** al final de la fase de persistencia, con la convención `D-107`, y retirar `Database.MigrateAsync()` del arranque (`D-40`, `D-107`).
+
+### 4.8.6 Impacto en el frontend (fuera de alcance, `D-109`)
+| ID | Cambio | Rompe | Mitigación |
+|---|---|---|---|
+| IF-01 | `snake_case` → `camelCase` | Todos los DTO consumidos por el cliente | Regenerar el cliente (`D-56`) al abrir la etapa de interfaz |
+| IF-02 | Formato de error → `ProblemDetails` | Manejo de errores del cliente | Interceptor único actualizado en la misma ventana |
+| IF-03 | Rol "Gerente" → "Director" | Guardias, menús y claims | Regenerar el cliente y ajustar constantes |
+| IF-04 | Dueño único de `/companies` y `/users` | Servicios duplicados | Eliminar el servicio redundante al regenerar |
+| IF-05 | `page`/`pageSize` unificados | Paginación de listados | Ajuste puntual en los servicios de listado |
+| IF-06 | Hash, lockout y verificación de correo | Flujo de login y registro | Probar el flujo completo tras `E-1b` |
+
+**Regla:** una sola ventana de cambio incompatible en `E-1b`; el cliente Angular `v0.0.1` no se mantiene compatible (`A-10`) y no se publican dos contratos en paralelo.
+
+### 4.8.7 Checklist de cierre de la etapa
+1. `openspec/specs/identidad` y `openspec/specs/proyectos` existen y validan.
+2. `GAP-01`…`GAP-17` están cerradas o aceptadas con etapa asignada.
+3. El contrato v1 está documentado, sin `snake_case`, sin sobres propios y con `ProblemDetails`.
+4. `RF-18` verificado con proveedor simulado (`T-I-22`).
+5. El autorregistro cumple `D-73` y `D-80` (`T-S-07`).
+6. Roles y permisos se crean por `seed` idempotente (`T-I-23`).
+7. La migración se aplicó con respaldo, convención `D-107` y reversión conocida.
+8. `Tests.Unit`, `Tests.Integration` y `Tests.Architecture` en verde; cobertura ≥ 80 % en dominio (`D-61`).
+9. `IMPACTO_FRONTEND.md` firmado y `A-10` aceptado.
+10. `.github/docs` actualizados y `specs/001`/`specs/002` marcadas como históricas (`D-108`).
 
 **Capítulo 4 cerrado** (v0.21). Siguiente: **capítulo 5 — Estrategia de calidad**.
 
@@ -1549,6 +1748,11 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | RT-20 | Regresiones de interfaz no detectadas | Media | Media | Media | Checklist manual de flujos críticos al cerrar etapa (`D-65`) | Checklist |
 | RT-21 | Degradación de rendimiento no detectada (sin requisito medible) | Media | Media | Media | Índices y revisión manual de consultas; `NFR-003` eliminado (`D-67`) | Revisión manual |
 | RT-22 | Abuso del autorregistro: cuentas falsas, creación masiva o enumeración de correos y usuarios por el endpoint público | Media | Media | Media | Control de límite de intentos y verificación por correo antes de E-1 (`D-72`); mientras no exista, solo despliegue local o demo (`D-39`); nombre de usuario único (`D-73`) reduce suplantación | T-I-21, T-S-07 |
+| RT-23 | Ruptura del cliente Angular por los cambios de contrato de `E-1b` | Alta | Media | Media | Ventana única de cambio incompatible, contrato congelado y regeneración diferida (`D-109`, `4.8.6`) | `IMPACTO_FRONTEND.md` firmado |
+| RT-24 | Dos implementaciones vigentes del mismo endpoint (`/companies`, `/users`) | Media | Alta | Media | Dueño único `M-01` (`D-102`) y retiro del duplicado con prueba de contrato (`T-C-01`) | Revisión de Swagger |
+| RT-25 | Migración de identidad incompleta (perfil, documento, membresías, hash) | Media | Alta | Media | Migración por pasos con respaldo, `GAP-02`…`GAP-08` verificadas y rehash controlado | Checklist de migración |
+| RT-26 | Pérdida de acceso de usuarios por cambio de hash o de rol | Media | Alta | Media | Rehash en el siguiente inicio de sesión y renombrado de rol con `seed` idempotente (`D-81`, `D-74`) | Prueba de login y de claims |
+| RT-27 | Exposición de imágenes de firma en respuestas o logs | Baja | Alta | Media | La imagen solo se sirve a roles autorizados, nunca en DTO públicos ni en el catálogo (`D-91`, `R-28`) | `T-S-08` |
 
 **Riesgos aceptados:** `RT-01` (sin historial de valores), `RT-05` (catálogo sin curaduría), `RT-06` (auditor interno), `RT-10` y `RT-11` (exposición al publicar) y `RT-16` (TLS postergado). Cada uno tiene una condición explícita en su decisión de origen.
 
@@ -1571,9 +1775,9 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 ### 5.6.1 Matriz funcionalidad → prueba
 | RF | Verificación principal | Nivel |
 |---|---|---|
-| RF-01 | T-I-01, T-S-01, T-S-04 | Integración y seguridad |
-| RF-02 | T-I-02, T-S-05 | Integración y seguridad |
-| RF-03 | T-I-03 | Integración |
+| RF-01 | T-I-01, T-S-01, T-S-04, T-I-27, T-I-28, T-I-29, T-I-31, T-S-09, T-S-10, T-S-11 | Integración y seguridad |
+| RF-02 | T-I-02, T-S-05, T-I-26 | Integración y seguridad |
+| RF-03 | T-I-03, T-I-30, T-I-32, T-U-12 | Integración y unitaria |
 | RF-04 | T-U-01, T-I-04 | Unitaria e integración |
 | RF-05 | T-U-02, T-I-05 | Unitaria e integración |
 | RF-06 | T-I-06 | Integración |
@@ -1588,10 +1792,10 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | RF-15 | T-I-14, T-S-02, T-S-06 | Integración y seguridad |
 | RF-16 | T-U-08, T-I-15 | Unitaria e integración |
 | RF-17 | T-U-09, T-I-16 | Unitaria e integración |
-| RF-18 | T-I-17 | Integración con proveedor simulado |
+| RF-18 | T-I-17, T-I-22, T-S-12 | Integración con proveedor simulado |
 | RF-19 | — | Fuera del MVP (`D-18`) |
 | RF-20 | T-I-18 | Integración |
-| RF-21 | T-U-10, T-I-19 | Unitaria e integración |
+| RF-21 | T-U-10, T-I-19, T-U-12, T-I-32 | Unitaria e integración |
 | RF-22 | T-U-11, T-I-20 | Unitaria e integración |
 | RF-23 | T-I-21, T-S-07 | Integración y seguridad |
 
@@ -1603,7 +1807,7 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | NFR-001 Seguridad y RBAC | Vigente | T-S-01 a T-S-07 y T-A-01 |
 | NFR-002 Sanitización pública | **Modificado** por `D-28`: se publican precios y contactos | T-S-02 comprueba que no se expongan autoría, empresa ni firma; la prohibición de precios queda sin efecto |
 | NFR-003 Rendimiento p95 ≤ 1.5 s | **Eliminado** por `Q-58` = B (`D-67`) | Ya no es requisito; no se verifica |
-| NFR-004 Auditoría inmutable | **Obsoleto** por `D-08` y `D-52`: no hay bitácora histórica | Se reemplaza por T-I-12 (aprobación) y T-I-13 (último modificador) |
+| NFR-004 Auditoría inmutable | **Modificado** por `D-08`, `D-92` y `D-111`: sin historial de valores; se admiten eventos de estado/visibilidad y eventos de seguridad | Se verifica con T-I-12 (aprobación), T-I-13 (último modificador) y T-I-25 (historial de estados) |
 | NFR-005 Cobertura ≥ 80 % | Vigente, acotado por `D-61` | Puerta de cobertura en CI |
 
 ### 5.6.3 Reglas de negocio modificadas y su verificación
@@ -1613,7 +1817,7 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | BR-004 | **Modificado** por `D-08` y `D-52`: último modificador y una aprobación por APU | T-I-12, T-I-13 |
 | BR-006 | **Obsoleto** por `D-28`: el catálogo publica precios | T-S-02 |
 | BR-007 y BR-011 | **Modificados** por `D-04`, `D-14` y `D-52`: cierre con todo cotizado y aprobación única | T-U-10, T-I-19 |
-| BR-012 | Vigente: la firma se captura en el frontend y no se persiste | T-E-01 y revisión manual |
+| BR-012 | **OBSOLETO** por `D-91`: la firma se persiste en `UserSignature` | T-S-08 y `R-28` |
 | Resto de BR | Vigentes | Pruebas unitarias del módulo correspondiente |
 
 ### 5.6.4 Evidencia de aceptación
@@ -1623,13 +1827,38 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 4. Demostración del flujo al cerrar la etapa (`D-58`).
 5. Registro de riesgos actualizado.
 
+### 5.6.5 Verificación de la etapa `E-1b`
+| Verificación | Qué comprueba | Nivel |
+|---|---|---|
+| T-I-22 | `RF-18`: correo de creación de cuenta y de recuperación | Integración manual con proveedor simulado |
+| T-I-23 | `seed` de `Permission`/`RolePermission` idempotente y política fail-closed | Integración manual |
+| T-I-24 | `rowversion` y `409 Conflict` en `Project` | Integración manual |
+| T-I-25 | Historial de estados y de visibilidad (`D-92`) | Integración manual |
+| T-I-26 | Ciclo de vida de la compañía: alta, edición, inhabilitación y reactivación (`REQ-IDENTIDAD-13`…`REQ-IDENTIDAD-16`) | Integración manual |
+| T-I-27 | Alta, búsqueda y cambio de rol de usuarios según la matriz (`REQ-IDENTIDAD-09`…`REQ-IDENTIDAD-11`) | Integración manual |
+| T-I-28 | Modelo de usuario unificado y número de documento no único (`REQ-IDENTIDAD-05`, `D-78`, `D-77`) | Integración manual |
+| T-I-29 | Pertenencia con `User.company_id` y `ProjectMember` (`REQ-IDENTIDAD-12`, `REQ-PROYECTOS-12`) | Integración manual |
+| T-I-30 | Configuración única del proyecto (`REQ-PROYECTOS-10`, `D-93`) | Integración manual |
+| T-I-31 | Bootstrap idempotente del primer Administrador (`REQ-IDENTIDAD-27`, `D-110`) | Integración manual |
+| T-I-32 | Transiciones de estado y actor por transición (`REQ-PROYECTOS-05`, `16`, `17`, `19`) | Integración manual |
+| T-U-12 | Reglas de estado en el dominio: conjunto cerrado, comandos y transiciones (`REQ-PROYECTOS-03`…`REQ-PROYECTOS-06`) | Unitaria |
+| T-S-09 | Aislamiento entre compañías y proyectos (`REQ-IDENTIDAD-20`, `REQ-PROYECTOS-14`) | Seguridad manual |
+| T-S-10 | Fail-closed y eventos de seguridad (`REQ-IDENTIDAD-18`, `REQ-IDENTIDAD-21`) | Seguridad manual |
+| T-S-11 | Bloqueo por intentos fallidos y rehash del hash (`REQ-IDENTIDAD-22`, `REQ-IDENTIDAD-23`) | Seguridad manual |
+| T-S-12 | Recuperación de contraseña con respaldo asistido (`REQ-IDENTIDAD-25`) | Seguridad manual |
+| T-C-01 | Contrato v1: `camelCase`, `ProblemDetails`, `page`/`pageSize` | Contrato en CI |
+| T-A-02 | Reglas de capas y módulos con `NetArchTest` | Arquitectura en CI |
+| T-S-07 | Autorregistro: límite por IP y verificación de correo | Seguridad manual |
+| T-S-08 | La imagen de firma no se expone en DTO públicos ni en logs | Seguridad manual |
+
 ## 5.7 Herramientas de prueba
 | Herramienta | Uso | Estado |
 |---|---|---|
 | xUnit + FluentAssertions + Moq | Pruebas unitarias | CONFIRMADO (`03 §4`) |
-| `WebApplicationFactory` | Integración automatizada | **NO SE USA** (`D-66`) |
+| `WebApplicationFactory` | Integración automatizada | **NO SE USA** (`D-66`, `D-106`) |
+| `EF Core InMemory` | Persistencia para pruebas | **NO SE USA**: se prohíbe; integración manual con SQL local (`D-106`) |
 | SQL Server local | Verificación manual de persistencia | CONFIRMADO (`D-66`) |
-| NetArchTest | Reglas de capas y módulos | CONFIRMADO (`D-63`) |
+| NetArchTest | Reglas de capas y módulos | CONFIRMADO (`D-63`, `D-105`); proyecto `BudgetCivil.Tests.Architecture` |
 | NBomber | Rendimiento y p95 | **NO SE USA**: `NFR-003` eliminado (`D-67`) |
 | Playwright | Flujos extremo a extremo | **NO SE USA**: checklist manual (`D-65`) |
 | Coverlet | Cobertura | Propuesto; se confirma al configurar CI |
@@ -1669,6 +1898,7 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | `openspec/specs/` | Comportamiento por capacidad | **Fuente de verdad del comportamiento** |
 | `openspec/changes/` | Cambios activos y archivados | Trabajo en curso e historial |
 | `.github/docs/00`–`09` | Documentación narrativa del proyecto | Apoyo; se actualiza por capítulo (`D-09`) |
+| `specs/001`, `specs/002` | Evidencia histórica de lo implementado con Spec Kit | **No normativa** (`D-108`): solo insumo para el registro `GAP` |
 | Código y pruebas | Implementación y evidencia | Verificación |
 
 **Regla de conflicto:** si dos artefactos discrepan sobre comportamiento, manda la especificación de OpenSpec; si discrepan sobre alcance o decisión, manda `PLAN_INGENIERIA.md`. En ambos casos se detiene el cambio y se resuelve antes de continuar.
@@ -1732,6 +1962,7 @@ Una **capacidad** por módulo; un **cambio** por funcionalidad o grupo pequeño;
 - `PLAN_INGENIERIA.md` no se copia en OpenSpec: lo alimenta y conserva la justificación.
 - Los documentos `00`–`09` se actualizan al cerrar cada capítulo, no en cada cambio.
 - El archivo de cambios de OpenSpec es el historial; no se mantiene una bitácora paralela.
+- `specs/001` y `specs/002` se conservan sin editar como evidencia histórica (`D-108`); su contenido se traduce a `openspec/specs` durante `E-1b` y cada divergencia queda registrada como `GAP` (`4.8.4`).
 
 ## 6.2 Del plan de ingeniería a las especificaciones
 
@@ -1941,5 +2172,5 @@ La integración y el E2E son manuales (`D-65`, `D-66`) y no bloquean la CI, pero
 
 ---
 
-**Capítulo 6 cerrado** (v0.26). Documento completo: seis capítulos y 73 decisiones registradas (v0.28). Siguiente paso: crear la estructura de OpenSpec y el primer cambio (`E-0`).
+**Capítulo 6 cerrado** (v0.26). Documento completo: seis capítulos y 111 decisiones registradas (v0.29). Siguiente paso: ejecutar la etapa `E-1b` (`4.8`) —línea base de OpenSpec y cierre de brechas— y solo después abrir el cambio de `E-2`.
 

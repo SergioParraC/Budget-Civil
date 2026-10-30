@@ -30,6 +30,21 @@ public sealed class LoginUseCase(
 
         if (!userAccount.AccountEnabled || userAccount.AccountLocked)
         {
+            // SC-IDENTIDAD-16: el intento con una cuenta no habilitada (por ejemplo, correo sin
+            // verificar) se rechaza y queda registrado como evento de seguridad.
+            await securityAuditService.WriteAsync(
+                new SecurityAuditWriteRequest(
+                    userAccount.Id,
+                    userAccount.CompanyId,
+                    SecurityAuditEventType.AuthLogin,
+                    SecurityAuditResult.Denied,
+                    ReasonCode: userAccount.AccountLocked ? "ACCOUNT_LOCKED" : "ACCOUNT_NOT_ENABLED",
+                    Metadata: new Dictionary<string, string>
+                    {
+                        ["identifier"] = request.Identifier.Trim()
+                    }),
+                cancellationToken);
+
             throw new LockedAppException(AccountNotEnabledMessage, "ACCOUNT_NOT_ENABLED");
         }
 
@@ -37,6 +52,11 @@ public sealed class LoginUseCase(
         {
             await ProcessInvalidPasswordAsync(userAccount, cancellationToken);
             throw new UnauthorizedAppException("Credenciales invalidas.", "INVALID_CREDENTIALS");
+        }
+
+        if (passwordHasher.NeedsRehash(userAccount.PasswordHash))
+        {
+            userAccount.PasswordHash = passwordHasher.HashPassword(request.Password);
         }
 
         userAccount.FailedLoginAttempts = 0;

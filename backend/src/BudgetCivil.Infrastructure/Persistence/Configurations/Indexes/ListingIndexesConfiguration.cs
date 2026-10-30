@@ -21,14 +21,6 @@ public sealed class UserAccountListingIndexesConfiguration : IEntityTypeConfigur
     }
 }
 
-public sealed class UserProfileListingIndexesConfiguration : IEntityTypeConfiguration<UserProfile>
-{
-    public void Configure(EntityTypeBuilder<UserProfile> builder)
-    {
-        builder.HasIndex(profile => profile.DocumentNumber);
-    }
-}
-
 public sealed class ProjectListingIndexesConfiguration : IEntityTypeConfiguration<Project>
 {
     public void Configure(EntityTypeBuilder<Project> builder)

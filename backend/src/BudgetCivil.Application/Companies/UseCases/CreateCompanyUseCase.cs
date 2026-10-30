@@ -39,16 +39,12 @@ public sealed class CreateCompanyUseCase(
             throw new ConflictAppException("Company tax id already exists.", "COMPANY_TAX_ID_ALREADY_EXISTS");
         }
 
-        var isManager = actor.Role.Code == CompanyAdministrationAuthorizationRules.ProjectManagerRoleCode;
-        if (isManager)
+        var isManager = actor.Role.Code == CompanyAdministrationAuthorizationRules.DirectorRoleCode;
+        if (isManager && actor.CompanyId.HasValue)
         {
-            var managerActiveMembership = await companyRepository.GetActiveMembershipByUserIdAsync(actor.Id, cancellationToken);
-            if (actor.CompanyId.HasValue || managerActiveMembership is not null)
-            {
-                throw new ConflictAppException(
-                    "Gerente de proyectos can only create one own company.",
-                    "MANAGER_COMPANY_LIMIT_REACHED");
-            }
+            throw new ConflictAppException(
+                "Director de proyectos can only create one own company.",
+                "MANAGER_COMPANY_LIMIT_REACHED");
         }
 
         var utcNow = DateTime.UtcNow;
@@ -76,20 +72,9 @@ public sealed class CreateCompanyUseCase(
 
         if (isManager)
         {
+            // D-98: la pertenencia a la compañía vive en User.company_id.
             actor.CompanyId = createdCompany.Id;
             actor.UpdatedAtUtc = utcNow;
-
-            await companyRepository.AddMembershipAsync(
-                new UserCompanyMembership
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = actor.Id,
-                    CompanyId = createdCompany.Id,
-                    IsActive = true,
-                    AssignedByUserId = actor.Id,
-                    AssignedAtUtc = utcNow
-                },
-                cancellationToken);
         }
 
         await companyRepository.SaveChangesAsync(cancellationToken);

@@ -1,7 +1,7 @@
-using BudgetCivil.Application.Profile.Dtos;
+using BudgetCivil.Application.Dtos;
 using FluentValidation;
 
-namespace BudgetCivil.Application.Profile.Validators;
+namespace BudgetCivil.Application.Validators;
 
 public sealed class ChangeMyPasswordRequestValidator : AbstractValidator<ChangeMyPasswordRequest>
 {

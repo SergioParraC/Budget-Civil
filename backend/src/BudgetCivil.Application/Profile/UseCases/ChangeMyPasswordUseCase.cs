@@ -1,12 +1,12 @@
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Common.Security;
-using BudgetCivil.Application.Profile.Dtos;
-using BudgetCivil.Application.Profile.Repositories;
+using BudgetCivil.Application.Dtos;
+using BudgetCivil.Application.Repositories;
 using BudgetCivil.Domain.Users.Entities;
 using FluentValidation;
 
-namespace BudgetCivil.Application.Profile.UseCases;
+namespace BudgetCivil.Application.UseCases;
 
 public sealed class ChangeMyPasswordUseCase(
     IProfileRepository repository,

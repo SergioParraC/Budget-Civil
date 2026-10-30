@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace BudgetCivil.Application.Listings.Queries;
 
-public sealed record ListingPagination(int PageNumber, int PageSize);
+public sealed record ListingPagination(int Page, int PageSize);
 
 public sealed class ListingQueryPipeline(IValidator<PaginationQuery> paginationValidator)
 {
@@ -15,7 +15,7 @@ public sealed class ListingQueryPipeline(IValidator<PaginationQuery> paginationV
     {
         var paginationQuery = new PaginationQuery
         {
-            PageNumber = pageNumber,
+            Page = pageNumber,
             PageSize = pageSize
         };
 
@@ -25,6 +25,6 @@ public sealed class ListingQueryPipeline(IValidator<PaginationQuery> paginationV
             throw new ValidationAppException("Invalid pagination query.", "PAGE_SIZE_INVALID");
         }
 
-        return new ListingPagination(paginationQuery.PageNumber, paginationQuery.PageSize);
+        return new ListingPagination(paginationQuery.Page, paginationQuery.PageSize);
     }
 }

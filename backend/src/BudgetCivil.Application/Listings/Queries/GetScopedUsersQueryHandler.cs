@@ -14,76 +14,54 @@ public enum ScopedUsersListingScope
 
 public sealed class GetScopedUsersQuery
 {
-    [JsonPropertyName("scope")]
     public ScopedUsersListingScope Scope { get; init; } = ScopedUsersListingScope.Global;
 
-    [JsonPropertyName("company_id")]
     public Guid? CompanyId { get; init; }
 
-    [JsonPropertyName("search")]
     public string? Search { get; init; }
 
-    [JsonPropertyName("role_code")]
     public string? RoleCode { get; init; }
 
-    [JsonPropertyName("is_active")]
     public bool? IsActive { get; init; }
 
-    [JsonPropertyName("page_number")]
-    public int PageNumber { get; init; } = 1;
+    public int Page { get; init; } = 1;
 
-    [JsonPropertyName("page_size")]
     public int PageSize { get; init; } = 10;
 }
 
 public sealed class GetScopedUsersResponse
 {
-    [JsonPropertyName("items")]
     public IReadOnlyList<ScopedUserListItem> Items { get; init; } = [];
 
-    [JsonPropertyName("page_number")]
-    public int PageNumber { get; init; }
+    public int Page { get; init; }
 
-    [JsonPropertyName("page_size")]
     public int PageSize { get; init; }
 
-    [JsonPropertyName("total_items")]
     public int TotalItems { get; init; }
 }
 
 public sealed class ScopedUserListItem
 {
-    [JsonPropertyName("user_id")]
     public Guid UserId { get; init; }
 
-    [JsonPropertyName("company_id")]
     public Guid? CompanyId { get; init; }
 
-    [JsonPropertyName("email")]
     public string Email { get; init; } = string.Empty;
 
-    [JsonPropertyName("username")]
     public string Username { get; init; } = string.Empty;
 
-    [JsonPropertyName("role_code")]
     public string RoleCode { get; init; } = string.Empty;
 
-    [JsonPropertyName("estado_cuenta")]
     public bool AccountEnabled { get; init; }
 
-    [JsonPropertyName("primer_nombre")]
     public string FirstName { get; init; } = string.Empty;
 
-    [JsonPropertyName("segundo_nombre")]
     public string? MiddleName { get; init; }
 
-    [JsonPropertyName("primer_apellido")]
     public string LastName { get; init; } = string.Empty;
 
-    [JsonPropertyName("segundo_apellido")]
     public string? SecondLastName { get; init; }
 
-    [JsonPropertyName("numero_documento")]
     public string DocumentNumber { get; init; } = string.Empty;
 }
 
@@ -92,7 +70,7 @@ public sealed class GetScopedUsersQueryHandler(
     ListingQueryPipeline listingQueryPipeline)
 {
     private const string AdministratorRoleCode = "ADMINISTRADOR";
-    private const string ProjectManagerRoleCode = "GERENTE_PROYECTOS";
+    private const string DirectorRoleCode = "DIRECTOR";
     private const string EstimatorRoleCode = "PRESUPUESTADOR";
     private const string AuditorRoleCode = "AUDITOR";
 
@@ -104,7 +82,7 @@ public sealed class GetScopedUsersQueryHandler(
         var actor = await listingRepository.GetActorSnapshotAsync(actorUserId, cancellationToken);
         var resolvedActor = EnsureActorOperational(actor);
 
-        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.PageNumber, query.PageSize, cancellationToken);
+        var pagination = await listingQueryPipeline.ValidateAndNormalizeAsync(query.Page, query.PageSize, cancellationToken);
         var scope = await ResolveScopeAsync(resolvedActor, query, cancellationToken);
 
         var totalItems = await listingRepository.CountUsersAsync(
@@ -121,7 +99,7 @@ public sealed class GetScopedUsersQueryHandler(
             scope.RoleCodeFilter,
             query.IsActive,
             scope.RestrictedRoleCodes,
-            pagination.PageNumber,
+            pagination.Page,
             pagination.PageSize,
             cancellationToken);
 
@@ -141,7 +119,7 @@ public sealed class GetScopedUsersQueryHandler(
                 SecondLastName = row.SecondLastName,
                 DocumentNumber = row.DocumentNumber
             }).ToArray(),
-            PageNumber = pagination.PageNumber,
+            Page = pagination.Page,
             PageSize = pagination.PageSize,
             TotalItems = totalItems
         };
@@ -196,7 +174,7 @@ public sealed class GetScopedUsersQueryHandler(
             return new UserScopeDefinition(companyId.Value, roleCodeFilter, null);
         }
 
-        if (actor.RoleCode == ProjectManagerRoleCode && actor.CompanyId == companyId.Value)
+        if (actor.RoleCode == DirectorRoleCode && actor.CompanyId == companyId.Value)
         {
             return new UserScopeDefinition(companyId.Value, roleCodeFilter, null);
         }
@@ -206,7 +184,7 @@ public sealed class GetScopedUsersQueryHandler(
 
     private static UserScopeDefinition ResolveMyCompanyScope(ListingActorSnapshot actor, string? roleCodeFilter)
     {
-        if (actor.RoleCode is not ProjectManagerRoleCode and not EstimatorRoleCode)
+        if (actor.RoleCode is not DirectorRoleCode and not EstimatorRoleCode)
         {
             throw new ForbiddenAppException("Actor cannot read own company users list.", "USERS_SCOPE_FORBIDDEN");
         }

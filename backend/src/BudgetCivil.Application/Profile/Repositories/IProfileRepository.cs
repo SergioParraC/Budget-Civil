@@ -1,6 +1,6 @@
 using BudgetCivil.Domain.Users.Entities;
 
-namespace BudgetCivil.Application.Profile.Repositories;
+namespace BudgetCivil.Application.Repositories;
 
 public interface IProfileRepository
 {

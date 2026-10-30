@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using BudgetCivil.Api.Auth;
 using BudgetCivil.Application.Common.Exceptions;
-using BudgetCivil.Application.Profile.Dtos;
-using BudgetCivil.Application.Profile.UseCases;
+using BudgetCivil.Application.Dtos;
+using BudgetCivil.Application.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

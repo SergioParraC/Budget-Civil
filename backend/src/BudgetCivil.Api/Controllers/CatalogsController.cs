@@ -22,7 +22,7 @@ public sealed class CatalogsController(GetCatalogItemsQueryHandler getCatalogIte
             new CatalogListingQuery
             {
                 Search = search,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);
@@ -45,7 +45,7 @@ public sealed class CatalogsController(GetCatalogItemsQueryHandler getCatalogIte
             {
                 CountryId = countryId,
                 Search = search,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);
@@ -68,7 +68,7 @@ public sealed class CatalogsController(GetCatalogItemsQueryHandler getCatalogIte
             {
                 DepartmentId = departmentId,
                 Search = search,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);
@@ -89,7 +89,7 @@ public sealed class CatalogsController(GetCatalogItemsQueryHandler getCatalogIte
             new CatalogListingQuery
             {
                 Search = search,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);
@@ -110,7 +110,7 @@ public sealed class CatalogsController(GetCatalogItemsQueryHandler getCatalogIte
             new CatalogListingQuery
             {
                 Search = search,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);

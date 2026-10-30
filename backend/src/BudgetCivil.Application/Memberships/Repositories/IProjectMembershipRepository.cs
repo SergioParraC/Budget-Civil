@@ -14,11 +14,18 @@ public interface IProjectMembershipRepository
 
     Task<bool> IsUserAffiliatedToCompanyAsync(Guid userId, Guid companyId, CancellationToken cancellationToken = default);
 
-    Task<ProjectUserMembership?> GetActiveMembershipByProjectAndUserAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default);
+    Task<ProjectMember?> GetMembershipByProjectAndUserAsync(
+        Guid projectId,
+        Guid userId,
+        CancellationToken cancellationToken = default);
 
-    Task<ProjectUserMembership?> GetActiveMembershipByIdAsync(Guid membershipId, CancellationToken cancellationToken = default);
+    Task<ProjectMember?> GetMembershipByIdAsync(Guid membershipId, CancellationToken cancellationToken = default);
 
-    Task AddMembershipAsync(ProjectUserMembership membership, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Registra la pertenencia. Devuelve <c>false</c> cuando ya existe una fila para el par
+    /// (`project_id`, `user_id`), incluida la carrera entre dos solicitudes simultáneas (`D-98`).
+    /// </summary>
+    Task<bool> TryAddMembershipAsync(ProjectMember member, CancellationToken cancellationToken = default);
 
-    Task SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task RemoveMembershipAsync(ProjectMember member, CancellationToken cancellationToken = default);
 }
