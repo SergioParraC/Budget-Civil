@@ -3,13 +3,13 @@ namespace BudgetCivil.Domain.Memberships;
 public static class ProjectMembershipPolicy
 {
     public const string AdministratorRoleCode = "ADMINISTRADOR";
-    public const string ProjectManagerRoleCode = "GERENTE_PROYECTOS";
+    public const string DirectorRoleCode = "DIRECTOR";
     public const string EstimatorRoleCode = "PRESUPUESTADOR";
     public const string AuditorRoleCode = "AUDITOR";
 
     private static readonly HashSet<string> AllowedProjectRoles =
     [
-        ProjectManagerRoleCode,
+        DirectorRoleCode,
         EstimatorRoleCode,
         AuditorRoleCode
     ];
@@ -31,17 +31,8 @@ public static class ProjectMembershipPolicy
         var normalizedActorRoleCode = NormalizeRoleCode(actorRoleCode);
         var normalizedTargetRoleCode = NormalizeRoleCode(targetRoleCode);
 
-        if (normalizedActorRoleCode == AdministratorRoleCode)
-        {
-            if (normalizedTargetRoleCode != ProjectManagerRoleCode)
-            {
-                throw new InvalidOperationException("Administrador can only assign project managers to projects.");
-            }
-
-            return;
-        }
-
-        if (normalizedActorRoleCode == ProjectManagerRoleCode)
+        // `D-112`: el Administrador no gestiona membresías de proyecto (solo lectura).
+        if (normalizedActorRoleCode == DirectorRoleCode)
         {
             EnsureActorInCompany(projectCompanyId, actorCompanyId);
             EnsureRoleAllowedForProjectAssignment(normalizedTargetRoleCode);
@@ -72,7 +63,7 @@ public static class ProjectMembershipPolicy
         var normalizedActorRoleCode = NormalizeRoleCode(actorRoleCode);
         var normalizedTargetRoleCode = NormalizeRoleCode(targetRoleCode);
 
-        if (normalizedActorRoleCode == ProjectManagerRoleCode)
+        if (normalizedActorRoleCode == DirectorRoleCode)
         {
             EnsureActorInCompany(projectCompanyId, actorCompanyId);
             EnsureRoleAllowedForProjectAssignment(normalizedTargetRoleCode);

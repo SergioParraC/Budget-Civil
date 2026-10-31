@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
@@ -8,10 +8,11 @@ import { CardModule } from 'primeng/card';
 import { MessageModule } from 'primeng/message';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { resolveApiError } from '../../../core/http/api-error';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, PasswordModule, CardModule, MessageModule],
+  imports: [ReactiveFormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, CardModule, MessageModule],
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
@@ -42,9 +43,9 @@ export class Login {
         this.loading.set(false);
         this.router.navigate(['/dashboard']);
       },
-      error: () => {
+      error: (error: unknown) => {
         this.loading.set(false);
-        this.errorMessage.set('Usuario o contraseña incorrectos.');
+        this.errorMessage.set(resolveApiError(error).message);
       }
     });
   }

@@ -22,8 +22,6 @@ public interface IProjectRepository
         Guid baseCurrencyId,
         CancellationToken cancellationToken = default);
 
-    Task<bool> HasActiveSignatureAsync(Guid userId, CancellationToken cancellationToken = default);
-
     Task AddProjectAsync(Project project, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Project>> GetProjectsAsync(

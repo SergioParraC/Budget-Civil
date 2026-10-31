@@ -5,7 +5,6 @@ namespace BudgetCivil.Application.Users.Administration.Dtos;
 
 public sealed class ChangeUserCompanyRequest
 {
-    [JsonPropertyName("company_id")]
     public Guid CompanyId { get; init; }
 
     [JsonExtensionData]

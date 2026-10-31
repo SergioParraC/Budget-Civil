@@ -6,21 +6,21 @@ export interface Country {
 
 export interface Department {
   id: string;
-  country_id: string;
+  countryId: string;
   code: string;
   name: string;
 }
 
 export interface Municipality {
   id: string;
-  department_id: string;
+  departmentId: string;
   code: string;
   name: string;
 }
 
 export interface Currency {
   id: string;
-  iso_code: string;
+  isoCode: string;
   name: string;
 }
 

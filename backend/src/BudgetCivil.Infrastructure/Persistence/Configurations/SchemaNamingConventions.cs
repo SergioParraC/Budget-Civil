@@ -24,7 +24,7 @@ public static class SchemaNamingConventions
                 continue;
             }
 
-            var schema = entityType.GetSchema() ?? DatabaseSchemas.Dbo;
+            var schema = entityType.GetSchema() ?? "dbo";
             var storeObject = StoreObjectIdentifier.Table(tableName, entityType.GetSchema());
 
             var primaryKey = entityType.FindPrimaryKey();

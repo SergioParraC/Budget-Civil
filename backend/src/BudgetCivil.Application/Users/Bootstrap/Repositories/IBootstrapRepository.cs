@@ -10,8 +10,6 @@ public interface IBootstrapRepository
 
     Task<bool> UsernameExistsAsync(string username, CancellationToken cancellationToken = default);
 
-    Task<bool> CompanyTaxIdExistsAsync(string taxId, CancellationToken cancellationToken = default);
-
     Task<(Guid AdministratorId, Guid AuditEventId)> CreateFirstAdministratorAsync(
         BootstrapRequest request,
         CancellationToken cancellationToken = default);

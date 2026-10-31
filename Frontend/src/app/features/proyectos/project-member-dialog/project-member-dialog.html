@@ -1,0 +1,76 @@
+<p-dialog [(visible)]="visible" [modal]="true" [style]="{ width: '820px' }" [header]="title()" [dismissableMask]="true">
+  <div class="member-picker">
+    <p class="member-picker__hint">{{ hint() }}</p>
+
+    <div class="member-picker__row">
+      <p-select
+        class="member-picker__filter"
+        fluid
+        appendTo="body"
+        [panelStyle]="{ width: '220px' }"
+        [options]="filterOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="filter()"
+        (ngModelChange)="onFilterChange($event)"
+        placeholder="Filtrar por"
+      />
+
+      @if (filter() === 'document') {
+        <p-select
+          class="member-picker__document-type"
+          fluid
+          appendTo="body"
+          [panelStyle]="{ width: '190px' }"
+          [options]="documentTypes()"
+          optionLabel="name"
+          optionValue="code"
+          [ngModel]="selectedDocumentType()"
+          (ngModelChange)="selectedDocumentType.set($event)"
+          placeholder="Tipo de documento"
+        />
+        <input
+          class="member-picker__document-number"
+          pInputText
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+          placeholder="Número de documento"
+          (keyup.enter)="search(searchTerm())"
+        />
+      } @else {
+        <input
+          class="member-picker__term"
+          pInputText
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+          [placeholder]="searchPlaceholder()"
+          (keyup.enter)="search(searchTerm())"
+        />
+      }
+
+      <p-button label="Buscar" icon="pi pi-search" [loading]="searching()" (onClick)="search(searchTerm())" />
+    </div>
+
+    @if (candidates().length > 0) {
+      <ul class="member-picker__results">
+        @for (candidate of candidates(); track candidate.userId) {
+          <li>
+            <div class="member-picker__candidate">
+              <strong>{{ candidate.firstName }} {{ candidate.lastName }}</strong>
+              <span>{{ candidate.username }} · {{ candidate.email }}</span>
+            </div>
+            <p-button
+              [label]="mode() === 'select' ? 'Seleccionar' : 'Vincular'"
+              [icon]="mode() === 'select' ? 'pi pi-check' : 'pi pi-plus'"
+              size="small"
+              [loading]="assigningUserId() === candidate.userId"
+              (onClick)="assign(candidate)"
+            />
+          </li>
+        }
+      </ul>
+    } @else if (searchAttempted() && !searching()) {
+      <small class="member-picker__empty">No hay usuarios disponibles con ese criterio.</small>
+    }
+  </div>
+</p-dialog>

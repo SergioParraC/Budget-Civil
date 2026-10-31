@@ -1,53 +1,87 @@
+export const ROLE_CODES = ['ADMINISTRADOR', 'DIRECTOR', 'PRESUPUESTADOR', 'AUDITOR'] as const;
+
+export type RoleCode = (typeof ROLE_CODES)[number];
 export type CompanyType = 'PUBLICA' | 'PRIVADA';
 export type RepresentativeMode = 'USER_REFERENCE' | 'MANUAL_DATA';
-export type RoleCode = 'GERENTE_PROYECTOS' | 'PRESUPUESTADOR' | 'AUDITOR';
 
 export interface Company {
-  company_id: string;
-  business_name: string;
-  tax_id: string;
-  company_type: CompanyType;
-  territorial_level: string | null;
-  country_id: string;
-  department_id: string;
-  municipality_id: string;
-  representative_mode: RepresentativeMode;
-  representative_user_id: string | null;
-  representative_full_name: string | null;
-  representative_document_type_id: string | null;
-  representative_document_number: string | null;
-  is_active: boolean;
-  created_by_user_id: string | null;
-  created_at: string;
-  last_modified_by_user_id: string | null;
-  last_modified_at: string | null;
+  companyId: string;
+  businessName: string;
+  taxId: string;
+  companyType: CompanyType | null;
+  territorialLevel: string | null;
+  countryId: string | null;
+  departmentId: string | null;
+  municipalityId: string | null;
+  representativeMode: RepresentativeMode | null;
+  representativeUserId: string | null;
+  representativeFullName: string | null;
+  representativeDocumentTypeId: string | null;
+  representativeDocumentNumber: string | null;
+  isActive: boolean;
+  createdByUserId: string | null;
+  createdAtUtc: string;
+  lastModifiedByUserId: string | null;
+  lastModifiedAtUtc: string | null;
 }
 
 export interface CompanyRepresentativePayload {
   mode: RepresentativeMode;
-  user_id?: string;
-  full_name?: string;
-  document_type_id?: string;
-  document_number?: string;
+  userId?: string;
+  fullName?: string;
+  documentNumber?: string;
+  documentTypeId?: string;
 }
 
 export interface CompanyFormValue {
-  business_name: string;
-  tax_id: string;
-  company_type: CompanyType;
-  territorial_level?: string;
-  country_id: string;
-  department_id: string;
-  municipality_id: string;
+  businessName: string;
+  taxId: string;
+  companyType: CompanyType;
+  territorialLevel?: string;
+  countryId: string;
+  departmentId: string;
+  municipalityId: string;
   representative: CompanyRepresentativePayload;
-  is_active?: boolean;
+  isActive?: boolean;
 }
 
-export interface Membership {
-  membership_id: string;
-  company_id?: string;
-  project_id?: string;
-  user_id: string;
-  role_code: RoleCode;
-  is_active: boolean;
+/** Respuesta de `GET /companies/me`: ficha de la compañía del usuario autenticado. */
+export interface MyCompany {
+  companyId: string;
+  businessName: string;
+  taxId: string;
+  companyType: CompanyType | null;
+  territorialLevel: string | null;
+  countryId: string | null;
+  countryName: string | null;
+  departmentId: string | null;
+  departmentName: string | null;
+  municipalityId: string | null;
+  municipalityName: string | null;
+  representativeMode: RepresentativeMode | null;
+  representativeUserId: string | null;
+  representativeFullName: string | null;
+  representativeDocumentTypeId: string | null;
+  representativeDocumentNumber: string | null;
+  isActive: boolean;
+  /** Fecha de vinculación del usuario con la compañía (`users_company.created_at`). */
+  linkedAtUtc: string | null;
+  roleCode: string;
+  roleName: string;
+}
+
+/** Respuesta de `POST /companies/me/leave`. */
+export interface LeaveCompanyResponse {
+  companyId: string;
+  userId: string;
+  leftAtUtc: string;
+  projectsDetached: number;
+  requiresRelogin: boolean;
+}
+
+/** Respuesta de `POST /companies/{companyId}/memberships` (`IF-07`). */
+export interface CompanyMemberAssignment {
+  companyId: string;
+  userId: string;
+  isActive: boolean;
 }

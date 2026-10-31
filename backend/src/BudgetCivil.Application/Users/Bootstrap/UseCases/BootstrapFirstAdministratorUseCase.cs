@@ -1,13 +1,16 @@
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Catalogs;
 using BudgetCivil.Application.Catalogs.Repositories;
-using BudgetCivil.Application.Companies;
 using BudgetCivil.Application.Users.Bootstrap.Dtos;
 using BudgetCivil.Application.Users.Bootstrap.Repositories;
 using FluentValidation;
 
 namespace BudgetCivil.Application.Users.Bootstrap.UseCases;
 
+/// <summary>
+/// `REQ-IDENTIDAD-27` (`D-110`): crea el primer Administrador, **sin compañía** y sin crear ninguna
+/// empresa (`SC-IDENTIDAD-69`). El endpoint se cierra al existir un Administrador.
+/// </summary>
 public sealed class BootstrapFirstAdministratorUseCase(
     IBootstrapRepository bootstrapRepository,
     IGeographicCatalogRepository geographicCatalogRepository,
@@ -16,28 +19,16 @@ public sealed class BootstrapFirstAdministratorUseCase(
     public async Task<BootstrapResponse> ExecuteAsync(BootstrapRequest request, CancellationToken cancellationToken = default)
     {
         await ValidateAsync(request, cancellationToken);
-        await GeographicLocationRules.EnsureValidActiveLocationAsync(
-            geographicCatalogRepository,
-            request.AdminProfile.CountryId,
-            request.AdminProfile.DepartmentId,
-            request.AdminProfile.MunicipalityId,
-            cancellationToken);
-        await CompanyReferenceRules.EnsureValidReferencesAsync(
-            geographicCatalogRepository,
-            request.Company.CountryId,
-            request.Company.DepartmentId,
-            request.Company.MunicipalityId,
-            request.Company.Representative,
-            cancellationToken);
-        BudgetCivil.Domain.Companies.Company.ValidateTerritorialLevel(request.Company.CompanyType, request.Company.TerritorialLevel);
-        BudgetCivil.Domain.Companies.Company.ValidateRepresentative(new BudgetCivil.Domain.Companies.LegalRepresentativeInput
+
+        if (request.AdminProfile.HasCompleteResidence)
         {
-            Mode = request.Company.Representative?.Mode,
-            UserId = request.Company.Representative?.UserId,
-            FullName = request.Company.Representative?.FullName,
-            DocumentTypeId = request.Company.Representative?.DocumentTypeId,
-            DocumentNumber = request.Company.Representative?.DocumentNumber
-        });
+            await GeographicLocationRules.EnsureValidActiveLocationAsync(
+                geographicCatalogRepository,
+                request.AdminProfile.CountryId!.Value,
+                request.AdminProfile.DepartmentId!.Value,
+                request.AdminProfile.MunicipalityId!.Value,
+                cancellationToken);
+        }
 
         if (await bootstrapRepository.AnyAdministratorExistsAsync(cancellationToken))
         {
@@ -52,11 +43,6 @@ public sealed class BootstrapFirstAdministratorUseCase(
         if (await bootstrapRepository.UsernameExistsAsync(request.AdminProfile.Username, cancellationToken))
         {
             throw new ConflictAppException("Username already exists.", "USERNAME_ALREADY_EXISTS");
-        }
-
-        if (await bootstrapRepository.CompanyTaxIdExistsAsync(request.Company.TaxId, cancellationToken))
-        {
-            throw new ConflictAppException("Company tax id already exists.", "COMPANY_TAX_ID_ALREADY_EXISTS");
         }
 
         var creationResult = await bootstrapRepository.CreateFirstAdministratorAsync(request, cancellationToken);

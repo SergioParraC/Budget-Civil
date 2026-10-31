@@ -1,10 +1,17 @@
 <p-card header="Nuevo proyecto">
+  @if (!currentUser()?.companyId) {
+    <p-message
+      severity="warn"
+      text="Tu usuario no tiene una compañía asignada. Asígnala antes de crear el proyecto; si ya la tienes, cierra sesión y vuelve a entrar."
+    />
+  }
+
   <form [formGroup]="form" (ngSubmit)="submit()" class="form-grid">
     <label for="name">Nombre</label>
-    <input id="name" pInputText formControlName="name" />
+    <input id="name" pInputText formControlName="name" maxlength="255" />
 
     <label for="description">Descripción</label>
-    <textarea id="description" pTextarea formControlName="description" rows="2"></textarea>
+    <textarea id="description" pTextarea formControlName="description" rows="2" maxlength="1000"></textarea>
 
     <label for="objective">Objetivo</label>
     <textarea id="objective" pTextarea formControlName="objective" rows="2" maxlength="1000"></textarea>
@@ -33,10 +40,18 @@
     <p-select id="municipality" formControlName="municipalityId" [options]="municipalities()" optionLabel="name" optionValue="id" />
 
     <label for="currency">Divisa</label>
-    <p-select id="currency" formControlName="baseCurrencyId" [options]="currencies()" optionLabel="iso_code" optionValue="id" />
+    <p-select id="currency" formControlName="baseCurrencyId" [options]="currencies()" optionLabel="isoCode" optionValue="id" />
+
+    <label for="budgetLimit">Tope presupuestal (opcional)</label>
+    <p-inputnumber id="budgetLimit" formControlName="budgetLimit" [min]="0" placeholder="Sin tope" />
 
     <label for="signingMode">Modo de firma</label>
     <p-select id="signingMode" formControlName="signingMode" [options]="signingModes" optionLabel="label" optionValue="value" />
+
+    <div class="form-grid__switch">
+      <label for="requiresAuditor">Requiere auditor</label>
+      <p-toggleswitch id="requiresAuditor" formControlName="requiresAuditor" />
+    </div>
 
     <label>AIU (%)</label>
     <div class="form-grid__aiu">
@@ -44,6 +59,10 @@
       <p-inputnumber formControlName="unforeseenPercent" suffix="%" placeholder="Imprevistos" />
       <p-inputnumber formControlName="profitPercent" suffix="%" placeholder="Utilidad" />
     </div>
+
+    @if (errorMessage()) {
+      <p-message severity="error" [text]="errorMessage()!" />
+    }
 
     <p-button type="submit" label="Guardar" [loading]="saving()" />
   </form>

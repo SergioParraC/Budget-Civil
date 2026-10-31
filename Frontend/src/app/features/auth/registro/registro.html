@@ -1,0 +1,86 @@
+<div class="registro">
+  <p-card header="Crear cuenta" class="registro__card">
+    @if (registered()) {
+      <div class="registro__done">
+        <p-message severity="success" text="Cuenta creada. Ya puedes iniciar sesión." />
+        <a routerLink="/login">Volver al inicio de sesión</a>
+      </div>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()" class="registro__form">
+        <label for="documentType">Tipo de documento</label>
+        <p-select
+          id="documentType"
+          formControlName="documentType"
+          [options]="documentTypes()"
+          optionLabel="name"
+          optionValue="code"
+        />
+
+        <label for="documentNumber">Número de documento</label>
+        <input id="documentNumber" pInputText formControlName="documentNumber" />
+
+        <label for="firstName">Primer nombre</label>
+        <input id="firstName" pInputText formControlName="firstName" />
+
+        <label for="middleName">Segundo nombre (opcional)</label>
+        <input id="middleName" pInputText formControlName="middleName" />
+
+        <label for="lastName">Primer apellido</label>
+        <input id="lastName" pInputText formControlName="lastName" />
+
+        <label for="secondLastName">Segundo apellido (opcional)</label>
+        <input id="secondLastName" pInputText formControlName="secondLastName" />
+
+        <label for="birthDate">Fecha de nacimiento</label>
+        <input id="birthDate" type="date" pInputText formControlName="birthDate" />
+
+        <label for="email">Correo electrónico</label>
+        <input id="email" type="email" pInputText formControlName="email" autocomplete="email" />
+
+        <label for="username">Nombre de usuario</label>
+        <input id="username" pInputText formControlName="username" autocomplete="username" />
+
+        <label for="password">Contraseña</label>
+        <p-password id="password" formControlName="password" [feedback]="false" [toggleMask]="true" />
+        <small class="registro__hint">Mínimo 8 caracteres, una mayúscula, un número y un símbolo.</small>
+
+        <label for="country">País</label>
+        <p-select
+          id="country"
+          formControlName="countryId"
+          [options]="countries()"
+          optionLabel="name"
+          optionValue="id"
+          (onChange)="onCountryChange($event.value)"
+        />
+
+        <label for="department">Departamento</label>
+        <p-select
+          id="department"
+          formControlName="departmentId"
+          [options]="departments()"
+          optionLabel="name"
+          optionValue="id"
+          (onChange)="onDepartmentChange($event.value)"
+        />
+
+        <label for="municipality">Municipio</label>
+        <p-select
+          id="municipality"
+          formControlName="municipalityId"
+          [options]="municipalities()"
+          optionLabel="name"
+          optionValue="id"
+        />
+
+        @if (errorMessage()) {
+          <p-message severity="error" [text]="errorMessage()!" />
+        }
+
+        <p-button type="submit" label="Crear cuenta" [loading]="saving()" />
+      </form>
+
+      <a class="registro__back" routerLink="/login">Ya tengo cuenta, iniciar sesión</a>
+    }
+  </p-card>
+</div>

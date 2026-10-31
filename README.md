@@ -53,9 +53,11 @@ Flujo general:
 6. Api retorna respuesta estandarizada.
 
 Documentacion de soporte:
-- `specs/` (especificaciones, planes, tareas y contratos)
+- `openspec/` (fuente de verdad del comportamiento: `openspec/specs/`, cambios en `openspec/changes/`)
+- `.github/docs/` (requerimientos, arquitectura, stack, modelo de datos y casos de uso)
 - `docs/architecture/` (diagramas de arquitectura y modelo de datos)
-- `.github/docs/` (requerimientos y lineamientos generales del proyecto)
+- `docs/runbook-migraciones.md` (aplicación manual del esquema, `D-40`)
+- `specs/001` y `specs/002`: **evidencia histórica no normativa** de lo implementado con Spec Kit; no se editan (`D-108`)
 
 ---
 

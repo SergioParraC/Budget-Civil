@@ -10,11 +10,7 @@ public interface ICompanyRepository
 
     Task<bool> TaxIdExistsAsync(string taxId, Guid? excludingCompanyId = null, CancellationToken cancellationToken = default);
 
-    Task<UserCompanyMembership?> GetActiveMembershipByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
-
     Task AddCompanyAsync(Company company, CancellationToken cancellationToken = default);
-
-    Task AddMembershipAsync(UserCompanyMembership membership, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Company>> GetCompaniesAsync(
         string? search,

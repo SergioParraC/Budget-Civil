@@ -5,6 +5,7 @@ using BudgetCivil.Application.Companies.Dtos;
 using BudgetCivil.Application.Companies;
 using BudgetCivil.Application.Companies.Repositories;
 using BudgetCivil.Application.Companies.UseCases;
+using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Users.Entities;
 using FluentValidation;
 using CompanyEntity = BudgetCivil.Domain.Users.Entities.Company;
@@ -40,16 +41,12 @@ public sealed class CreateCompanyCommandHandler(
             throw new ConflictAppException("Company tax id already exists.", "COMPANY_TAX_ID_ALREADY_EXISTS");
         }
 
-        var isManager = actor.Role.Code == CompanyAdministrationAuthorizationRules.ProjectManagerRoleCode;
-        if (isManager)
+        var isManager = actor.Role.Code == CompanyAdministrationAuthorizationRules.DirectorRoleCode;
+        if (isManager && actor.CompanyId.HasValue)
         {
-            var managerActiveMembership = await companyRepository.GetActiveMembershipByUserIdAsync(actor.Id, cancellationToken);
-            if (actor.CompanyId.HasValue || managerActiveMembership is not null)
-            {
-                throw new ConflictAppException(
-                    "Gerente de proyectos can only create one own company.",
-                    "MANAGER_COMPANY_LIMIT_REACHED");
-            }
+            throw new ConflictAppException(
+                "Director de proyectos can only create one own company.",
+                "MANAGER_COMPANY_LIMIT_REACHED");
         }
 
         var normalizedBusinessName = CompanyDomainRules.NormalizeBusinessName(command.BusinessName);
@@ -83,20 +80,9 @@ public sealed class CreateCompanyCommandHandler(
 
         if (isManager)
         {
-            actor.CompanyId = createdCompany.Id;
+            // `users_company` es la única fuente de verdad de la pertenencia (`D-98` revisado).
+            CompanyMembershipAssignment.Attach(actor, createdCompany.Id, utcNow);
             actor.UpdatedAtUtc = utcNow;
-
-            await companyRepository.AddMembershipAsync(
-                new UserCompanyMembership
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = actor.Id,
-                    CompanyId = createdCompany.Id,
-                    IsActive = true,
-                    AssignedByUserId = actor.Id,
-                    AssignedAtUtc = utcNow
-                },
-                cancellationToken);
         }
 
         await companyRepository.SaveChangesAsync(cancellationToken);

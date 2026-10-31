@@ -10,73 +10,55 @@ namespace BudgetCivil.Application.Projects.Commands.CreateProject;
 
 public sealed class CreateProjectCommand
 {
-    [JsonPropertyName("company_id")]
     public Guid? CompanyId { get; init; }
 
-    [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 
-    [JsonPropertyName("code")]
     public string? Code { get; init; }
 
-    [JsonPropertyName("description")]
     public string? Description { get; init; }
 
-    [JsonPropertyName("objective")]
     public string? Objective { get; init; }
 
-    [JsonPropertyName("country_id")]
     public Guid? CountryId { get; init; }
 
-    [JsonPropertyName("department_id")]
     public Guid? DepartmentId { get; init; }
 
-    [JsonPropertyName("municipality_id")]
     public Guid? MunicipalityId { get; init; }
 
-    [JsonPropertyName("base_currency_id")]
     public Guid? BaseCurrencyId { get; init; }
 
-    [JsonPropertyName("aiu_admin_percent")]
+    public decimal? BudgetLimit { get; init; }
+
     public decimal? AiuAdminPercent { get; init; }
 
-    [JsonPropertyName("aiu_unforeseen_percent")]
     public decimal? AiuUnforeseenPercent { get; init; }
 
-    [JsonPropertyName("aiu_profit_percent")]
     public decimal? AiuProfitPercent { get; init; }
 
-    [JsonPropertyName("signing_mode")]
     public string? SigningMode { get; init; }
 
-    [JsonPropertyName("signer_user_id")]
     public Guid? SignerUserId { get; init; }
+
+    public bool? RequiresAuditor { get; init; }
 }
 
 public sealed class CreateProjectResponse
 {
-    [JsonPropertyName("project_id")]
     public Guid ProjectId { get; init; }
 
-    [JsonPropertyName("company_id")]
     public Guid CompanyId { get; init; }
 
-    [JsonPropertyName("status")]
     public string Status { get; init; } = string.Empty;
 
-    [JsonPropertyName("country_id")]
     public Guid CountryId { get; init; }
 
-    [JsonPropertyName("department_id")]
     public Guid DepartmentId { get; init; }
 
-    [JsonPropertyName("municipality_id")]
     public Guid MunicipalityId { get; init; }
 
-    [JsonPropertyName("base_currency_id")]
     public Guid BaseCurrencyId { get; init; }
 
-    [JsonPropertyName("created_at_utc")]
     public DateTime CreatedAtUtc { get; init; }
 }
 
@@ -116,6 +98,11 @@ public sealed class CreateProjectCommandValidator : AbstractValidator<CreateProj
             .NotNull()
             .NotEqual(Guid.Empty);
 
+        RuleFor(command => command.BudgetLimit)
+            .GreaterThan(0m)
+            .PrecisionScale(18, 2, ignoreTrailingZeros: true)
+            .When(command => command.BudgetLimit.HasValue);
+
         RuleFor(command => command.AiuAdminPercent)
             .InclusiveBetween(0m, 100m)
             .When(command => command.AiuAdminPercent.HasValue);
@@ -131,8 +118,7 @@ public sealed class CreateProjectCommandValidator : AbstractValidator<CreateProj
         RuleFor(command => command.SigningMode)
             .Must(signingMode =>
                 string.IsNullOrWhiteSpace(signingMode) ||
-                string.Equals(signingMode, Project.UniqueSignerByAssignedEstimator, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(signingMode, Project.IndependentSignerByResponsibleProfessional, StringComparison.OrdinalIgnoreCase))
+                Project.IsValidSignatureMode(signingMode))
             .WithMessage("signing_mode is invalid.");
     }
 }
@@ -191,7 +177,7 @@ public sealed class CreateProjectCommandHandler(
                 "PROJECT_DIRECTOR_REQUIRED");
         }
 
-        var directorOwnerUserId = actor.Role.Code == ProjectStatusTransitionPolicy.ProjectManagerRoleCode
+        var directorOwnerUserId = actor.Role.Code == ProjectStatusTransitionPolicy.DirectorRoleCode
             ? actor.Id
             : await projectRepository.GetOldestActiveDirectorUserIdAsync(companyId, cancellationToken)
                 ?? throw new ConflictAppException("Active project manager was not found.", "PROJECT_DIRECTOR_REQUIRED");
@@ -211,26 +197,33 @@ public sealed class CreateProjectCommandHandler(
                 CountryId = countryId,
                 DepartmentId = departmentId,
                 MunicipalityId = municipalityId,
-                BaseCurrencyId = baseCurrencyId,
-                AiuAdminPercent = Project.NormalizeAiuPercent(command.AiuAdminPercent, "aiu_admin_percent"),
-                AiuUnforeseenPercent = Project.NormalizeAiuPercent(command.AiuUnforeseenPercent, "aiu_unforeseen_percent"),
-                AiuProfitPercent = Project.NormalizeAiuPercent(command.AiuProfitPercent, "aiu_profit_percent"),
                 Status = ProjectStatus.PorCotizar,
                 IsPublic = false,
-                SigningMode = Project.NormalizeSigningModeOrDefault(command.SigningMode),
-                SignerUserId = command.SignerUserId,
                 DirectorOwnerUserId = directorOwnerUserId,
                 CreatedByUserId = actor.Id,
                 LastModifiedByUserId = null,
                 LastModifiedAtUtc = null,
                 CreatedAtUtc = now,
-                UpdatedAtUtc = now
+                UpdatedAtUtc = now,
+                Configuration = new ProjectConfiguration
+                {
+                    BaseCurrencyId = baseCurrencyId,
+                    BudgetLimit = ProjectConfiguration.NormalizeBudgetLimit(command.BudgetLimit),
+                    AiuAdminPercent = ProjectConfiguration.NormalizeAiuPercent(command.AiuAdminPercent, "aiu_admin_percent"),
+                    AiuUnforeseenPercent = ProjectConfiguration.NormalizeAiuPercent(command.AiuUnforeseenPercent, "aiu_unforeseen_percent"),
+                    AiuProfitPercent = ProjectConfiguration.NormalizeAiuPercent(command.AiuProfitPercent, "aiu_profit_percent"),
+                    SignatureMode = Project.NormalizeSignatureModeOrDefault(command.SigningMode),
+                    SignerUserId = command.SignerUserId,
+                    RequiresAuditor = command.RequiresAuditor ?? false
+                }
             };
         }
         catch (InvalidOperationException)
         {
             throw new ValidationAppException("Project payload contains invalid values.", "VALIDATION_ERROR");
         }
+
+        project.Configuration.ProjectId = project.Id;
 
         await projectRepository.AddProjectAsync(project, cancellationToken);
         await projectRepository.SaveChangesAsync(cancellationToken);
@@ -259,7 +252,7 @@ public sealed class CreateProjectCommandHandler(
             CountryId = project.CountryId,
             DepartmentId = project.DepartmentId,
             MunicipalityId = project.MunicipalityId,
-            BaseCurrencyId = project.BaseCurrencyId,
+            BaseCurrencyId = project.Configuration.BaseCurrencyId,
             CreatedAtUtc = project.CreatedAtUtc
         };
     }
@@ -298,7 +291,7 @@ public sealed class CreateProjectCommandHandler(
             throw new ForbiddenAppException("Authenticated actor is not operational.", "ACTOR_NOT_ENABLED");
         }
 
-        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.ProjectManagerRoleCode and not ProjectStatusTransitionPolicy.EstimatorRoleCode)
+        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.DirectorRoleCode and not ProjectStatusTransitionPolicy.EstimatorRoleCode)
         {
             throw new ForbiddenAppException("Actor cannot create projects.", "PROJECT_CREATE_FORBIDDEN");
         }

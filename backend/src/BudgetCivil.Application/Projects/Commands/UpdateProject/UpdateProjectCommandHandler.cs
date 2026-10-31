@@ -10,52 +10,41 @@ namespace BudgetCivil.Application.Projects.Commands.UpdateProject;
 
 public sealed class UpdateProjectCommand
 {
-    [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
 
-    [JsonPropertyName("code")]
     public string? Code { get; init; }
 
-    [JsonPropertyName("description")]
     public string? Description { get; init; }
 
-    [JsonPropertyName("objective")]
     public string? Objective { get; init; }
 
-    [JsonPropertyName("country_id")]
     public Guid? CountryId { get; init; }
 
-    [JsonPropertyName("department_id")]
     public Guid? DepartmentId { get; init; }
 
-    [JsonPropertyName("municipality_id")]
     public Guid? MunicipalityId { get; init; }
 
-    [JsonPropertyName("base_currency_id")]
     public Guid? BaseCurrencyId { get; init; }
 
-    [JsonPropertyName("aiu_admin_percent")]
+    public decimal? BudgetLimit { get; init; }
+
     public decimal? AiuAdminPercent { get; init; }
 
-    [JsonPropertyName("aiu_unforeseen_percent")]
     public decimal? AiuUnforeseenPercent { get; init; }
 
-    [JsonPropertyName("aiu_profit_percent")]
     public decimal? AiuProfitPercent { get; init; }
 
-    [JsonPropertyName("signing_mode")]
     public string? SigningMode { get; init; }
 
-    [JsonPropertyName("signer_user_id")]
     public Guid? SignerUserId { get; init; }
+
+    public bool? RequiresAuditor { get; init; }
 }
 
 public sealed class UpdateProjectResponse
 {
-    [JsonPropertyName("project_id")]
     public Guid ProjectId { get; init; }
 
-    [JsonPropertyName("updated_at_utc")]
     public DateTime UpdatedAtUtc { get; init; }
 }
 
@@ -82,8 +71,7 @@ public sealed class UpdateProjectCommandValidator : AbstractValidator<UpdateProj
         RuleFor(command => command.SigningMode)
             .Must(signingMode =>
                 string.IsNullOrWhiteSpace(signingMode) ||
-                string.Equals(signingMode, Project.UniqueSignerByAssignedEstimator, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(signingMode, Project.IndependentSignerByResponsibleProfessional, StringComparison.OrdinalIgnoreCase))
+                Project.IsValidSignatureMode(signingMode))
             .WithMessage("signing_mode is invalid.");
 
         RuleFor(command => command.CountryId)
@@ -101,6 +89,11 @@ public sealed class UpdateProjectCommandValidator : AbstractValidator<UpdateProj
         RuleFor(command => command.BaseCurrencyId)
             .NotEqual(Guid.Empty)
             .When(command => command.BaseCurrencyId.HasValue);
+
+        RuleFor(command => command.BudgetLimit)
+            .GreaterThan(0m)
+            .PrecisionScale(18, 2, ignoreTrailingZeros: true)
+            .When(command => command.BudgetLimit.HasValue);
 
         RuleFor(command => command.AiuAdminPercent)
             .InclusiveBetween(0m, 100m)
@@ -140,10 +133,56 @@ public sealed class UpdateProjectCommandHandler(
 
         EnsureCompanyScope(actor, project.CompanyId);
 
+        var configuration = project.Configuration
+            ?? throw new ConflictAppException("Project configuration was not found.", "PROJECT_CONFIGURATION_NOT_FOUND");
+
+        // `D-112`: el Director es el único que configura los parámetros del proyecto. El Presupuestador
+        // conserva la edición de datos generales (nombre, código, descripción y objetivo).
+        if (actor.Role.Code == ProjectStatusTransitionPolicy.EstimatorRoleCode)
+        {
+            var requestedSignatureMode = string.IsNullOrWhiteSpace(command.SigningMode)
+                ? null
+                : Project.NormalizeSignatureModeOrDefault(command.SigningMode);
+
+            var changesSignatureMode = requestedSignatureMode is not null &&
+                !string.Equals(requestedSignatureMode, configuration.SignatureMode, StringComparison.Ordinal);
+
+            var changesSigner = command.SignerUserId != configuration.SignerUserId;
+
+            var changesAuditorRequirement = command.RequiresAuditor.HasValue &&
+                command.RequiresAuditor.Value != configuration.RequiresAuditor;
+
+            if (changesSignatureMode || changesSigner || changesAuditorRequirement)
+            {
+                throw new ForbiddenAppException(
+                    "Only Director de proyectos can change the signature mode, the signer or the auditor requirement.",
+                    "PROJECT_SIGNATURE_CONFIGURATION_FORBIDDEN");
+            }
+
+            var changesLocation =
+                (command.CountryId.HasValue && command.CountryId != project.CountryId) ||
+                (command.DepartmentId.HasValue && command.DepartmentId != project.DepartmentId) ||
+                (command.MunicipalityId.HasValue && command.MunicipalityId != project.MunicipalityId);
+
+            var changesFinancialConfiguration =
+                (command.BaseCurrencyId.HasValue && command.BaseCurrencyId != configuration.BaseCurrencyId) ||
+                (command.BudgetLimit.HasValue && command.BudgetLimit != configuration.BudgetLimit) ||
+                (command.AiuAdminPercent.HasValue && command.AiuAdminPercent != configuration.AiuAdminPercent) ||
+                (command.AiuUnforeseenPercent.HasValue && command.AiuUnforeseenPercent != configuration.AiuUnforeseenPercent) ||
+                (command.AiuProfitPercent.HasValue && command.AiuProfitPercent != configuration.AiuProfitPercent);
+
+            if (changesLocation || changesFinancialConfiguration)
+            {
+                throw new ForbiddenAppException(
+                    "Only Director de proyectos can change the project configuration.",
+                    "PROJECT_CONFIGURATION_FORBIDDEN");
+            }
+        }
+
         var countryId = command.CountryId ?? project.CountryId;
         var departmentId = command.DepartmentId ?? project.DepartmentId;
         var municipalityId = command.MunicipalityId ?? project.MunicipalityId;
-        var baseCurrencyId = command.BaseCurrencyId ?? project.BaseCurrencyId;
+        var baseCurrencyId = command.BaseCurrencyId ?? configuration.BaseCurrencyId;
 
         var referencesValid = await projectRepository.AreProjectCatalogReferencesValidAsync(
             countryId,
@@ -168,20 +207,28 @@ public sealed class UpdateProjectCommandHandler(
             project.CountryId = countryId;
             project.DepartmentId = departmentId;
             project.MunicipalityId = municipalityId;
-            project.BaseCurrencyId = baseCurrencyId;
-            project.AiuAdminPercent = command.AiuAdminPercent.HasValue
-                ? Project.NormalizeAiuPercent(command.AiuAdminPercent, "aiu_admin_percent")
-                : project.AiuAdminPercent;
-            project.AiuUnforeseenPercent = command.AiuUnforeseenPercent.HasValue
-                ? Project.NormalizeAiuPercent(command.AiuUnforeseenPercent, "aiu_unforeseen_percent")
-                : project.AiuUnforeseenPercent;
-            project.AiuProfitPercent = command.AiuProfitPercent.HasValue
-                ? Project.NormalizeAiuPercent(command.AiuProfitPercent, "aiu_profit_percent")
-                : project.AiuProfitPercent;
+            configuration.BaseCurrencyId = baseCurrencyId;
+            configuration.BudgetLimit = command.BudgetLimit.HasValue
+                ? ProjectConfiguration.NormalizeBudgetLimit(command.BudgetLimit)
+                : configuration.BudgetLimit;
+            configuration.AiuAdminPercent = command.AiuAdminPercent.HasValue
+                ? ProjectConfiguration.NormalizeAiuPercent(command.AiuAdminPercent, "aiu_admin_percent")
+                : configuration.AiuAdminPercent;
+            configuration.AiuUnforeseenPercent = command.AiuUnforeseenPercent.HasValue
+                ? ProjectConfiguration.NormalizeAiuPercent(command.AiuUnforeseenPercent, "aiu_unforeseen_percent")
+                : configuration.AiuUnforeseenPercent;
+            configuration.AiuProfitPercent = command.AiuProfitPercent.HasValue
+                ? ProjectConfiguration.NormalizeAiuPercent(command.AiuProfitPercent, "aiu_profit_percent")
+                : configuration.AiuProfitPercent;
 
             if (!string.IsNullOrWhiteSpace(command.SigningMode))
             {
-                project.SigningMode = Project.NormalizeSigningModeOrDefault(command.SigningMode);
+                configuration.SignatureMode = Project.NormalizeSignatureModeOrDefault(command.SigningMode);
+            }
+
+            if (command.RequiresAuditor.HasValue)
+            {
+                configuration.RequiresAuditor = command.RequiresAuditor.Value;
             }
         }
         catch (InvalidOperationException)
@@ -189,7 +236,7 @@ public sealed class UpdateProjectCommandHandler(
             throw new ValidationAppException("Project payload contains invalid values.", "VALIDATION_ERROR");
         }
 
-        project.SignerUserId = command.SignerUserId;
+        configuration.SignerUserId = command.SignerUserId;
         project.LastModifiedByUserId = actor.Id;
         project.LastModifiedAtUtc = DateTime.UtcNow;
         project.UpdatedAtUtc = DateTime.UtcNow;
@@ -224,7 +271,7 @@ public sealed class UpdateProjectCommandHandler(
             throw new ForbiddenAppException("Authenticated actor is not operational.", "ACTOR_NOT_ENABLED");
         }
 
-        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.ProjectManagerRoleCode and not ProjectStatusTransitionPolicy.EstimatorRoleCode)
+        if (resolvedActor.Role.Code is not ProjectStatusTransitionPolicy.AdministratorRoleCode and not ProjectStatusTransitionPolicy.DirectorRoleCode and not ProjectStatusTransitionPolicy.EstimatorRoleCode)
         {
             throw new ForbiddenAppException("Actor cannot update projects.", "PROJECT_UPDATE_FORBIDDEN");
         }

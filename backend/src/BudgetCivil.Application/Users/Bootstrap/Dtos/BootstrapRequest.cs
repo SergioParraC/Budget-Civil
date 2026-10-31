@@ -1,73 +1,42 @@
-using System.Text.Json.Serialization;
-using BudgetCivil.Application.Companies.Dtos;
-
 namespace BudgetCivil.Application.Users.Bootstrap.Dtos;
 
+/// <summary>
+/// `REQ-IDENTIDAD-27` / `SC-IDENTIDAD-69`: el bootstrap crea **solo** al primer Administrador, que no
+/// pertenece a ninguna compañía. La empresa demo, si se necesita, se crea después con `POST /companies`.
+/// </summary>
 public sealed class BootstrapRequest
 {
-    [JsonPropertyName("admin_profile")]
     public BootstrapAdminProfileRequest AdminProfile { get; init; } = new();
-
-    [JsonPropertyName("company")]
-    public BootstrapCompanyRequest Company { get; init; } = new();
 }
 
 public sealed class BootstrapAdminProfileRequest
 {
-    [JsonPropertyName("primer_nombre")]
     public string FirstName { get; init; } = string.Empty;
 
-    [JsonPropertyName("primer_apellido")]
     public string LastName { get; init; } = string.Empty;
 
-    [JsonPropertyName("tipo_documento")]
     public string DocumentType { get; init; } = string.Empty;
 
-    [JsonPropertyName("numero_documento")]
     public string DocumentNumber { get; init; } = string.Empty;
 
-    [JsonPropertyName("email")]
+    public DateOnly BirthDate { get; init; }
+
     public string Email { get; init; } = string.Empty;
 
-    [JsonPropertyName("username")]
     public string Username { get; init; } = string.Empty;
 
-    [JsonPropertyName("password")]
     public string Password { get; init; } = string.Empty;
 
-    [JsonPropertyName("country_id")]
-    public Guid CountryId { get; init; }
+    // La residencia es opcional en el bootstrap: el Administrador no opera dentro de una compañía y
+    // puede completarla después en su perfil (REQ-IDENTIDAD-08).
+    public Guid? CountryId { get; init; }
 
-    [JsonPropertyName("department_id")]
-    public Guid DepartmentId { get; init; }
+    public Guid? DepartmentId { get; init; }
 
-    [JsonPropertyName("municipality_id")]
-    public Guid MunicipalityId { get; init; }
-}
+    public Guid? MunicipalityId { get; init; }
 
-public sealed class BootstrapCompanyRequest
-{
-    [JsonPropertyName("business_name")]
-    public string BusinessName { get; init; } = string.Empty;
+    public bool HasResidence => CountryId.HasValue || DepartmentId.HasValue || MunicipalityId.HasValue;
 
-    [JsonPropertyName("tax_id")]
-    public string TaxId { get; init; } = string.Empty;
-
-    [JsonPropertyName("company_type")]
-    public string CompanyType { get; init; } = string.Empty;
-
-    [JsonPropertyName("territorial_level")]
-    public string? TerritorialLevel { get; init; }
-
-    [JsonPropertyName("country_id")]
-    public Guid CountryId { get; init; }
-
-    [JsonPropertyName("department_id")]
-    public Guid DepartmentId { get; init; }
-
-    [JsonPropertyName("municipality_id")]
-    public Guid MunicipalityId { get; init; }
-
-    [JsonPropertyName("representative")]
-    public LegalRepresentativePayload? Representative { get; init; }
+    public bool HasCompleteResidence =>
+        CountryId.HasValue && DepartmentId.HasValue && MunicipalityId.HasValue;
 }

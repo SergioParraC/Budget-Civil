@@ -17,8 +17,6 @@ public sealed class UserAdministrationRepository(BudgetCivilDbContext dbContext)
     {
         return dbContext.UserAccounts
             .Include(user => user.Role)
-            .Include(user => user.Profile)
-            .Include(user => user.Memberships)
             .SingleOrDefaultAsync(user => user.Id == userId, cancellationToken);
     }
 
@@ -67,11 +65,11 @@ public sealed class UserAdministrationRepository(BudgetCivilDbContext dbContext)
         var normalizedDocumentType = documentType.Trim().ToUpperInvariant();
         var normalizedDocumentNumber = documentNumber.Trim().ToUpperInvariant();
 
-        return dbContext.UserProfiles.AnyAsync(
+        return dbContext.UserAccounts.AnyAsync(
             profile =>
                 profile.DocumentType.ToUpper() == normalizedDocumentType &&
                 profile.DocumentNumber.ToUpper() == normalizedDocumentNumber &&
-                (!excludingUserId.HasValue || profile.UserId != excludingUserId.Value),
+                (!excludingUserId.HasValue || profile.Id != excludingUserId.Value),
             cancellationToken);
     }
 
@@ -85,23 +83,9 @@ public sealed class UserAdministrationRepository(BudgetCivilDbContext dbContext)
                 cancellationToken);
     }
 
-    public Task<UserCompanyMembership?> GetActiveMembershipAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return dbContext.UserCompanyMemberships
-            .SingleOrDefaultAsync(
-                membership => membership.UserId == userId && membership.IsActive,
-                cancellationToken);
-    }
-
     public Task AddUserAsync(UserAccount userAccount, CancellationToken cancellationToken = default)
     {
         dbContext.UserAccounts.Add(userAccount);
-        return Task.CompletedTask;
-    }
-
-    public Task AddMembershipAsync(UserCompanyMembership membership, CancellationToken cancellationToken = default)
-    {
-        dbContext.UserCompanyMemberships.Add(membership);
         return Task.CompletedTask;
     }
 

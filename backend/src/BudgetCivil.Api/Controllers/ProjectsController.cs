@@ -22,8 +22,10 @@ public sealed class ProjectsController(
     ChangeProjectVisibilityCommandHandler changeProjectVisibilityCommandHandler,
     GetScopedProjectsQueryHandler getScopedProjectsQueryHandler,
     GetProjectByIdQueryHandler getProjectByIdQueryHandler,
+    GetProjectConfigurationQueryHandler getProjectConfigurationQueryHandler,
     AssignProjectMemberCommandHandler assignProjectMemberCommandHandler,
-    DeactivateProjectMemberCommandHandler deactivateProjectMemberCommandHandler) : ControllerBase
+    DeactivateProjectMemberCommandHandler deactivateProjectMemberCommandHandler,
+    GetProjectMembersQueryHandler getProjectMembersQueryHandler) : ControllerBase
 {
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.ProjectsCreate)]
@@ -142,7 +144,7 @@ public sealed class ProjectsController(
                 CompanyId = companyId,
                 Status = status,
                 Search = search,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);
@@ -159,6 +161,36 @@ public sealed class ProjectsController(
     {
         var actorUserId = GetActorUserId();
         var response = await getProjectByIdQueryHandler.ExecuteAsync(actorUserId, projectId, cancellationToken);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Miembros del proyecto con su rol y fecha de asignación (`project_members`). Alimenta la pestaña
+    /// "Miembros" del detalle del proyecto.
+    /// </summary>
+    [HttpGet("{projectId:guid}/members")]
+    [Authorize(Policy = AuthorizationPolicies.ProjectsRead)]
+    [ProducesResponseType(typeof(GetProjectMembersResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<GetProjectMembersResponse>> GetProjectMembers(
+        [FromRoute] Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        var response = await getProjectMembersQueryHandler.ExecuteAsync(actorUserId, projectId, cancellationToken);
+
+        return Ok(response);
+    }
+
+    [HttpGet("{projectId:guid}/configuration")]
+    [Authorize(Policy = AuthorizationPolicies.ProjectsRead)]
+    [ProducesResponseType(typeof(GetProjectConfigurationResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<GetProjectConfigurationResponse>> GetProjectConfiguration(
+        [FromRoute] Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        var response = await getProjectConfigurationQueryHandler.ExecuteAsync(actorUserId, projectId, cancellationToken);
 
         return Ok(response);
     }

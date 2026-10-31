@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Memberships.Repositories;
@@ -9,20 +8,21 @@ namespace BudgetCivil.Application.Memberships.Companies;
 
 public sealed class DeactivateCompanyMemberCommand
 {
-    [JsonPropertyName("reason")]
     public string? Reason { get; init; }
 }
 
 public sealed class DeactivateCompanyMemberResponse
 {
-    [JsonPropertyName("membership_id")]
-    public Guid MembershipId { get; init; }
+    public Guid CompanyId { get; init; }
 
-    [JsonPropertyName("is_active")]
+    public Guid UserId { get; init; }
+
     public bool IsActive { get; init; }
 
-    [JsonPropertyName("deactivated_at_utc")]
     public DateTime DeactivatedAtUtc { get; init; }
+
+    /// <summary>Pertenecen a proyectos de la compañía que se retiraron al desvincular.</summary>
+    public int ProjectsDetached { get; init; }
 }
 
 public sealed class DeactivateCompanyMemberCommandHandler(
@@ -32,7 +32,7 @@ public sealed class DeactivateCompanyMemberCommandHandler(
     public async Task<DeactivateCompanyMemberResponse> ExecuteAsync(
         Guid actorUserId,
         Guid companyId,
-        Guid membershipId,
+        Guid userId,
         DeactivateCompanyMemberCommand command,
         CancellationToken cancellationToken = default)
     {
@@ -48,27 +48,33 @@ public sealed class DeactivateCompanyMemberCommandHandler(
             throw new ForbiddenAppException("Actor cannot deactivate company memberships.", "COMPANY_MEMBER_DEACTIVATE_FORBIDDEN");
         }
 
-        var membership = await repository.GetActiveMembershipByIdAsync(membershipId, cancellationToken);
-        if (membership is null || membership.CompanyId != companyId)
+        var targetUser = await repository.GetUserByIdAsync(userId, cancellationToken)
+            ?? throw new ConflictAppException("User was not found.", "USER_NOT_FOUND");
+
+        try
+        {
+            CompanyMembershipPolicy.EnsureActorCanManageTargetRole(actor.Role.Code, targetUser.Role.Code);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new ForbiddenAppException(
+                "Actor cannot deactivate this company member.",
+                "COMPANY_MEMBER_DEACTIVATE_FORBIDDEN");
+        }
+
+        if (targetUser.CompanyId != companyId)
         {
             throw new ConflictAppException("Company membership was not found.", "COMPANY_MEMBERSHIP_NOT_FOUND");
         }
 
-        var targetUser = await repository.GetUserByIdAsync(membership.UserId, cancellationToken)
-            ?? throw new ConflictAppException("Membership user was not found.", "USER_NOT_FOUND");
-
         var utcNow = DateTime.UtcNow;
-        membership.IsActive = false;
-        membership.EndedAtUtc = utcNow;
-
-        if (targetUser.CompanyId == companyId)
+        var removed = await repository.DeactivateAsync(userId, companyId, utcNow, cancellationToken);
+        if (!removed)
         {
-            targetUser.CompanyId = null;
+            throw new ConflictAppException("Company membership was not found.", "COMPANY_MEMBERSHIP_NOT_FOUND");
         }
 
-        targetUser.UpdatedAtUtc = utcNow;
-
-        await repository.SaveChangesAsync(cancellationToken);
+        var projectsDetached = await repository.RemoveProjectMembershipsAsync(userId, companyId, cancellationToken);
 
         await securityAuditService.WriteAsync(
             new SecurityAuditWriteRequest(
@@ -77,16 +83,18 @@ public sealed class DeactivateCompanyMemberCommandHandler(
                 SecurityAuditEventType.CompanyAdministration,
                 SecurityAuditResult.Success,
                 PermissionKey: "COMPANY_MEMBERS_DEACTIVATE",
-                TargetType: nameof(UserCompanyMembership),
-                TargetId: membership.Id,
+                TargetType: nameof(UserAccount),
+                TargetId: userId,
                 ReasonCode: "COMPANY_MEMBER_DEACTIVATED"),
             cancellationToken);
 
         return new DeactivateCompanyMemberResponse
         {
-            MembershipId = membership.Id,
-            IsActive = membership.IsActive,
-            DeactivatedAtUtc = utcNow
+            CompanyId = companyId,
+            UserId = userId,
+            IsActive = false,
+            DeactivatedAtUtc = utcNow,
+            ProjectsDetached = projectsDetached
         };
     }
 

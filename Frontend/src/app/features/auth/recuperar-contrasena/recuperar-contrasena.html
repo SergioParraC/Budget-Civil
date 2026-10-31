@@ -1,0 +1,28 @@
+<div class="recuperar">
+  <p-card header="Recuperar contraseña" class="recuperar__card">
+    @if (sent()) {
+      <div class="recuperar__done">
+        <p-message
+          severity="success"
+          text="Si el correo está registrado, recibirás un código para restablecer tu contraseña."
+        />
+        <a routerLink="/login">Volver al inicio de sesión</a>
+      </div>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()" class="recuperar__form">
+        <p>Escribe tu correo electrónico y te enviaremos las instrucciones para restablecer tu contraseña.</p>
+
+        <label for="email">Correo electrónico</label>
+        <input id="email" type="email" pInputText formControlName="email" autocomplete="email" />
+
+        @if (errorMessage()) {
+          <p-message severity="error" [text]="errorMessage()!" />
+        }
+
+        <p-button type="submit" label="Enviar instrucciones" [loading]="sending()" />
+      </form>
+
+      <a class="recuperar__back" routerLink="/login">Volver al inicio de sesión</a>
+    }
+  </p-card>
+</div>

@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Memberships.Repositories;
@@ -9,25 +8,19 @@ namespace BudgetCivil.Application.Memberships.Projects;
 
 public sealed class AssignProjectMemberCommand
 {
-    [JsonPropertyName("user_id")]
     public Guid UserId { get; init; }
 
-    [JsonPropertyName("role_code")]
     public string RoleCode { get; init; } = string.Empty;
 }
 
 public sealed class AssignProjectMemberResponse
 {
-    [JsonPropertyName("membership_id")]
     public Guid MembershipId { get; init; }
 
-    [JsonPropertyName("project_id")]
     public Guid ProjectId { get; init; }
 
-    [JsonPropertyName("user_id")]
     public Guid UserId { get; init; }
 
-    [JsonPropertyName("is_active")]
     public bool IsActive { get; init; }
 }
 
@@ -87,25 +80,28 @@ public sealed class AssignProjectMemberCommandHandler(
                 "PROJECT_MEMBERSHIP_COMPANY_AFFILIATION_REQUIRED");
         }
 
-        var existingMembership = await repository.GetActiveMembershipByProjectAndUserAsync(project.Id, targetUser.Id, cancellationToken);
+        var existingMembership = await repository.GetMembershipByProjectAndUserAsync(project.Id, targetUser.Id, cancellationToken);
         if (existingMembership is not null)
         {
             throw new ConflictAppException("User already has an active membership in project.", "PROJECT_MEMBER_ALREADY_ACTIVE");
         }
 
-        var membership = new ProjectUserMembership
+        var membership = new ProjectMember
         {
             Id = Guid.NewGuid(),
             ProjectId = project.Id,
             UserId = targetUser.Id,
-            IsActive = true,
+            RoleInProject = requestedRoleCode,
             AssignedByUserId = actor.Id,
-            AssignedAtUtc = DateTime.UtcNow,
-            EndedAtUtc = null
+            AssignedAtUtc = DateTime.UtcNow
         };
 
-        await repository.AddMembershipAsync(membership, cancellationToken);
-        await repository.SaveChangesAsync(cancellationToken);
+        var added = await repository.TryAddMembershipAsync(membership, cancellationToken);
+        if (!added)
+        {
+            // La unicidad (project_id, user_id) la garantiza la base (SC-PROYECTOS-28).
+            throw new ConflictAppException("User already has an active membership in project.", "PROJECT_MEMBER_ALREADY_ACTIVE");
+        }
 
         await securityAuditService.WriteAsync(
             new SecurityAuditWriteRequest(
@@ -114,7 +110,7 @@ public sealed class AssignProjectMemberCommandHandler(
                 SecurityAuditEventType.ProjectAdministration,
                 SecurityAuditResult.Success,
                 PermissionKey: "PROJECT_MEMBERS_ASSIGN",
-                TargetType: nameof(ProjectUserMembership),
+                TargetType: nameof(ProjectMember),
                 TargetId: membership.Id,
                 ReasonCode: "PROJECT_MEMBER_ASSIGNED"),
             cancellationToken);
@@ -124,7 +120,7 @@ public sealed class AssignProjectMemberCommandHandler(
             MembershipId = membership.Id,
             ProjectId = membership.ProjectId,
             UserId = membership.UserId,
-            IsActive = membership.IsActive
+            IsActive = true
         };
     }
 

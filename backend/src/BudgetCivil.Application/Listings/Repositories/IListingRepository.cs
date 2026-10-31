@@ -16,12 +16,15 @@ public sealed record ListingUserRow(
     string Email,
     string Username,
     string RoleCode,
+    string RoleName,
     bool AccountEnabled,
     string FirstName,
     string? MiddleName,
     string LastName,
     string? SecondLastName,
-    string DocumentNumber);
+    string DocumentNumber,
+    DateTime? LinkedAtUtc,
+    DateTime? MembershipUpdatedAtUtc);
 
 public sealed record ListingProjectRow(
     Guid ProjectId,

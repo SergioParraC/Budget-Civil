@@ -46,7 +46,7 @@ public sealed class AuthRepository(BudgetCivilDbContext dbContext) : IAuthReposi
         var normalizedDocumentType = documentType.Trim().ToUpperInvariant();
         var normalizedDocumentNumber = documentNumber.Trim().ToUpperInvariant();
 
-        return dbContext.UserProfiles.AnyAsync(
+        return dbContext.UserAccounts.AnyAsync(
             profile =>
                 profile.DocumentType.ToUpper() == normalizedDocumentType &&
                 profile.DocumentNumber.ToUpper() == normalizedDocumentNumber,

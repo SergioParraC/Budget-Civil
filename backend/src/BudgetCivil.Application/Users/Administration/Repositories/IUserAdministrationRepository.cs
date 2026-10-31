@@ -24,11 +24,7 @@ public interface IUserAdministrationRepository
 
     Task<int> CountEnabledAdministratorsAsync(CancellationToken cancellationToken = default);
 
-    Task<UserCompanyMembership?> GetActiveMembershipAsync(Guid userId, CancellationToken cancellationToken = default);
-
     Task AddUserAsync(UserAccount userAccount, CancellationToken cancellationToken = default);
-
-    Task AddMembershipAsync(UserCompanyMembership membership, CancellationToken cancellationToken = default);
 
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

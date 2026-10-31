@@ -44,35 +44,25 @@ public sealed class UpdateUserUseCase(
             throw new ConflictAppException("Username already exists.", "USERNAME_ALREADY_EXISTS");
         }
 
-        if (await repository.DocumentExistsAsync(request.DocumentType, request.DocumentNumber, targetUserId, cancellationToken))
-        {
-            throw new ConflictAppException("Document already exists.", "DOCUMENT_ALREADY_EXISTS");
-        }
-
         var utcNow = DateTime.UtcNow;
 
         targetUser!.Email = request.Email.Trim();
         targetUser.Username = request.Username.Trim();
         targetUser.UpdatedAtUtc = utcNow;
 
-        if (targetUser.Profile is null)
-        {
-            throw new ConflictAppException("Target user profile is missing.", "TARGET_PROFILE_MISSING");
-        }
-
-        targetUser.Profile.FirstName = request.FirstName.Trim();
-        targetUser.Profile.MiddleName = NormalizeOptionalText(request.MiddleName);
-        targetUser.Profile.LastName = request.LastName.Trim();
-        targetUser.Profile.SecondLastName = NormalizeOptionalText(request.SecondLastName);
-        targetUser.Profile.DocumentType = request.DocumentType.Trim();
-        targetUser.Profile.DocumentNumber = request.DocumentNumber.Trim();
-        targetUser.Profile.BirthDate = request.BirthDate;
-        targetUser.Profile.CountryId = request.Residence.CountryId;
-        targetUser.Profile.DepartmentId = request.Residence.DepartmentId;
-        targetUser.Profile.MunicipalityId = request.Residence.MunicipalityId;
-        targetUser.Profile.ProfessionalCard = NormalizeOptionalText(request.ProfessionalCard);
-        targetUser.Profile.ProfessionalCardIssuedAt = request.ProfessionalCardIssuedAt;
-        targetUser.Profile.ProfessionalCardFilePath = NormalizeOptionalText(request.ProfessionalCardFilePath);
+        targetUser.FirstName = request.FirstName.Trim();
+        targetUser.MiddleName = NormalizeOptionalText(request.MiddleName);
+        targetUser.LastName = request.LastName.Trim();
+        targetUser.SecondLastName = NormalizeOptionalText(request.SecondLastName);
+        targetUser.DocumentType = request.DocumentType.Trim();
+        targetUser.DocumentNumber = request.DocumentNumber.Trim();
+        targetUser.BirthDate = request.BirthDate;
+        targetUser.CountryId = request.Residence.CountryId;
+        targetUser.DepartmentId = request.Residence.DepartmentId;
+        targetUser.MunicipalityId = request.Residence.MunicipalityId;
+        targetUser.ProfessionalCard = NormalizeOptionalText(request.ProfessionalCard);
+        targetUser.ProfessionalCardIssuedAt = request.ProfessionalCardIssuedAt;
+        targetUser.ProfessionalCardFilePath = NormalizeOptionalText(request.ProfessionalCardFilePath);
 
         await repository.SaveChangesAsync(cancellationToken);
 

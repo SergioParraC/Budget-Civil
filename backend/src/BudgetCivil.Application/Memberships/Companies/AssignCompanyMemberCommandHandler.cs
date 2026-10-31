@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Memberships.Repositories;
@@ -9,25 +8,17 @@ namespace BudgetCivil.Application.Memberships.Companies;
 
 public sealed class AssignCompanyMemberCommand
 {
-    [JsonPropertyName("user_id")]
     public Guid UserId { get; init; }
 
-    [JsonPropertyName("role_code")]
     public string RoleCode { get; init; } = string.Empty;
 }
 
 public sealed class AssignCompanyMemberResponse
 {
-    [JsonPropertyName("membership_id")]
-    public Guid MembershipId { get; init; }
-
-    [JsonPropertyName("company_id")]
     public Guid CompanyId { get; init; }
 
-    [JsonPropertyName("user_id")]
     public Guid UserId { get; init; }
 
-    [JsonPropertyName("is_active")]
     public bool IsActive { get; init; }
 }
 
@@ -83,45 +74,34 @@ public sealed class AssignCompanyMemberCommandHandler(
         try
         {
             CompanyMembershipPolicy.EnsureActorCanAssign(companyId, actor.Role.Code, actor.CompanyId);
+            CompanyMembershipPolicy.EnsureActorCanManageTargetRole(actor.Role.Code, requestedRoleCode);
         }
         catch (InvalidOperationException)
         {
             throw new ForbiddenAppException("Actor cannot assign company memberships.", "COMPANY_MEMBER_ASSIGN_FORBIDDEN");
         }
 
-        var existingActiveMembership = await repository.GetActiveMembershipByUserIdAsync(targetUser.Id, cancellationToken);
-        if (existingActiveMembership is not null)
+        if (targetUser.CompanyId.HasValue)
         {
-            if (existingActiveMembership.CompanyId == companyId)
+            if (targetUser.CompanyId.Value == companyId)
             {
                 throw new ConflictAppException("User is already active in this company.", "COMPANY_MEMBER_ALREADY_ACTIVE");
             }
 
-            if (CompanyMembershipPolicy.RequiresSingleActiveCompanyConstraint(targetUser.Role.Code))
-            {
-                throw new ConflictAppException(
-                    "User already has an active company membership.",
-                    "COMPANY_MEMBERSHIP_LIMIT_REACHED");
-            }
+            throw new ConflictAppException(
+                "User already has an active company membership.",
+                "COMPANY_MEMBERSHIP_LIMIT_REACHED");
         }
 
         var utcNow = DateTime.UtcNow;
-        var membership = new UserCompanyMembership
+        var assigned = await repository.AssignAsync(targetUser.Id, companyId, utcNow, cancellationToken);
+        if (!assigned)
         {
-            Id = Guid.NewGuid(),
-            CompanyId = companyId,
-            UserId = targetUser.Id,
-            IsActive = true,
-            AssignedByUserId = actor.Id,
-            AssignedAtUtc = utcNow,
-            EndedAtUtc = null
-        };
-
-        targetUser.CompanyId = companyId;
-        targetUser.UpdatedAtUtc = utcNow;
-
-        await repository.AddMembershipAsync(membership, cancellationToken);
-        await repository.SaveChangesAsync(cancellationToken);
+            // Otra solicitud asignó una compañía entre la lectura y la escritura (SC-IDENTIDAD-31).
+            throw new ConflictAppException(
+                "User already has an active company membership.",
+                "COMPANY_MEMBERSHIP_LIMIT_REACHED");
+        }
 
         await securityAuditService.WriteAsync(
             new SecurityAuditWriteRequest(
@@ -130,17 +110,16 @@ public sealed class AssignCompanyMemberCommandHandler(
                 SecurityAuditEventType.CompanyAdministration,
                 SecurityAuditResult.Success,
                 PermissionKey: "COMPANY_MEMBERS_ASSIGN",
-                TargetType: nameof(UserCompanyMembership),
-                TargetId: membership.Id,
+                TargetType: nameof(UserAccount),
+                TargetId: targetUser.Id,
                 ReasonCode: "COMPANY_MEMBER_ASSIGNED"),
             cancellationToken);
 
         return new AssignCompanyMemberResponse
         {
-            MembershipId = membership.Id,
-            CompanyId = membership.CompanyId,
-            UserId = membership.UserId,
-            IsActive = membership.IsActive
+            CompanyId = companyId,
+            UserId = targetUser.Id,
+            IsActive = true
         };
     }
 

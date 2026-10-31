@@ -17,7 +17,9 @@ public sealed class ProjectRepository(BudgetCivilDbContext dbContext)
 
     public Task<Project?> GetProjectByIdAsync(Guid projectId, CancellationToken cancellationToken = default)
     {
-        return DbContext.Projects.SingleOrDefaultAsync(project => project.Id == projectId, cancellationToken);
+        return DbContext.Projects
+            .Include(project => project.Configuration)
+            .SingleOrDefaultAsync(project => project.Id == projectId, cancellationToken);
     }
 
     public Task<Company?> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default)
@@ -29,11 +31,11 @@ public sealed class ProjectRepository(BudgetCivilDbContext dbContext)
     {
         return DbContext.UserAccounts.AnyAsync(
             user =>
-                user.CompanyId == companyId &&
+                user.Memberships.Any(membership => membership.AccountEnabled && membership.CompanyId == companyId) &&
                 user.AccountEnabled &&
                 !user.AccountLocked &&
                 user.Role.IsActive &&
-                user.Role.Code == ProjectStatusTransitionPolicy.ProjectManagerRoleCode,
+                user.Role.Code == ProjectStatusTransitionPolicy.DirectorRoleCode,
             cancellationToken);
     }
 
@@ -41,11 +43,11 @@ public sealed class ProjectRepository(BudgetCivilDbContext dbContext)
     {
         return await DbContext.UserAccounts
             .Where(user =>
-                user.CompanyId == companyId &&
+                user.Memberships.Any(membership => membership.AccountEnabled && membership.CompanyId == companyId) &&
                 user.AccountEnabled &&
                 !user.AccountLocked &&
                 user.Role.IsActive &&
-                user.Role.Code == ProjectStatusTransitionPolicy.ProjectManagerRoleCode)
+                user.Role.Code == ProjectStatusTransitionPolicy.DirectorRoleCode)
             .OrderBy(user => user.CreatedAtUtc)
             .Select(user => (Guid?)user.Id)
             .FirstOrDefaultAsync(cancellationToken);
@@ -93,15 +95,6 @@ public sealed class ProjectRepository(BudgetCivilDbContext dbContext)
 
         return await DbContext.BaseCurrencies.AnyAsync(
             baseCurrency => baseCurrency.Id == baseCurrencyId && baseCurrency.IsActive,
-            cancellationToken);
-    }
-
-    public Task<bool> HasActiveSignatureAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return DbContext.UserProfiles.AnyAsync(
-            profile =>
-                profile.UserId == userId &&
-                !string.IsNullOrWhiteSpace(profile.ProfessionalCardFilePath),
             cancellationToken);
     }
 

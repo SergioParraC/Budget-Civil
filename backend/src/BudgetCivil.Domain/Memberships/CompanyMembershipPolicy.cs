@@ -3,13 +3,13 @@ namespace BudgetCivil.Domain.Memberships;
 public static class CompanyMembershipPolicy
 {
     public const string AdministratorRoleCode = "ADMINISTRADOR";
-    public const string ProjectManagerRoleCode = "GERENTE_PROYECTOS";
+    public const string DirectorRoleCode = "DIRECTOR";
     public const string EstimatorRoleCode = "PRESUPUESTADOR";
     public const string AuditorRoleCode = "AUDITOR";
 
     private static readonly HashSet<string> AllowedCompanyRoles =
     [
-        ProjectManagerRoleCode,
+        DirectorRoleCode,
         EstimatorRoleCode,
         AuditorRoleCode
     ];
@@ -43,7 +43,7 @@ public static class CompanyMembershipPolicy
             return;
         }
 
-        if (normalizedActorRoleCode == ProjectManagerRoleCode && actorCompanyId == companyId)
+        if (normalizedActorRoleCode == DirectorRoleCode && actorCompanyId == companyId)
         {
             return;
         }
@@ -56,10 +56,42 @@ public static class CompanyMembershipPolicy
         EnsureActorCanAssign(companyId, actorRoleCode, actorCompanyId);
     }
 
+    /// <summary>
+    /// Reglas de qué roles puede gestionar cada actor en la compañía: el Administrador solo directores
+    /// de proyectos; el Director de proyectos solo presupuestadores y auditores de su compañía.
+    /// </summary>
+    public static void EnsureActorCanManageTargetRole(string actorRoleCode, string targetRoleCode)
+    {
+        var normalizedActorRoleCode = NormalizeRoleCode(actorRoleCode);
+        var normalizedTargetRoleCode = NormalizeRoleCode(targetRoleCode);
+
+        if (normalizedActorRoleCode == AdministratorRoleCode)
+        {
+            if (normalizedTargetRoleCode != DirectorRoleCode)
+            {
+                throw new InvalidOperationException("Administrador can only manage Director de proyectos memberships.");
+            }
+
+            return;
+        }
+
+        if (normalizedActorRoleCode == DirectorRoleCode)
+        {
+            if (normalizedTargetRoleCode is not EstimatorRoleCode and not AuditorRoleCode)
+            {
+                throw new InvalidOperationException("Director de proyectos can only manage Presupuestador and Auditor memberships.");
+            }
+
+            return;
+        }
+
+        throw new InvalidOperationException("Actor cannot manage company membership roles.");
+    }
+
     public static bool RequiresSingleActiveCompanyConstraint(string roleCode)
     {
         var normalizedRoleCode = NormalizeRoleCode(roleCode);
-        return normalizedRoleCode is ProjectManagerRoleCode or EstimatorRoleCode or AuditorRoleCode;
+        return normalizedRoleCode is DirectorRoleCode or EstimatorRoleCode or AuditorRoleCode;
     }
 
     private static string NormalizeRoleCode(string roleCode)

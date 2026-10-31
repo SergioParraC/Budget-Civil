@@ -1,30 +1,41 @@
 export type ProjectStatus = 'POR_COTIZAR' | 'FALTA_INFORMACION' | 'COTIZADO' | 'FINALIZADO' | 'INHABILITADO';
-export type SigningMode = 'UNICA_POR_PRESUPUESTADOR_ASIGNADO' | 'INDEPENDIENTE_POR_PROFESIONAL_RESPONSABLE';
+
+export const SIGNING_MODES = [
+  'SIN_FIRMA',
+  'UNICA_POR_PRESUPUESTADOR_ASIGNADO',
+  'INDEPENDIENTE_POR_PROFESIONAL_RESPONSABLE'
+] as const;
+
+export type SigningMode = (typeof SIGNING_MODES)[number];
 
 export interface ProjectListItem {
-  project_id: string;
-  company_id: string;
+  projectId: string;
+  companyId: string;
   name: string;
   status: ProjectStatus;
-  is_public: boolean;
+  isPublic: boolean;
 }
 
 export interface Project {
-  project_id: string;
-  company_id: string;
+  projectId: string;
+  companyId: string;
   name: string;
   code: string | null;
   description: string | null;
   objective: string | null;
-  country_id: string;
-  department_id: string;
-  municipality_id: string;
-  base_currency_id: string;
-  aiu_admin_percent: number | null;
-  aiu_unforeseen_percent: number | null;
-  aiu_profit_percent: number | null;
+  countryId: string;
+  departmentId: string;
+  municipalityId: string;
+  baseCurrencyId: string;
+  budgetLimit: number | null;
+  aiuAdminPercent: number | null;
+  aiuUnforeseenPercent: number | null;
+  aiuProfitPercent: number | null;
+  signatureMode: SigningMode;
+  signerUserId: string | null;
+  requiresAuditor: boolean;
   status: ProjectStatus;
-  is_public: boolean;
+  isPublic: boolean;
 }
 
 export interface ProjectFormValue {
@@ -32,19 +43,47 @@ export interface ProjectFormValue {
   code?: string;
   description?: string;
   objective?: string;
-  country_id: string;
-  department_id: string;
-  municipality_id: string;
-  base_currency_id: string;
-  aiu_admin_percent?: number;
-  aiu_unforeseen_percent?: number;
-  aiu_profit_percent?: number;
-  signing_mode?: SigningMode;
-  signer_user_id?: string;
-  company_id?: string;
+  countryId: string;
+  departmentId: string;
+  municipalityId: string;
+  baseCurrencyId: string;
+  budgetLimit?: number;
+  aiuAdminPercent?: number;
+  aiuUnforeseenPercent?: number;
+  aiuProfitPercent?: number;
+  signingMode?: SigningMode;
+  signerUserId?: string;
+  requiresAuditor?: boolean;
+  companyId?: string;
 }
 
 export interface ProjectStatusChangeRequest {
-  target_status: Extract<ProjectStatus, 'FALTA_INFORMACION' | 'COTIZADO' | 'FINALIZADO' | 'INHABILITADO'>;
+  targetStatus: ProjectStatus;
   reason?: string;
+}
+
+/** Respuesta de `POST /projects/{projectId}/memberships` (`IF-07`). */
+export interface ProjectMemberAssignment {
+  membershipId: string;
+  projectId: string;
+  userId: string;
+  isActive: boolean;
+}
+
+/** Miembro del proyecto (`GET /projects/{projectId}/members`). */
+export interface ProjectMemberItem {
+  membershipId: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  roleCode: string;
+  roleName: string;
+  accountEnabled: boolean;
+  assignedAtUtc: string;
+}
+
+export interface ProjectMembersResponse {
+  items: ProjectMemberItem[];
 }

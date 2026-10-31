@@ -31,21 +31,9 @@ public sealed class CompanyRepository(BudgetCivilDbContext dbContext)
             cancellationToken);
     }
 
-    public Task<UserCompanyMembership?> GetActiveMembershipByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return DbContext.UserCompanyMemberships
-            .SingleOrDefaultAsync(membership => membership.UserId == userId && membership.IsActive, cancellationToken);
-    }
-
     public Task AddCompanyAsync(Company company, CancellationToken cancellationToken = default)
     {
         DbContext.Companies.Add(company);
-        return Task.CompletedTask;
-    }
-
-    public Task AddMembershipAsync(UserCompanyMembership membership, CancellationToken cancellationToken = default)
-    {
-        DbContext.UserCompanyMemberships.Add(membership);
         return Task.CompletedTask;
     }
 

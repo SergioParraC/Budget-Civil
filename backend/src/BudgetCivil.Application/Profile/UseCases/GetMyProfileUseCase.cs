@@ -1,8 +1,8 @@
 using BudgetCivil.Application.Common.Exceptions;
-using BudgetCivil.Application.Profile.Dtos;
-using BudgetCivil.Application.Profile.Repositories;
+using BudgetCivil.Application.Dtos;
+using BudgetCivil.Application.Repositories;
 
-namespace BudgetCivil.Application.Profile.UseCases;
+namespace BudgetCivil.Application.UseCases;
 
 public sealed class GetMyProfileUseCase(IProfileRepository repository)
 {
@@ -12,11 +12,6 @@ public sealed class GetMyProfileUseCase(IProfileRepository repository)
         if (actor is null)
         {
             throw new ForbiddenAppException("Authenticated user does not exist.", "AUTH_USER_NOT_FOUND");
-        }
-
-        if (actor.Profile is null)
-        {
-            throw new ConflictAppException("User profile does not exist.", "PROFILE_NOT_FOUND");
         }
 
         return new GetMyProfileResponse
@@ -29,25 +24,25 @@ public sealed class GetMyProfileUseCase(IProfileRepository repository)
             AccountEnabled = actor.AccountEnabled,
             Profile = new ProfileSummaryResponse
             {
-                FirstName = actor.Profile.FirstName,
-                MiddleName = actor.Profile.MiddleName,
-                LastName = actor.Profile.LastName,
-                SecondLastName = actor.Profile.SecondLastName,
-                DocumentType = actor.Profile.DocumentType,
-                DocumentNumber = actor.Profile.DocumentNumber,
-                BirthDate = actor.Profile.BirthDate,
+                FirstName = actor.FirstName,
+                MiddleName = actor.MiddleName,
+                LastName = actor.LastName,
+                SecondLastName = actor.SecondLastName,
+                DocumentType = actor.DocumentType,
+                DocumentNumber = actor.DocumentNumber,
+                BirthDate = actor.BirthDate,
                 Residence = new ProfileResidenceResponse
                 {
-                    City = actor.Profile.Municipality?.Name,
-                    Department = actor.Profile.Department?.Name,
-                    Country = actor.Profile.Country?.Name,
-                    CountryId = actor.Profile.CountryId,
-                    DepartmentId = actor.Profile.DepartmentId,
-                    MunicipalityId = actor.Profile.MunicipalityId
+                    City = actor.Municipality?.Name,
+                    Department = actor.Department?.Name,
+                    Country = actor.Country?.Name,
+                    CountryId = actor.CountryId,
+                    DepartmentId = actor.DepartmentId,
+                    MunicipalityId = actor.MunicipalityId
                 },
-                ProfessionalCard = actor.Profile.ProfessionalCard,
-                ProfessionalCardIssuedAt = actor.Profile.ProfessionalCardIssuedAt,
-                ProfessionalCardFilePath = actor.Profile.ProfessionalCardFilePath
+                ProfessionalCard = actor.ProfessionalCard,
+                ProfessionalCardIssuedAt = actor.ProfessionalCardIssuedAt,
+                ProfessionalCardFilePath = actor.ProfessionalCardFilePath
             }
         };
     }

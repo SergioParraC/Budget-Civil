@@ -45,7 +45,7 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         };
 
         problemDetails.Extensions["code"] = normalizedCode;
-        problemDetails.Extensions["trace_id"] = httpContext.TraceIdentifier;
+        problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
 
         httpContext.Response.StatusCode = statusCode;
         return httpContext.Response.WriteAsJsonAsync(problemDetails);

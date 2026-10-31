@@ -1,8 +1,9 @@
 using System.Security.Claims;
 using BudgetCivil.Api.Auth;
+using BudgetCivil.Api.Middleware;
 using BudgetCivil.Application.Common.Exceptions;
-using BudgetCivil.Application.Profile.Dtos;
-using BudgetCivil.Application.Profile.UseCases;
+using BudgetCivil.Application.Dtos;
+using BudgetCivil.Application.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,6 +18,7 @@ public sealed class ProfileController(
 {
     [HttpGet]
     [Authorize(Policy = AuthorizationPolicies.ProfileReadSelf)]
+    [AllowWithoutCompanyContext]
     [ProducesResponseType(typeof(GetMyProfileResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<GetMyProfileResponse>> GetMyProfile(CancellationToken cancellationToken)
     {

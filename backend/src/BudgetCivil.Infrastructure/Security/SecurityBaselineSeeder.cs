@@ -9,7 +9,7 @@ public sealed class SecurityBaselineSeeder(
     BudgetCivilDbContext dbContext,
     ILogger<SecurityBaselineSeeder> logger) : ISecurityBaselineSeeder
 {
-    private const string SeedVersion = "v1";
+    private const string SeedVersion = "v3";
 
     private static readonly string[] PermissionKeys =
     {
@@ -26,6 +26,8 @@ public sealed class SecurityBaselineSeeder(
         "COMPANIES_DEACTIVATE",
         "COMPANIES_REACTIVATE",
         "COMPANIES_READ",
+        "COMPANY_PROFILE_READ_SELF",
+        "COMPANY_LEAVE_SELF",
         "COMPANY_MEMBERS_ASSIGN",
         "COMPANY_MEMBERS_DEACTIVATE",
         "PROJECTS_CREATE",
@@ -45,7 +47,7 @@ public sealed class SecurityBaselineSeeder(
     private static readonly (string Code, string Name, bool IsBaseRole)[] Roles =
     {
         ("ADMINISTRADOR", "Administrador", true),
-        ("GERENTE_PROYECTOS", "Gerente de proyectos", true),
+        ("DIRECTOR", "Director de proyectos", true),
         ("PRESUPUESTADOR", "Presupuestador", true),
         ("AUDITOR", "Auditor", true)
     };
@@ -66,31 +68,26 @@ public sealed class SecurityBaselineSeeder(
             "COMPANIES_DEACTIVATE",
             "COMPANIES_REACTIVATE",
             "COMPANIES_READ",
+            "COMPANY_PROFILE_READ_SELF",
             "COMPANY_MEMBERS_ASSIGN",
             "COMPANY_MEMBERS_DEACTIVATE",
-            "PROJECTS_CREATE",
-            "PROJECTS_UPDATE",
-            "PROJECTS_STATUS_CHANGE",
-            "PROJECTS_VISIBILITY_CHANGE",
             "PROJECTS_READ",
-            "PROJECT_MEMBERS_ASSIGN",
             "USERS_PASSWORD_RECOVERY_ENABLE",
             "AUDIT_BOOTSTRAP_READ",
             "PROFILE_READ_SELF",
             "PROFILE_UPDATE_SELF",
             "PROFILE_CHANGE_PASSWORD_SELF"
         ],
-        ["GERENTE_PROYECTOS"] =
+        ["DIRECTOR"] =
         [
             "APU_PUBLIC_READ",
             "CATALOGS_READ",
-            "USERS_UPDATE",
-            "USERS_DEACTIVATE",
             "USERS_ROLE_CHANGE",
             "USERS_COMPANY_CHANGE",
             "USERS_READ",
             "COMPANIES_CREATE",
             "COMPANIES_UPDATE",
+            "COMPANY_PROFILE_READ_SELF",
             "COMPANY_MEMBERS_ASSIGN",
             "COMPANY_MEMBERS_DEACTIVATE",
             "PROJECTS_CREATE",
@@ -109,6 +106,8 @@ public sealed class SecurityBaselineSeeder(
             "APU_PUBLIC_READ",
             "CATALOGS_READ",
             "USERS_READ",
+            "COMPANY_PROFILE_READ_SELF",
+            "COMPANY_LEAVE_SELF",
             "PROJECTS_CREATE",
             "PROJECTS_UPDATE",
             "PROJECTS_STATUS_CHANGE",
@@ -124,6 +123,8 @@ public sealed class SecurityBaselineSeeder(
             "APU_PUBLIC_READ",
             "CATALOGS_READ",
             "USERS_READ",
+            "COMPANY_PROFILE_READ_SELF",
+            "COMPANY_LEAVE_SELF",
             "PROJECTS_READ",
             "PROFILE_READ_SELF",
             "PROFILE_UPDATE_SELF",

@@ -1,13 +1,16 @@
+export type PageSize = 10 | 50 | 100;
+
+/** Envelope de los listados paginados del backend (`D-101`). */
 export interface PagedResult<T> {
   items: T[];
-  page_number: number;
-  page_size: number;
-  total_items: number;
+  page: number;
+  pageSize: number;
+  totalItems: number;
 }
 
 export interface PageQuery {
   pageNumber?: number;
-  pageSize?: 10 | 50 | 100;
+  pageSize?: PageSize;
   search?: string;
 }
 

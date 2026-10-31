@@ -1,6 +1,6 @@
 # Stack tecnológico
 
-> Documento actualizado el 27/10/2026. Decisiones en el capítulo 3 de `PLAN_INGENIERIA.md` (v0.26).
+> Documento actualizado el 30/10/2026 (reconciliación `E-1b`, `D-74`…`D-111`). Decisiones en el capítulo 3 de `PLAN_INGENIERIA.md`.
 
 ## 1. Stack oficial
 | Capa | Tecnología | Versión base | Motivo |
@@ -12,7 +12,9 @@
 | UI | Angular Material | Alineada a Angular 20 | Componentes oficiales y accesibilidad |
 | Proxy | Nginx | Versión fija al desplegar | Estáticos y proxy inverso |
 | Contenedores | Docker Compose | v2 | Entorno reproducible en un servidor |
-| Identidad | ASP.NET Identity + JWT | .NET 10 | Usuarios, roles y tokens |
+| Identidad | ASP.NET Core Identity (solo el hasher PBKDF2) + JWT | .NET 10 | Hash de contraseña y tokens (`D-81`) |
+| Validación | FluentValidation + `DependencyInjectionExtensions` | 12.x | Validación de DTOs sin `FluentValidation.AspNetCore` (`D-104`) |
+| Mapeo | Manual (métodos de proyección) | — | Sin `AutoMapper` ni `Mapster` (`D-41`, `D-104`) |
 | Logging | Serilog | Última estable | Logs estructurados JSON |
 | Pruebas | xUnit + Moq + FluentAssertions | Últimas estables | Unitarias de dominio y aplicación |
 | Arquitectura | NetArchTest | Última estable | Reglas de capas en CI |
@@ -23,14 +25,17 @@
 | Librería | Uso | Estado |
 |---|---|---|
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | Validación de tokens | Confirmado |
-| `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | Usuarios y roles | Confirmado |
-| `FluentValidation` + `DependencyInjectionExtensions` | Validación de DTOs | Confirmado; `FluentValidation.AspNetCore` está discontinuado |
+| `Microsoft.EntityFrameworkCore` y `Microsoft.EntityFrameworkCore.SqlServer` | Persistencia y migraciones | Confirmado |
+| `Microsoft.EntityFrameworkCore.Design` | Herramientas de migración | Confirmado (solo diseño) |
+| ASP.NET Core Identity (`PasswordHasher`) | Hash de contraseña PBKDF2 con rehash | Confirmado (`D-81`); `Argon2PasswordHasher` retirado |
+| `System.IdentityModel.Tokens.Jwt` | Emisión de tokens | Confirmado |
+| `FluentValidation` + `DependencyInjectionExtensions` | Validación de DTOs | Confirmado; `FluentValidation.AspNetCore` está **prohibido** (`D-104`) |
 | `Serilog.AspNetCore` | Logs | Confirmado |
 | `Swashbuckle.AspNetCore` | OpenAPI | Confirmado |
 | `xUnit`, `Moq`, `FluentAssertions` | Pruebas unitarias | Confirmado |
 | `NetArchTest` | Pruebas de arquitectura | Confirmado |
 | `Coverlet` | Cobertura | Confirmado al configurar CI |
-| `AutoMapper` | — | **No se usa**: mapeo manual (`D-41`) |
+| `AutoMapper` / `Mapster` | — | **No se usan**: mapeo manual (`D-41`, `D-104`) |
 
 ## 3. Frontend
 | Elemento | Definición |
@@ -62,7 +67,7 @@
 | SemVer `MAJOR.MINOR.PATCH` | Versionado |
 | Cobertura ≥ 80 % | Dominio y motor de cálculo (`D-61`) |
 
-**Pruebas automatizadas:** unitarias, arquitectura y contrato. **Manuales:** integración, E2E, migraciones y aceptación (`D-65`, `D-66`).
+**Pruebas automatizadas:** `BudgetCivil.Tests.Unit` (dominio y aplicación), `BudgetCivil.Tests.Architecture` (`NetArchTest`) y contrato en CI. **Manuales:** `BudgetCivil.Tests.Integration` contra SQL Server local y el checklist de la etapa (`D-65`, `D-66`). Se prohíben `EF Core InMemory` y `WebApplicationFactory` (`D-106`).
 
 ## 6. Herramientas de especificación e IA
 - **OpenSpec** reemplaza por completo a Spec Kit (`D-09`).
@@ -73,6 +78,6 @@
 ## 7. Pendientes
 | Tema | Responsable | Momento |
 |---|---|---|
-| Proveedor de correo concreto | Estudiante | Antes de E-1 |
+| Proveedor de correo concreto | Estudiante | Antes de E-2; hoy se usa un proveedor simulado (`LoggingEmailSender`, `D-79`) |
 | Edición de SQL Server | Estudiante | Antes de E-6 |
 | TLS para despliegue público | Estudiante | Antes de exponer la aplicación |

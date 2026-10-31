@@ -22,12 +22,6 @@ public abstract class BaseFeature002Repository(BudgetCivilDbContext dbContext)
             .SingleOrDefaultAsync(company => company.Id == companyId, cancellationToken);
     }
 
-    protected Task<UserCompanyMembership?> GetActiveCompanyMembershipAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return DbContext.UserCompanyMemberships
-            .SingleOrDefaultAsync(membership => membership.UserId == userId && membership.IsActive, cancellationToken);
-    }
-
     protected Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return DbContext.SaveChangesAsync(cancellationToken);

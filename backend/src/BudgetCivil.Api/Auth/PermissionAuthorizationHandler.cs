@@ -1,13 +1,12 @@
 using System.Security.Claims;
 using BudgetCivil.Application.Common.Auditing;
-using BudgetCivil.Infrastructure.Persistence;
+using BudgetCivil.Application.Common.Security;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
 
 namespace BudgetCivil.Api.Auth;
 
 public sealed class PermissionAuthorizationHandler(
-    BudgetCivilDbContext dbContext,
+    IActorAccessReader actorAccessReader,
     ISecurityAuditService securityAuditService,
     ILogger<PermissionAuthorizationHandler> logger) : AuthorizationHandler<PermissionRequirement>
 {
@@ -28,19 +27,7 @@ public sealed class PermissionAuthorizationHandler(
 
         try
         {
-            var authorizationSnapshot = await dbContext.UserAccounts
-                .AsNoTracking()
-                .Where(user => user.Id == actorUserId.Value)
-                .Select(user => new
-                {
-                    user.CompanyId,
-                    user.RoleId,
-                    RoleCode = user.Role.Code,
-                    user.AccountEnabled,
-                    user.AccountLocked,
-                    RoleIsActive = user.Role.IsActive
-                })
-                .SingleOrDefaultAsync();
+            var authorizationSnapshot = await actorAccessReader.GetSnapshotAsync(actorUserId.Value);
 
             var authorizationMetadata = new Dictionary<string, string>
             {
@@ -61,16 +48,7 @@ public sealed class PermissionAuthorizationHandler(
                 return;
             }
 
-            var grantedPermissionKeys = await dbContext.RolePermissions
-                .AsNoTracking()
-                .Where(rolePermission =>
-                    rolePermission.RoleId == authorizationSnapshot.RoleId &&
-                    rolePermission.IsActive &&
-                    rolePermission.Permission.IsActive)
-                .Select(rolePermission => rolePermission.Permission.PermissionKey)
-                .ToListAsync();
-
-            var grantedPermissions = grantedPermissionKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var grantedPermissions = authorizationSnapshot.GrantedPermissionKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
             var hasRequiredPermission = requirement.MatchMode == PermissionMatchMode.All
                 ? requirement.PermissionKeys.All(requiredPermissionKey => grantedPermissions.Contains(requiredPermissionKey))
                 : requirement.PermissionKeys.Any(requiredPermissionKey => grantedPermissions.Contains(requiredPermissionKey));
@@ -102,6 +80,7 @@ public sealed class PermissionAuthorizationHandler(
                     httpContext,
                     context,
                     authorizationMetadata);
+
                 context.Fail();
                 return;
             }
@@ -116,6 +95,7 @@ public sealed class PermissionAuthorizationHandler(
                     httpContext,
                     context,
                     authorizationMetadata);
+
                 context.Fail();
                 return;
             }
@@ -175,7 +155,7 @@ public sealed class PermissionAuthorizationHandler(
         {
             metadata["path"] = httpContext.Request.Path.ToString();
             metadata["method"] = httpContext.Request.Method;
-            metadata["trace_id"] = httpContext.TraceIdentifier;
+            metadata["traceId"] = httpContext.TraceIdentifier;
         }
 
         await securityAuditService.WriteAuthorizationDeniedAsync(

@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Memberships.Repositories;
@@ -9,19 +8,15 @@ namespace BudgetCivil.Application.Memberships.Projects;
 
 public sealed class DeactivateProjectMemberCommand
 {
-    [JsonPropertyName("reason")]
     public string? Reason { get; init; }
 }
 
 public sealed class DeactivateProjectMemberResponse
 {
-    [JsonPropertyName("membership_id")]
     public Guid MembershipId { get; init; }
 
-    [JsonPropertyName("is_active")]
     public bool IsActive { get; init; }
 
-    [JsonPropertyName("deactivated_at_utc")]
     public DateTime DeactivatedAtUtc { get; init; }
 }
 
@@ -42,7 +37,7 @@ public sealed class DeactivateProjectMemberCommandHandler(
         var project = await repository.GetProjectByIdAsync(projectId, cancellationToken)
             ?? throw new ConflictAppException("Project was not found.", "PROJECT_NOT_FOUND");
 
-        var membership = await repository.GetActiveMembershipByIdAsync(membershipId, cancellationToken);
+        var membership = await repository.GetMembershipByIdAsync(membershipId, cancellationToken);
         if (membership is null || membership.ProjectId != projectId)
         {
             throw new ConflictAppException("Project membership was not found.", "PROJECT_MEMBERSHIP_NOT_FOUND");
@@ -60,11 +55,10 @@ public sealed class DeactivateProjectMemberCommandHandler(
             throw new ForbiddenAppException("Actor cannot deactivate project memberships.", "PROJECT_MEMBER_DEACTIVATE_FORBIDDEN");
         }
 
-        var utcNow = DateTime.UtcNow;
-        membership.IsActive = false;
-        membership.EndedAtUtc = utcNow;
+        // D-98: la pertenencia no guarda historial; retirarla libera el par (project_id, user_id).
+        await repository.RemoveMembershipAsync(membership, cancellationToken);
 
-        await repository.SaveChangesAsync(cancellationToken);
+        var utcNow = DateTime.UtcNow;
 
         await securityAuditService.WriteAsync(
             new SecurityAuditWriteRequest(
@@ -73,7 +67,7 @@ public sealed class DeactivateProjectMemberCommandHandler(
                 SecurityAuditEventType.ProjectAdministration,
                 SecurityAuditResult.Success,
                 PermissionKey: "PROJECT_MEMBERS_DEACTIVATE",
-                TargetType: nameof(ProjectUserMembership),
+                TargetType: nameof(ProjectMember),
                 TargetId: membership.Id,
                 ReasonCode: "PROJECT_MEMBER_DEACTIVATED"),
             cancellationToken);
@@ -81,7 +75,7 @@ public sealed class DeactivateProjectMemberCommandHandler(
         return new DeactivateProjectMemberResponse
         {
             MembershipId = membership.Id,
-            IsActive = membership.IsActive,
+            IsActive = false,
             DeactivatedAtUtc = utcNow
         };
     }

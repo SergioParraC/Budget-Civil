@@ -6,9 +6,11 @@ using BudgetCivil.Application.Listings.Queries;
 using BudgetCivil.Application.Companies.ChangeCompanyStatus;
 using BudgetCivil.Application.Companies.CreateCompany;
 using BudgetCivil.Application.Companies.Dtos;
+using BudgetCivil.Application.Companies.GetMyCompany;
 using BudgetCivil.Application.Companies.ListCompanies;
 using BudgetCivil.Application.Companies.UpdateCompany;
 using BudgetCivil.Application.Memberships.Companies;
+using BudgetCivil.Application.Memberships.LeaveCompany;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,7 +26,9 @@ public sealed class CompaniesController(
     GetCompaniesQueryHandler getCompaniesQueryHandler,
     GetScopedUsersQueryHandler getScopedUsersQueryHandler,
     AssignCompanyMemberCommandHandler assignCompanyMemberCommandHandler,
-    DeactivateCompanyMemberCommandHandler deactivateCompanyMemberCommandHandler) : ControllerBase
+    DeactivateCompanyMemberCommandHandler deactivateCompanyMemberCommandHandler,
+    GetMyCompanyQueryHandler getMyCompanyQueryHandler,
+    LeaveCompanyCommandHandler leaveCompanyCommandHandler) : ControllerBase
 {
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.CompaniesCreate)]
@@ -97,17 +101,51 @@ public sealed class CompaniesController(
         return StatusCode(StatusCodes.Status201Created, response);
     }
 
-    [HttpPatch("{companyId:guid}/memberships/{membershipId:guid}/deactivate")]
+    [HttpPatch("{companyId:guid}/memberships/{userId:guid}/deactivate")]
     [Authorize(Policy = AuthorizationPolicies.CompanyMembersDeactivate)]
     [ProducesResponseType(typeof(DeactivateCompanyMemberResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<DeactivateCompanyMemberResponse>> DeactivateCompanyMember(
         [FromRoute] Guid companyId,
-        [FromRoute] Guid membershipId,
+        [FromRoute] Guid userId,
         [FromBody] DeactivateCompanyMemberCommand command,
         CancellationToken cancellationToken)
     {
         var actorUserId = GetActorUserId();
-        var response = await deactivateCompanyMemberCommandHandler.ExecuteAsync(actorUserId, companyId, membershipId, command, cancellationToken);
+        var response = await deactivateCompanyMemberCommandHandler.ExecuteAsync(actorUserId, companyId, userId, command, cancellationToken);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Ficha de la compañía del usuario autenticado para el dashboard. Devuelve 204 cuando el usuario
+    /// no tiene un vínculo vigente en `users_company`.
+    /// </summary>
+    [HttpGet("me")]
+    [Authorize(Policy = AuthorizationPolicies.CompanyProfileReadSelf)]
+    [AllowWithoutCompanyContext]
+    [ProducesResponseType(typeof(MyCompanyResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<ActionResult<MyCompanyResponse>> GetMyCompany(CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        var response = await getMyCompanyQueryHandler.ExecuteAsync(actorUserId, cancellationToken);
+
+        return response is null ? NoContent() : Ok(response);
+    }
+
+    /// <summary>
+    /// Salida voluntaria de la compañía (Presupuestador y Auditor): cierra el vínculo en
+    /// `users_company` conservándolo en el historial, retira las pertenencias a proyectos de esa
+    /// compañía y deja la cuenta habilitada. El cliente debe volver a iniciar sesión porque el token
+    /// vigente conserva el claim `company_id`.
+    /// </summary>
+    [HttpPost("me/leave")]
+    [Authorize(Policy = AuthorizationPolicies.CompanyLeaveSelf)]
+    [ProducesResponseType(typeof(LeaveCompanyResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<LeaveCompanyResponse>> LeaveMyCompany(CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        var response = await leaveCompanyCommandHandler.ExecuteAsync(actorUserId, cancellationToken);
 
         return Ok(response);
     }
@@ -129,7 +167,7 @@ public sealed class CompaniesController(
             {
                 Search = search,
                 IsActive = isActive,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);
@@ -160,7 +198,7 @@ public sealed class CompaniesController(
                 Search = search,
                 RoleCode = roleCode,
                 IsActive = isActive,
-                PageNumber = pageNumber,
+                Page = pageNumber,
                 PageSize = pageSize
             },
             cancellationToken);

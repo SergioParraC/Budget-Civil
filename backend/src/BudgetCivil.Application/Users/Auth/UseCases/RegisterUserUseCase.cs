@@ -1,4 +1,5 @@
 using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Common.Notifications;
 using BudgetCivil.Application.Common.Security;
 using BudgetCivil.Application.Catalogs;
 using BudgetCivil.Application.Catalogs.Repositories;
@@ -13,6 +14,7 @@ public sealed class RegisterUserUseCase(
     IAuthRepository authRepository,
     IGeographicCatalogRepository geographicCatalogRepository,
     IPasswordHasher passwordHasher,
+    IEmailSender emailSender,
     IValidator<RegisterUserRequest> validator)
 {
     private const string SelfRegistrationRoleCode = "PRESUPUESTADOR";
@@ -37,11 +39,6 @@ public sealed class RegisterUserUseCase(
             throw new ConflictAppException("Username already exists.", "USERNAME_ALREADY_EXISTS");
         }
 
-        if (await authRepository.DocumentExistsAsync(request.DocumentType, request.DocumentNumber, cancellationToken))
-        {
-            throw new ConflictAppException("Document already exists.", "DOCUMENT_ALREADY_EXISTS");
-        }
-
         var role = await authRepository.GetRoleByCodeAsync(SelfRegistrationRoleCode, cancellationToken);
         if (role is null || !role.IsActive)
         {
@@ -52,7 +49,6 @@ public sealed class RegisterUserUseCase(
         var userAccount = new UserAccount
         {
             Id = Guid.NewGuid(),
-            CompanyId = null,
             RoleId = role.Id,
             Email = request.Email.Trim(),
             Username = request.Username.Trim(),
@@ -62,23 +58,25 @@ public sealed class RegisterUserUseCase(
             FailedLoginAttempts = 0,
             CreatedAtUtc = utcNow,
             UpdatedAtUtc = utcNow,
-            Profile = new UserProfile
-            {
-                UserId = Guid.Empty,
-                FirstName = request.FirstName.Trim(),
-                LastName = request.LastName.Trim(),
-                DocumentType = request.DocumentType.Trim(),
-                DocumentNumber = request.DocumentNumber.Trim(),
-                BirthDate = new DateOnly(2000, 1, 1),
-                CountryId = request.CountryId,
-                DepartmentId = request.DepartmentId,
-                MunicipalityId = request.MunicipalityId
-            }
+            FirstName = request.FirstName.Trim(),
+            MiddleName = string.IsNullOrWhiteSpace(request.MiddleName) ? null : request.MiddleName.Trim(),
+            LastName = request.LastName.Trim(),
+            SecondLastName = string.IsNullOrWhiteSpace(request.SecondLastName) ? null : request.SecondLastName.Trim(),
+            DocumentType = request.DocumentType.Trim(),
+            DocumentNumber = request.DocumentNumber.Trim(),
+            BirthDate = request.BirthDate,
+            CountryId = request.CountryId,
+            DepartmentId = request.DepartmentId,
+            MunicipalityId = request.MunicipalityId
         };
 
-        userAccount.Profile.UserId = userAccount.Id;
-
         await authRepository.AddUserAsync(userAccount, cancellationToken);
+
+        await emailSender.SendAsync(
+            userAccount.Email,
+            "Cuenta creada en Budget Civil",
+            "Tu cuenta fue creada. Ya puedes iniciar sesion.",
+            cancellationToken);
 
         return new RegisterUserResponse
         {

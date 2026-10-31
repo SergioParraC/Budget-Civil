@@ -5,11 +5,21 @@
       <p-tag [value]="p.status" [severity]="statusSeverity(p.status)" />
     </div>
 
+    @if (isAuditor() && !p.requiresAuditor) {
+      <p-message
+        severity="warn"
+        text="La auditoría no está habilitada para este proyecto. Contacta al Director de proyectos para habilitarla."
+      />
+    }
+
     <p-tabs value="0">
       <p-tablist>
         <p-tab value="0">Datos generales</p-tab>
         <p-tab value="1">Estado y visibilidad</p-tab>
         <p-tab value="2">Miembros</p-tab>
+        @if (p.requiresAuditor) {
+          <p-tab value="3">Auditores</p-tab>
+        }
       </p-tablist>
 
       <p-tabpanels>
@@ -24,52 +34,430 @@
             <label for="objective">Objetivo</label>
             <textarea id="objective" pTextarea formControlName="objective" rows="2" maxlength="1000"></textarea>
 
-            <p-button type="submit" label="Guardar cambios" [loading]="saving()" />
+            @if (canEdit) {
+              <p-button type="submit" label="Guardar cambios" [loading]="saving()" />
+            }
           </form>
         </p-tabpanel>
 
         <p-tabpanel value="1">
-          <div class="form-grid">
+          <form [formGroup]="configForm" (ngSubmit)="saveConfiguration()" class="config-form">
+            @if (!canConfigureProject()) {
+              <p-message
+                severity="info"
+                text="Solo el Director de proyectos puede configurar la ubicación, los parámetros presupuestales, el AIU y la firma."
+              />
+            }
+
+            <h3 class="config-form__section">Ubicación</h3>
+            <div class="config-form__grid">
+              <div class="config-form__field">
+                <label for="configCountry">País</label>
+                <p-select
+                  inputId="configCountry"
+                  formControlName="countryId"
+                  [disabled]="!canConfigureProject()"
+                  [options]="countries()"
+                  optionLabel="name"
+                  optionValue="id"
+                  appendTo="body"
+                  (onChange)="onConfigCountryChange($event.value)"
+                />
+              </div>
+
+              <div class="config-form__field">
+                <label for="configDepartment">Departamento</label>
+                <p-select
+                  inputId="configDepartment"
+                  formControlName="departmentId"
+                  [disabled]="!canConfigureProject()"
+                  [options]="departments()"
+                  optionLabel="name"
+                  optionValue="id"
+                  appendTo="body"
+                  (onChange)="onConfigDepartmentChange($event.value)"
+                />
+              </div>
+
+              <div class="config-form__field">
+                <label for="configMunicipality">Municipio</label>
+                <p-select
+                  inputId="configMunicipality"
+                  formControlName="municipalityId"
+                  [disabled]="!canConfigureProject()"
+                  [options]="municipalities()"
+                  optionLabel="name"
+                  optionValue="id"
+                  appendTo="body"
+                />
+              </div>
+            </div>
+
+            <h3 class="config-form__section">Parámetros presupuestales</h3>
+            <div class="config-form__grid">
+              <div class="config-form__field">
+                <label for="configCurrency">Divisa base</label>
+                <p-select
+                  inputId="configCurrency"
+                  formControlName="baseCurrencyId"
+                  [disabled]="!canConfigureProject()"
+                  [options]="currencies()"
+                  optionLabel="name"
+                  optionValue="id"
+                  appendTo="body"
+                />
+              </div>
+
+              <div class="config-form__field">
+                <label for="configBudgetLimit">Tope presupuestal</label>
+                <p-inputnumber
+                  inputId="configBudgetLimit"
+                  formControlName="budgetLimit"
+                  [disabled]="!canConfigureProject()"
+                  mode="decimal"
+                  locale="es-CO"
+                  [min]="0.01"
+                  [minFractionDigits]="0"
+                  [maxFractionDigits]="2"
+                  [useGrouping]="true"
+                  placeholder="Sin tope"
+                />
+                @if (configForm.controls.budgetLimit.touched && configForm.controls.budgetLimit.invalid) {
+                  <small class="field-error">Debe ser mayor que 0 y admitir máximo 2 decimales.</small>
+                } @else {
+                  <small class="config-form__hint">
+                    Máximo 2 decimales. Si se deja vacío se conserva el valor actual.
+                  </small>
+                }
+              </div>
+            </div>
+
+            <h3 class="config-form__section">AIU (%)</h3>
+            <div class="config-form__grid config-form__grid--three">
+              <div class="config-form__field">
+                <label for="aiuAdmin">Administración</label>
+                <p-inputnumber
+                  inputId="aiuAdmin"
+                  formControlName="aiuAdminPercent"
+                  [disabled]="!canConfigureProject()"
+                  mode="decimal"
+                  locale="es-CO"
+                  [min]="0"
+                  [max]="100"
+                  [minFractionDigits]="0"
+                  [maxFractionDigits]="2"
+                  [useGrouping]="false"
+                  suffix=" %"
+                />
+                @if (configForm.controls.aiuAdminPercent.touched && configForm.controls.aiuAdminPercent.invalid) {
+                  <small class="field-error">Entre 0 y 100, máximo 2 decimales.</small>
+                }
+              </div>
+
+              <div class="config-form__field">
+                <label for="aiuUnforeseen">Imprevistos</label>
+                <p-inputnumber
+                  inputId="aiuUnforeseen"
+                  formControlName="aiuUnforeseenPercent"
+                  [disabled]="!canConfigureProject()"
+                  mode="decimal"
+                  locale="es-CO"
+                  [min]="0"
+                  [max]="100"
+                  [minFractionDigits]="0"
+                  [maxFractionDigits]="2"
+                  [useGrouping]="false"
+                  suffix=" %"
+                />
+                @if (
+                  configForm.controls.aiuUnforeseenPercent.touched && configForm.controls.aiuUnforeseenPercent.invalid
+                ) {
+                  <small class="field-error">Entre 0 y 100, máximo 2 decimales.</small>
+                }
+              </div>
+
+              <div class="config-form__field">
+                <label for="aiuProfit">Utilidad</label>
+                <p-inputnumber
+                  inputId="aiuProfit"
+                  formControlName="aiuProfitPercent"
+                  [disabled]="!canConfigureProject()"
+                  mode="decimal"
+                  locale="es-CO"
+                  [min]="0"
+                  [max]="100"
+                  [minFractionDigits]="0"
+                  [maxFractionDigits]="2"
+                  [useGrouping]="false"
+                  suffix=" %"
+                />
+                @if (configForm.controls.aiuProfitPercent.touched && configForm.controls.aiuProfitPercent.invalid) {
+                  <small class="field-error">Entre 0 y 100, máximo 2 decimales.</small>
+                }
+              </div>
+            </div>
+
+            <h3 class="config-form__section">Firma y auditoría</h3>
+            <div class="config-form__grid">
+              <div class="config-form__field">
+                <div class="config-form__label-row">
+                  <label for="signingMode">Modo de firma</label>
+                  <p-button
+                    icon="pi pi-info-circle"
+                    severity="secondary"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    ariaLabel="Explicación de los modos de firma"
+                    (onClick)="openSignatureHelp()"
+                  />
+                </div>
+                <p-select
+                  inputId="signingMode"
+                  formControlName="signingMode"
+                  [options]="signingModes"
+                  optionLabel="label"
+                  optionValue="value"
+                  [disabled]="!canConfigureProject()"
+                  appendTo="body"
+                />
+              </div>
+
+              @if (currentSigningMode() === 'UNICA_POR_PRESUPUESTADOR_ASIGNADO') {
+                <div class="config-form__field">
+                  <label>Firmante</label>
+                  <div class="config-form__signer">
+                    <span
+                      class="config-form__signer-value"
+                      [class.config-form__signer-value--empty]="!configForm.controls.signerUserId.value"
+                    >
+                      {{ signerLabel() }}
+                    </span>
+                    @if (canConfigureProject()) {
+                      <p-button
+                        label="Buscar"
+                        icon="pi pi-search"
+                        size="small"
+                        severity="secondary"
+                        (onClick)="openSignerDialog()"
+                      />
+                      @if (configForm.controls.signerUserId.value) {
+                        <p-button
+                          icon="pi pi-times"
+                          severity="secondary"
+                          [text]="true"
+                          size="small"
+                          ariaLabel="Quitar firmante"
+                          (onClick)="clearSigner()"
+                        />
+                      }
+                    }
+                  </div>
+                </div>
+              }
+
+              <div class="config-form__field">
+                <label for="requiresAuditor">Requiere auditores</label>
+                <p-toggleswitch
+                  inputId="requiresAuditor"
+                  formControlName="requiresAuditor"
+                  [disabled]="!canConfigureProject()"
+                />
+              </div>
+            </div>
+
+            @if (canConfigureProject()) {
+              <p-button type="submit" label="Guardar configuración" [loading]="saving()" />
+            }
+          </form>
+
+          <div class="config-form config-form--status">
+            <h3 class="config-form__section">Visibilidad y estado</h3>
             <div class="proyecto-detalle__visibility">
               <label>Proyecto público</label>
-              <p-toggleswitch [ngModel]="p.is_public" [ngModelOptions]="{ standalone: true }" (onChange)="toggleVisibility($event.checked)" />
+              <p-toggleswitch
+                [ngModel]="p.isPublic"
+                [ngModelOptions]="{ standalone: true }"
+                [disabled]="!canChangeVisibility()"
+                (onChange)="toggleVisibility($event.checked)"
+              />
             </div>
 
             @if (nextStatusAction(); as action) {
               <p-button [label]="action.label" (onClick)="advanceStatus()" />
             }
 
-            @if (p.status !== 'INHABILITADO') {
+            @if (canDisable()) {
               <p-button label="Deshabilitar proyecto" severity="danger" (onClick)="disableProject()" />
-            } @else {
+            }
+
+            @if (canReactivate()) {
               <p-button label="Reactivar proyecto" severity="success" (onClick)="reactivateProject()" />
             }
           </div>
         </p-tabpanel>
 
         <p-tabpanel value="2">
-          <p-button label="Asignar miembro" icon="pi pi-plus" (onClick)="openMemberships()" />
-          <p-table [value]="members()" class="proyecto-detalle__members">
+          @if (canManageMembers()) {
+            <div class="proyecto-detalle__members-actions">
+              <p-button
+                label="Asignar presupuestador"
+                icon="pi pi-user-plus"
+                (onClick)="openMemberDialog('PRESUPUESTADOR')"
+              />
+            </div>
+          }
+
+          <p-table
+            [value]="members()"
+            [loading]="membersLoading()"
+            [paginator]="true"
+            [rows]="10"
+            dataKey="membershipId"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Nombre</th>
+                <th>Usuario</th>
+                <th>Correo</th>
+                <th>Rol</th>
+                <th>Fecha de asignación</th>
+                <th></th>
+              </tr>
+            </ng-template>
             <ng-template pTemplate="body" let-member>
               <tr>
-                <td>{{ member | json }}</td>
+                <td>{{ member.firstName }} {{ member.lastName }}</td>
+                <td>{{ member.username }}</td>
+                <td>{{ member.email }}</td>
+                <td><p-tag [value]="member.roleName" /></td>
+                <td>{{ member.assignedAtUtc | date: 'dd/MM/yyyy' }}</td>
+                <td class="proyecto-detalle__members-actions">
+                  @if (canRemoveMembers) {
+                    <p-button
+                      icon="pi pi-user-minus"
+                      [text]="true"
+                      severity="danger"
+                      (onClick)="removeMembership(member)"
+                    />
+                  }
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="6">El proyecto no tiene miembros asignados.</td>
               </tr>
             </ng-template>
           </p-table>
         </p-tabpanel>
+
+        @if (p.requiresAuditor) {
+          <p-tabpanel value="3">
+            @if (canManageMembers()) {
+              <div class="proyecto-detalle__members-actions">
+                <p-button label="Asignar auditor" icon="pi pi-user-plus" (onClick)="openMemberDialog('AUDITOR')" />
+              </div>
+            }
+
+            <p-table
+              [value]="auditors()"
+              [loading]="membersLoading()"
+              [paginator]="true"
+              [rows]="10"
+              dataKey="membershipId"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Nombre</th>
+                  <th>Usuario</th>
+                  <th>Correo</th>
+                  <th>Fecha de asignación</th>
+                  <th></th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-auditor>
+                <tr>
+                  <td>{{ auditor.firstName }} {{ auditor.lastName }}</td>
+                  <td>{{ auditor.username }}</td>
+                  <td>{{ auditor.email }}</td>
+                  <td>{{ auditor.assignedAtUtc | date: 'dd/MM/yyyy' }}</td>
+                  <td class="proyecto-detalle__members-actions">
+                    @if (canRemoveMembers) {
+                      <p-button
+                        icon="pi pi-user-minus"
+                        [text]="true"
+                        severity="danger"
+                        (onClick)="removeMembership(auditor)"
+                      />
+                    }
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="5">El proyecto no tiene auditores asignados.</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-tabpanel>
+        }
       </p-tabpanels>
     </p-tabs>
   </div>
 }
 
-<p-dialog [(visible)]="membershipDialogVisible" [modal]="true" [style]="{ width: '420px' }" header="Asignar miembro">
-  <form [formGroup]="membershipForm" (ngSubmit)="assignMembership()" class="form-grid">
-    <label for="memberUser">Usuario</label>
-    <p-select id="memberUser" formControlName="userId" [options]="memberCandidates()" optionLabel="username" optionValue="user_id" [filter]="true" filterBy="username,email" />
 
-    <label for="memberRole">Rol</label>
-    <p-select id="memberRole" formControlName="roleCode" [options]="roleCodes" optionLabel="label" optionValue="value" />
+<app-project-member-dialog
+  [(visible)]="memberDialogVisible"
+  [projectId]="projectId"
+  [companyId]="project()?.companyId ?? null"
+  [roleCode]="memberDialogRole()"
+  [assignedUserIds]="memberUserIds()"
+  [title]="memberDialogTitle()"
+  [hint]="memberDialogHint()"
+  (assigned)="loadMembers()"
+/>
 
-    <p-button type="submit" label="Vincular" />
-  </form>
+<app-project-member-dialog
+  [(visible)]="signerDialogVisible"
+  [companyId]="project()?.companyId ?? null"
+  roleCode="PRESUPUESTADOR"
+  mode="select"
+  title="Seleccionar firmante"
+  hint="Busca el presupuestador de la compañía que firmará todos los APUs del proyecto."
+  (selected)="onSignerSelected($event)"
+/>
+
+<p-dialog
+  [visible]="signatureHelpVisible()"
+  (visibleChange)="signatureHelpVisible.set($event)"
+  header="Modos de firma"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '36rem', maxWidth: '95vw' }"
+>
+  <ul class="signature-help">
+    <li>
+      <strong>Sin firma</strong>
+      <p>Los APUs no requieren firma. Se aprueban con la aprobación general del proyecto.</p>
+    </li>
+    <li>
+      <strong>Única por presupuestador asignado</strong>
+      <p>Se designa un firmante entre los presupuestadores de la compañía y esa persona firma todos los APUs.</p>
+    </li>
+    <li>
+      <strong>Independiente por profesional responsable</strong>
+      <p>Cada APU lo firma el presupuestador que lo elaboró; no se designa un firmante único.</p>
+    </li>
+    <li>
+      <strong>Requiere auditores</strong>
+      <p>Es independiente del modo de firma: al activarlo, los auditores asignados deben aprobar cada APU.</p>
+    </li>
+  </ul>
+  <ng-template pTemplate="footer">
+    <p-button label="Entendido" (onClick)="signatureHelpVisible.set(false)" />
+  </ng-template>
 </p-dialog>
+

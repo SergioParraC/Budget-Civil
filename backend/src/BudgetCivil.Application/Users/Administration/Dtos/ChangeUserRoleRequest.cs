@@ -5,7 +5,6 @@ namespace BudgetCivil.Application.Users.Administration.Dtos;
 
 public sealed class ChangeUserRoleRequest
 {
-    [JsonPropertyName("rol_asignado")]
     public string AssignedRoleCode { get; init; } = string.Empty;
 
     [JsonExtensionData]
