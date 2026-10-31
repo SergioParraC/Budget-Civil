@@ -2,6 +2,7 @@ using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Users.Administration.Dtos;
 using BudgetCivil.Application.Users.Administration.Repositories;
+using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Users.Entities;
 using FluentValidation;
 
@@ -38,8 +39,9 @@ public sealed class ChangeUserCompanyUseCase(
                 "ACTIVE_MEMBERSHIP_ALREADY_EXISTS");
         }
 
-        targetUser.CompanyId = destinationCompany.Id;
-        targetUser.UpdatedAtUtc = DateTime.UtcNow;
+        var utcNow = DateTime.UtcNow;
+        CompanyMembershipAssignment.Attach(targetUser, destinationCompany.Id, utcNow);
+        targetUser.UpdatedAtUtc = utcNow;
 
         await repository.SaveChangesAsync(cancellationToken);
 

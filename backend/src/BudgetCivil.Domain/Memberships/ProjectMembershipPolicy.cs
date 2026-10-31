@@ -31,16 +31,7 @@ public static class ProjectMembershipPolicy
         var normalizedActorRoleCode = NormalizeRoleCode(actorRoleCode);
         var normalizedTargetRoleCode = NormalizeRoleCode(targetRoleCode);
 
-        if (normalizedActorRoleCode == AdministratorRoleCode)
-        {
-            if (normalizedTargetRoleCode != DirectorRoleCode)
-            {
-                throw new InvalidOperationException("Administrador can only assign project managers to projects.");
-            }
-
-            return;
-        }
-
+        // `D-112`: el Administrador no gestiona membresías de proyecto (solo lectura).
         if (normalizedActorRoleCode == DirectorRoleCode)
         {
             EnsureActorInCompany(projectCompanyId, actorCompanyId);

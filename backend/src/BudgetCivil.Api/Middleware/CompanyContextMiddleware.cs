@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Common.Security;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BudgetCivil.Api.Middleware;
 
@@ -11,6 +12,16 @@ public sealed class CompanyContextMiddleware(RequestDelegate next)
         ICompanyContextAccessor companyContextAccessor,
         IActorAccessReader actorAccessReader)
     {
+        var endpoint = httpContext.GetEndpoint();
+
+        // Un endpoint anónimo no depende del contexto de compañía, aunque la petición traiga un
+        // token viejo o el usuario aún no tenga compañía.
+        if (endpoint?.Metadata.GetMetadata<IAllowAnonymous>() is not null)
+        {
+            await next(httpContext);
+            return;
+        }
+
         if (httpContext.User.Identity?.IsAuthenticated != true)
         {
             await next(httpContext);
@@ -51,7 +62,7 @@ public sealed class CompanyContextMiddleware(RequestDelegate next)
             throw new ForbiddenAppException("Company context claim has invalid format.", "INVALID_COMPANY_CLAIM");
         }
 
-        var allowsMissingCompanyContext = httpContext.GetEndpoint()?
+        var allowsMissingCompanyContext = endpoint?
             .Metadata
             .GetMetadata<AllowWithoutCompanyContextAttribute>() is not null;
 

@@ -31,7 +31,7 @@ public sealed class ProjectRepository(BudgetCivilDbContext dbContext)
     {
         return DbContext.UserAccounts.AnyAsync(
             user =>
-                user.CompanyId == companyId &&
+                user.Memberships.Any(membership => membership.AccountEnabled && membership.CompanyId == companyId) &&
                 user.AccountEnabled &&
                 !user.AccountLocked &&
                 user.Role.IsActive &&
@@ -43,7 +43,7 @@ public sealed class ProjectRepository(BudgetCivilDbContext dbContext)
     {
         return await DbContext.UserAccounts
             .Where(user =>
-                user.CompanyId == companyId &&
+                user.Memberships.Any(membership => membership.AccountEnabled && membership.CompanyId == companyId) &&
                 user.AccountEnabled &&
                 !user.AccountLocked &&
                 user.Role.IsActive &&

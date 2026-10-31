@@ -1,3 +1,4 @@
+using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Users.Entities;
 
 namespace BudgetCivil.Tests.Unit.TestData;
@@ -18,10 +19,9 @@ internal static class TestUsers
     {
         var roleId = Guid.NewGuid();
 
-        return new UserAccount
+        var user = new UserAccount
         {
             Id = Guid.NewGuid(),
-            CompanyId = companyId,
             RoleId = roleId,
             AccountEnabled = accountEnabled,
             AccountLocked = accountLocked,
@@ -35,5 +35,12 @@ internal static class TestUsers
             BirthDate = new DateOnly(1990, 1, 1),
             Role = new Role { Id = roleId, Code = roleCode, Name = roleCode, IsActive = roleIsActive }
         };
+
+        if (companyId.HasValue)
+        {
+            user.Memberships.Add(CompanyMembership.Create(user.Id, companyId.Value, DateTime.UtcNow));
+        }
+
+        return user;
     }
 }

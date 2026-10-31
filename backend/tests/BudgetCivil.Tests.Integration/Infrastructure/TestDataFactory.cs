@@ -1,4 +1,5 @@
 using BudgetCivil.Domain.Catalogs;
+using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Users.Entities;
 using BudgetCivil.Infrastructure.Persistence;
@@ -38,7 +39,7 @@ public static class TestDataFactory
         var baseCurrency = new BaseCurrency
         {
             Id = Guid.NewGuid(),
-            IsoCode = $"X{suffix[..3]}",
+            IsoCode = $"X{suffix}",
             Name = $"Moneda {suffix}"
         };
 
@@ -62,7 +63,6 @@ public static class TestDataFactory
         var director = new UserAccount
         {
             Id = Guid.NewGuid(),
-            CompanyId = companyId,
             RoleId = directorRole.Id,
             Email = $"director.{suffix}@example.com",
             Username = $"director_{suffix}".ToLowerInvariant(),
@@ -79,6 +79,7 @@ public static class TestDataFactory
         };
 
         context.AddRange(company, director);
+        director.Memberships.Add(CompanyMembership.Create(director.Id, companyId, DateTime.UtcNow));
         await context.SaveChangesAsync();
 
         return new CompanyTestData(company, director, country, department, municipality, baseCurrency);

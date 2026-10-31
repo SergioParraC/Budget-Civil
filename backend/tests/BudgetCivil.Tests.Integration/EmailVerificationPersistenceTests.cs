@@ -24,7 +24,6 @@ public sealed class EmailVerificationPersistenceTests(DatabaseFixture fixture) :
             var user = new UserAccount
             {
                 Id = Guid.NewGuid(),
-                CompanyId = null,
                 RoleId = role.Id,
                 Email = $"verificacion.{suffix}@example.com",
                 Username = $"verificacion_{suffix}",

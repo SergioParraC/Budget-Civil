@@ -29,6 +29,13 @@ public sealed class DeactivateUserResponse
     public bool AccountEnabled { get; init; }
 }
 
+public sealed class EnableUserResponse
+{
+    public Guid UserId { get; init; }
+
+    public bool AccountEnabled { get; init; }
+}
+
 public sealed class ChangeUserRoleResponse
 {
     public Guid UserId { get; init; }

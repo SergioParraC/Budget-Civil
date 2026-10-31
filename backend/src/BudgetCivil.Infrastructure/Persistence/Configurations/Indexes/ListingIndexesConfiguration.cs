@@ -17,7 +17,8 @@ public sealed class UserAccountListingIndexesConfiguration : IEntityTypeConfigur
 {
     public void Configure(EntityTypeBuilder<UserAccount> builder)
     {
-        builder.HasIndex(user => new { user.CompanyId, user.RoleId, user.AccountEnabled });
+        // La pertenencia vive en `users_company`; el listado por compañía se indexa allí.
+        builder.HasIndex(user => new { user.RoleId, user.AccountEnabled });
     }
 }
 

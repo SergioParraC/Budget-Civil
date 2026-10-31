@@ -7,6 +7,8 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { ProjectService } from '../../../core/services/project.service';
 import { ProjectListItem, ProjectStatus } from '../../../core/models/project.model';
+import { AuthService } from '../../../core/auth/auth.service';
+import { Permission } from '../../../core/auth/permissions';
 
 const STATUS_SEVERITY: Record<ProjectStatus, 'success' | 'warn' | 'danger' | 'info' | 'secondary'> = {
   POR_COTIZAR: 'info',
@@ -23,11 +25,14 @@ const STATUS_SEVERITY: Record<ProjectStatus, 'success' | 'warn' | 'danger' | 'in
 })
 export class ProyectoList {
   private readonly projectService = inject(ProjectService);
+  private readonly authService = inject(AuthService);
 
   readonly projects = signal<ProjectListItem[]>([]);
   readonly totalRecords = signal(0);
   readonly loading = signal(false);
   readonly search = signal('');
+
+  readonly canCreate = this.authService.can(Permission.projectsCreate);
 
   statusSeverity(status: ProjectStatus) {
     return STATUS_SEVERITY[status];
@@ -41,7 +46,7 @@ export class ProyectoList {
     this.projectService.list({ pageNumber, pageSize, search: this.search() }).subscribe({
       next: (response) => {
         this.projects.set(response.items);
-        this.totalRecords.set(response.total_items);
+        this.totalRecords.set(response.totalItems);
         this.loading.set(false);
       },
       error: () => this.loading.set(false)

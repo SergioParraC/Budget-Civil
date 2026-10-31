@@ -48,6 +48,8 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
 
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
 
+    public DbSet<CompanyMembership> CompanyMemberships => Set<CompanyMembership>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(BudgetCivilDbContext).Assembly);

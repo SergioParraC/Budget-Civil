@@ -12,16 +12,12 @@ namespace BudgetCivil.Application.Users.Auth.UseCases;
 
 public sealed class RegisterUserUseCase(
     IAuthRepository authRepository,
-    IEmailVerificationTokenRepository emailVerificationTokenRepository,
     IGeographicCatalogRepository geographicCatalogRepository,
     IPasswordHasher passwordHasher,
     IEmailSender emailSender,
     IValidator<RegisterUserRequest> validator)
 {
     private const string SelfRegistrationRoleCode = "PRESUPUESTADOR";
-
-    // D-80: la cuenta queda deshabilitada hasta verificar el correo; el token caduca en 24 horas.
-    private static readonly TimeSpan VerificationTokenLifetime = TimeSpan.FromHours(24);
 
     public async Task<RegisterUserResponse> ExecuteAsync(RegisterUserRequest request, CancellationToken cancellationToken = default)
     {
@@ -53,12 +49,11 @@ public sealed class RegisterUserUseCase(
         var userAccount = new UserAccount
         {
             Id = Guid.NewGuid(),
-            CompanyId = null,
             RoleId = role.Id,
             Email = request.Email.Trim(),
             Username = request.Username.Trim(),
             PasswordHash = passwordHasher.HashPassword(request.Password),
-            AccountEnabled = false,
+            AccountEnabled = true,
             AccountLocked = false,
             FailedLoginAttempts = 0,
             CreatedAtUtc = utcNow,
@@ -75,24 +70,12 @@ public sealed class RegisterUserUseCase(
             MunicipalityId = request.MunicipalityId
         };
 
-        var rawVerificationToken = TokenHash.CreateRawToken();
-        var verificationToken = new EmailVerificationToken
-        {
-            Id = Guid.NewGuid(),
-            UserId = userAccount.Id,
-            TokenHash = TokenHash.Compute(rawVerificationToken),
-            ExpiresAtUtc = utcNow.Add(VerificationTokenLifetime),
-            CreatedAtUtc = utcNow
-        };
-
         await authRepository.AddUserAsync(userAccount, cancellationToken);
-        await emailVerificationTokenRepository.AddTokenAsync(verificationToken, cancellationToken);
-        await emailVerificationTokenRepository.SaveChangesAsync(cancellationToken);
 
         await emailSender.SendAsync(
             userAccount.Email,
-            "Verifica tu cuenta en Budget Civil",
-            $"Tu cuenta fue creada. Verifica tu correo con este codigo; caduca en 24 horas: {rawVerificationToken}",
+            "Cuenta creada en Budget Civil",
+            "Tu cuenta fue creada. Ya puedes iniciar sesion.",
             cancellationToken);
 
         return new RegisterUserResponse

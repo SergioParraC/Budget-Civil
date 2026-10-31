@@ -4,6 +4,7 @@ using BudgetCivil.Application.Catalogs.Repositories;
 using BudgetCivil.Application.Companies;
 using BudgetCivil.Application.Companies.Dtos;
 using BudgetCivil.Application.Companies.Repositories;
+using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Users.Entities;
 using FluentValidation;
 
@@ -72,8 +73,8 @@ public sealed class CreateCompanyUseCase(
 
         if (isManager)
         {
-            // D-98: la pertenencia a la compañía vive en User.company_id.
-            actor.CompanyId = createdCompany.Id;
+            // `users_company` es la única fuente de verdad de la pertenencia (`D-98` revisado).
+            CompanyMembershipAssignment.Attach(actor, createdCompany.Id, utcNow);
             actor.UpdatedAtUtc = utcNow;
         }
 

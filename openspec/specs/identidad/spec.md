@@ -214,7 +214,7 @@ El sistema DEBE (MUST) permitir el cambio de rol al Administrador sobre cualquie
 
 ### Requirement: REQ-IDENTIDAD-12 Asignación de usuario a compañía
 
-El sistema DEBE (MUST) mantener a cada usuario en una sola compañía y permitir la asignación solo al Administrador y al Director, y solo a usuarios que no pertenezcan ya a otra. Citas: RF-01; BR-001; R-09, R-10; D-01, D-02, D-98.
+El sistema DEBE (MUST) mantener a cada usuario en una sola compañía vigente y permitir la asignación solo al Administrador y al Director, y solo a usuarios que no pertenezcan ya a otra. La pertenencia vive en la tabla `users_company` (`user_id`, `company_id`, `account_enable`, `created_at`, `updated_at`): las bajas cierran la fila (`account_enable = 0`) sin borrarla, de modo que se conserva el historial de compañías del usuario; al re-vincularlo a la misma compañía se reactiva la fila existente y, si cambia de compañía, se inserta una fila nueva. Citas: RF-01; BR-001; R-09, R-10; D-01, D-02, D-98.
 
 #### Scenario: SC-IDENTIDAD-28 Asignación de un usuario sin compañía
 

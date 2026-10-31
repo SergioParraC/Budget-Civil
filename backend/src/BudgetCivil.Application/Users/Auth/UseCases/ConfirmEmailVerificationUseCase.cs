@@ -5,8 +5,8 @@ using BudgetCivil.Application.Users.Auth.Repositories;
 namespace BudgetCivil.Application.Users.Auth.UseCases;
 
 /// <summary>
-/// `REQ-IDENTIDAD-07` (`D-80`): consume el token de verificación una sola vez y habilita la cuenta. La
-/// cuenta autorregistrada permanece deshabilitada hasta este paso.
+/// `REQ-IDENTIDAD-07` (`D-80`): consume el token de verificación una sola vez y habilita la cuenta. Se
+/// conserva para tokens emitidos antes de que el autorregistro naciera habilitado.
 /// </summary>
 public sealed class ConfirmEmailVerificationUseCase(IEmailVerificationTokenRepository repository)
 {

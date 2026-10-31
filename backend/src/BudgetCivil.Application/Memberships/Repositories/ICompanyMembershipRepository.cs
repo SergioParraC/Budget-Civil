@@ -1,3 +1,4 @@
+using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Users.Entities;
 
 namespace BudgetCivil.Application.Memberships.Repositories;
@@ -10,22 +11,35 @@ public interface ICompanyMembershipRepository
 
     Task<Company?> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default);
 
+    Task<Company?> GetCompanyWithDetailsAsync(Guid companyId, CancellationToken cancellationToken = default);
+
     /// <summary>
-    /// Asigna la compañía al usuario solo si aún no tiene una (`D-98`). La condición se evalúa en la
-    /// misma sentencia, de modo que dos asignaciones simultáneas no dejan dos compañías efectivas.
+    /// Registra el vínculo en <c>users_company</c>. Si el usuario ya tuvo un vínculo con la misma
+    /// compañía se reactiva esa fila (conservando la fecha de vinculación original); en caso contrario
+    /// se inserta una vinculación nueva. Devuelve <c>false</c> cuando otra solicitud dejó al usuario
+    /// con una compañía vigente (regla `BR-001` garantizada por el índice único filtrado).
     /// </summary>
-    Task<bool> TryAssignCompanyAsync(
+    Task<bool> AssignAsync(
         Guid userId,
         Guid companyId,
         DateTime utcNow,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retira la compañía indicada al usuario si es la que tiene asignada.
+    /// Cierra el vínculo vigente del usuario con la compañía indicada, conservando la fila para el
+    /// historial. Devuelve <c>false</c> si no había un vínculo vigente.
     /// </summary>
-    Task<bool> TryUnassignCompanyAsync(
+    Task<bool> DeactivateAsync(
         Guid userId,
         Guid companyId,
         DateTime utcNow,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Elimina las pertenencias del usuario a proyectos de esa compañía (`project_members`).
+    /// </summary>
+    Task<int> RemoveProjectMembershipsAsync(
+        Guid userId,
+        Guid companyId,
         CancellationToken cancellationToken = default);
 }

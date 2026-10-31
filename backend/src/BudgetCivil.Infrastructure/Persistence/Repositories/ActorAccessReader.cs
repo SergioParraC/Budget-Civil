@@ -15,7 +15,12 @@ public sealed class ActorAccessReader(BudgetCivilDbContext dbContext) : IActorAc
             .Select(userAccount => new
             {
                 userAccount.Id,
-                userAccount.CompanyId,
+                // `users_company` es la única fuente de verdad de la pertenencia vigente.
+                CompanyId = userAccount.Memberships
+                    .Where(membership => membership.AccountEnabled)
+                    .OrderByDescending(membership => membership.UpdatedAtUtc)
+                    .Select(membership => (Guid?)membership.CompanyId)
+                    .FirstOrDefault(),
                 userAccount.RoleId,
                 RoleCode = userAccount.Role.Code,
                 userAccount.AccountEnabled,

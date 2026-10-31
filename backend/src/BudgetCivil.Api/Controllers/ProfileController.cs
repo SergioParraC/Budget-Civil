@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using BudgetCivil.Api.Auth;
+using BudgetCivil.Api.Middleware;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Dtos;
 using BudgetCivil.Application.UseCases;
@@ -17,6 +18,7 @@ public sealed class ProfileController(
 {
     [HttpGet]
     [Authorize(Policy = AuthorizationPolicies.ProfileReadSelf)]
+    [AllowWithoutCompanyContext]
     [ProducesResponseType(typeof(GetMyProfileResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<GetMyProfileResponse>> GetMyProfile(CancellationToken cancellationToken)
     {

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 const string LocalDevelopmentCorsPolicy = "LocalDevelopmentCorsPolicy";
@@ -24,12 +25,43 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
+
+    // Autorización Bearer en Swagger UI: pega el accessToken de /auth/login sin el prefijo "Bearer".
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Pega únicamente el accessToken devuelto por POST /api/v1/auth/login (sin el prefijo 'Bearer')."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(LocalDevelopmentCorsPolicy, policy =>
     {
-        policy.WithOrigins("http://localhost:5239", "https://localhost:7098", "http://localhost:4200")
+        // El cliente Angular puede arrancar en cualquier puerto local (`ng serve` reasigna el
+        // 4200 cuando esta ocupado), asi que el origen se valida por host y no por puerto.
+        // `DnsSafeHost` normaliza IPv6 (`[::1]` -> `::1`).
+        policy.SetIsOriginAllowed(origin =>
+            Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+            uri.DnsSafeHost is "localhost" or "127.0.0.1" or "::1")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -159,6 +191,18 @@ builder.Services.AddAuthorization(options =>
             .RequirePermission("COMPANIES_READ"));
 
     options.AddPolicy(
+        AuthorizationPolicies.CompanyProfileReadSelf,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("COMPANY_PROFILE_READ_SELF"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.CompanyLeaveSelf,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("COMPANY_LEAVE_SELF"));
+
+    options.AddPolicy(
         AuthorizationPolicies.CompanyMembersAssign,
         policy => policy
             .RequireAuthenticatedUser()
@@ -284,12 +328,24 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        // Mantiene el token entre recargas de la pagina de Swagger UI.
+        options.ConfigObject.AdditionalItems["persistAuthorization"] = true;
+    });
     app.UseCors(LocalDevelopmentCorsPolicy);
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseHttpsRedirection();
+
+// En desarrollo el cliente Angular consume la API por HTTP: redirigir a HTTPS rompe la
+// peticion (el navegador falla contra el certificado de desarrollo y `HttpClient` reporta
+// `status: 0`). La redireccion se mantiene fuera de desarrollo.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseMiddleware<CompanyContextMiddleware>();

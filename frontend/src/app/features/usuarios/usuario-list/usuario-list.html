@@ -20,15 +20,35 @@
     </ng-template>
     <ng-template pTemplate="body" let-user>
       <tr>
-        <td>{{ user.primer_nombre }} {{ user.primer_apellido }}</td>
+        <td>{{ user.firstName }} {{ user.lastName }}</td>
         <td>{{ user.username }}</td>
         <td>{{ user.email }}</td>
-        <td>{{ user.role_code }}</td>
-        <td><p-tag [value]="user.estado_cuenta ? 'Activo' : 'Inactivo'" [severity]="user.estado_cuenta ? 'success' : 'danger'" /></td>
+        <td>{{ user.roleCode }}</td>
+        <td>
+          <p-tag
+            [value]="user.accountEnabled ? 'Activo' : 'Inhabilitado'"
+            [severity]="user.accountEnabled ? 'success' : 'danger'"
+          />
+        </td>
         <td class="usuario-list__actions">
-          <p-button icon="pi pi-id-card" [text]="true" (onClick)="openRoleDialog(user)" />
-          <p-button icon="pi pi-building" [text]="true" (onClick)="openCompanyDialog(user)" />
-          <p-button icon="pi pi-ban" [text]="true" severity="danger" (onClick)="deactivate(user)" />
+          @if (canChangeRole) {
+            <p-button icon="pi pi-id-card" [text]="true" (onClick)="openRoleDialog(user)" />
+          }
+          @if (canChangeCompany) {
+            <p-button icon="pi pi-building" [text]="true" (onClick)="openCompanyDialog(user)" />
+          }
+          @if (canDeactivate && user.accountEnabled) {
+            <p-button icon="pi pi-ban" [text]="true" severity="danger" (onClick)="deactivate(user)" />
+          }
+          @if (canReactivate && !user.accountEnabled) {
+            <p-button
+              label="Habilitar"
+              icon="pi pi-check-circle"
+              [text]="true"
+              severity="success"
+              (onClick)="enable(user)"
+            />
+          }
         </td>
       </tr>
     </ng-template>
@@ -37,14 +57,18 @@
 
 <p-dialog [(visible)]="roleDialogVisible" [modal]="true" [style]="{ width: '360px' }" header="Cambiar rol">
   <form [formGroup]="roleForm" (ngSubmit)="submitRole()" class="form-grid">
-    <p-select formControlName="rol_asignado" [options]="roleOptions" optionLabel="label" optionValue="value" />
+    <p-select formControlName="roleCode" [options]="roleOptions" optionLabel="label" optionValue="value" />
     <p-button type="submit" label="Guardar" />
   </form>
 </p-dialog>
 
 <p-dialog [(visible)]="companyDialogVisible" [modal]="true" [style]="{ width: '360px' }" header="Cambiar compañía">
   <form [formGroup]="companyForm" (ngSubmit)="submitCompany()" class="form-grid">
-    <p-select formControlName="company_id" [options]="companies()" optionLabel="business_name" optionValue="company_id" [filter]="true" filterBy="business_name" />
+    @if (canListCompanies) {
+      <p-select formControlName="companyId" [options]="companies()" optionLabel="businessName" optionValue="companyId" [filter]="true" filterBy="businessName" />
+    } @else {
+      <input pInputText formControlName="companyId" placeholder="00000000-0000-0000-0000-000000000000" />
+    }
     <p-button type="submit" label="Guardar" />
   </form>
 </p-dialog>

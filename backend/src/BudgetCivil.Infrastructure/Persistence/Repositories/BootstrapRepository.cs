@@ -1,6 +1,4 @@
 using System.Text.Json;
-using BudgetCivil.Application.Common.Exceptions;
-using BudgetCivil.Application.Common.Security;
 using BudgetCivil.Application.Users.Bootstrap.Dtos;
 using BudgetCivil.Application.Users.Bootstrap.Repositories;
 using BudgetCivil.Domain.Users.Entities;
@@ -11,7 +9,7 @@ namespace BudgetCivil.Infrastructure.Persistence.Repositories;
 
 public sealed class BootstrapRepository(
     BudgetCivilDbContext dbContext,
-    IPasswordHasher passwordHasher) : IBootstrapRepository
+    BudgetCivil.Application.Common.Security.IPasswordHasher passwordHasher) : IBootstrapRepository
 {
     private const string AdministratorRoleCode = "ADMINISTRADOR";
 
@@ -38,14 +36,10 @@ public sealed class BootstrapRepository(
             .AnyAsync(user => user.Username.ToUpper() == normalizedUsername, cancellationToken);
     }
 
-    public Task<bool> CompanyTaxIdExistsAsync(string taxId, CancellationToken cancellationToken = default)
-    {
-        var normalizedTaxId = taxId.Trim().ToUpperInvariant();
-        return dbContext.Companies
-            .AsNoTracking()
-            .AnyAsync(company => company.TaxId.ToUpper() == normalizedTaxId, cancellationToken);
-    }
-
+    /// <summary>
+    /// `SC-IDENTIDAD-69`: crea exactamente un Administrador **sin compañía** y registra el evento. No crea
+    /// ninguna empresa; la empresa demo se crea después con `POST /companies`.
+    /// </summary>
     public async Task<(Guid AdministratorId, Guid AuditEventId)> CreateFirstAdministratorAsync(
         BootstrapRequest request,
         CancellationToken cancellationToken = default)
@@ -61,7 +55,9 @@ public sealed class BootstrapRepository(
 
             if (await AnyAdministratorExistsAsync(cancellationToken))
             {
-                throw new ConflictAppException("Bootstrap is disabled because an administrator already exists.", "BOOTSTRAP_ALREADY_COMPLETED");
+                throw new BudgetCivil.Application.Common.Exceptions.ConflictAppException(
+                    "Bootstrap is disabled because an administrator already exists.",
+                    "BOOTSTRAP_ALREADY_COMPLETED");
             }
 
             var administratorRole = await dbContext.Roles
@@ -71,41 +67,17 @@ public sealed class BootstrapRepository(
 
             if (administratorRole is null)
             {
-                throw new ConflictAppException("Administrator role baseline is unavailable.", "ADMIN_ROLE_NOT_AVAILABLE");
+                throw new BudgetCivil.Application.Common.Exceptions.ConflictAppException(
+                    "Administrator role baseline is unavailable.",
+                    "ADMIN_ROLE_NOT_AVAILABLE");
             }
 
             var utcNow = DateTime.UtcNow;
-
-            var company = new Company
-            {
-                Id = Guid.NewGuid(),
-                BusinessName = request.Company.BusinessName.Trim(),
-                TaxId = request.Company.TaxId.Trim(),
-                CompanyType = BudgetCivil.Domain.Companies.Company.NormalizeCompanyType(request.Company.CompanyType),
-                TerritorialLevel = string.IsNullOrWhiteSpace(request.Company.TerritorialLevel)
-                    ? null
-                    : request.Company.TerritorialLevel.Trim(),
-                CountryId = request.Company.CountryId,
-                DepartmentId = request.Company.DepartmentId,
-                MunicipalityId = request.Company.MunicipalityId,
-                RepresentativeMode = request.Company.Representative!.Mode!.Trim().ToUpperInvariant(),
-                RepresentativeUserId = request.Company.Representative.UserId,
-                RepresentativeFullName = string.IsNullOrWhiteSpace(request.Company.Representative.FullName)
-                    ? null
-                    : request.Company.Representative.FullName.Trim(),
-                RepresentativeDocumentTypeId = request.Company.Representative.DocumentTypeId,
-                RepresentativeDocumentNumber = string.IsNullOrWhiteSpace(request.Company.Representative.DocumentNumber)
-                    ? null
-                    : request.Company.Representative.DocumentNumber.Trim(),
-                IsActive = true,
-                CreatedAtUtc = utcNow,
-            };
-
             var administratorId = Guid.NewGuid();
+
             var administrator = new UserAccount
             {
                 Id = administratorId,
-                CompanyId = company.Id,
                 RoleId = administratorRole.Id,
                 Email = request.AdminProfile.Email.Trim(),
                 Username = request.AdminProfile.Username.Trim(),
@@ -119,7 +91,7 @@ public sealed class BootstrapRepository(
                 LastName = request.AdminProfile.LastName.Trim(),
                 DocumentType = request.AdminProfile.DocumentType.Trim(),
                 DocumentNumber = request.AdminProfile.DocumentNumber.Trim(),
-                BirthDate = new DateOnly(2000, 1, 1),
+                BirthDate = request.AdminProfile.BirthDate,
                 CountryId = request.AdminProfile.CountryId,
                 DepartmentId = request.AdminProfile.DepartmentId,
                 MunicipalityId = request.AdminProfile.MunicipalityId
@@ -130,7 +102,7 @@ public sealed class BootstrapRepository(
             {
                 Id = auditEventId,
                 ActorUserId = administratorId,
-                CompanyId = company.Id,
+                CompanyId = null,
                 EventType = SecurityAuditEventType.Bootstrap,
                 Result = SecurityAuditResult.Success,
                 TargetType = nameof(UserAccount),
@@ -140,18 +112,13 @@ public sealed class BootstrapRepository(
                 MetadataJson = JsonSerializer.Serialize(new Dictionary<string, string>
                 {
                     ["email"] = administrator.Email,
-                    ["username"] = administrator.Username,
-                    ["company_id"] = company.Id.ToString()
+                    ["username"] = administrator.Username
                 })
             };
 
-            dbContext.Companies.Add(company);
             dbContext.UserAccounts.Add(administrator);
             dbContext.SecurityAuditEvents.Add(auditEvent);
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            company.CreatedByUserId = administratorId;
             await dbContext.SaveChangesAsync(cancellationToken);
 
             if (transaction is not null)

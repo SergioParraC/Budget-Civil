@@ -25,17 +25,23 @@
     </ng-template>
     <ng-template pTemplate="body" let-company>
       <tr>
-        <td>{{ company.business_name }}</td>
-        <td>{{ company.tax_id }}</td>
-        <td>{{ company.company_type }}</td>
-        <td><p-tag [value]="company.is_active ? 'Activa' : 'Inactiva'" [severity]="company.is_active ? 'success' : 'danger'" /></td>
+        <td>{{ company.businessName }}</td>
+        <td>{{ company.taxId }}</td>
+        <td>{{ company.companyType }}</td>
+        <td><p-tag [value]="company.isActive ? 'Activa' : 'Inactiva'" [severity]="company.isActive ? 'success' : 'danger'" /></td>
         <td class="compania-list__actions">
           <p-button icon="pi pi-pencil" [text]="true" (onClick)="openEdit(company)" />
-          <p-button icon="pi pi-users" [text]="true" (onClick)="openMemberships(company)" />
           <p-button
-            [icon]="company.is_active ? 'pi pi-ban' : 'pi pi-check'"
+            icon="pi pi-user-plus"
             [text]="true"
-            [severity]="company.is_active ? 'danger' : 'success'"
+            severity="info"
+            pTooltip="Asignar directores a la compañía"
+            (onClick)="openDirectors(company)"
+          />
+          <p-button
+            [icon]="company.isActive ? 'pi pi-ban' : 'pi pi-check'"
+            [text]="true"
+            [severity]="company.isActive ? 'danger' : 'success'"
             (onClick)="toggleActive(company)"
           />
         </td>
@@ -70,11 +76,80 @@
     <p-select id="municipality" formControlName="municipalityId" [options]="municipalities()" optionLabel="name" optionValue="id" />
 
     <label for="representativeMode">Representante</label>
-    <p-select id="representativeMode" formControlName="representativeMode" [options]="representativeModes" optionLabel="label" optionValue="value" />
+    <p-select
+      id="representativeMode"
+      formControlName="representativeMode"
+      [options]="representativeModes"
+      optionLabel="label"
+      optionValue="value"
+      (onChange)="onRepresentativeModeChange($event.value)"
+    />
 
     @if (form.value.representativeMode === 'USER_REFERENCE') {
-      <label for="representativeUserId">ID de usuario</label>
-      <input id="representativeUserId" pInputText formControlName="representativeUserId" />
+      <div class="representative-picker" [formGroup]="representativeSearchForm">
+        <p class="representative-picker__hint">
+          Busca al usuario que será el representante legal por su tipo y número de documento.
+        </p>
+
+        <label for="representativeDocumentType">Tipo de documento *</label>
+        <p-select
+          id="representativeDocumentType"
+          formControlName="documentType"
+          [options]="documentTypes()"
+          optionLabel="name"
+          optionValue="code"
+        />
+
+        <label for="representativeDocumentNumber">Número de documento *</label>
+        <input id="representativeDocumentNumber" pInputText formControlName="documentNumber" />
+
+        <label for="representativeUsername">Nombre de usuario (opcional)</label>
+        <input id="representativeUsername" pInputText formControlName="username" />
+
+        <label for="representativeEmail">Correo (opcional)</label>
+        <input id="representativeEmail" pInputText formControlName="email" />
+
+        <p-button
+          type="button"
+          label="Buscar usuario"
+          icon="pi pi-search"
+          [loading]="representativeSearching()"
+          (onClick)="searchRepresentative()"
+        />
+
+        @if (representativeSearchForm.invalid && representativeSearchForm.touched) {
+          <small class="field-error">El tipo y el número de documento son obligatorios.</small>
+        }
+      </div>
+
+      @if (selectedRepresentative(); as selected) {
+        <div class="representative-selected">
+          <div>
+            <strong>{{ selected.firstName }} {{ selected.lastName }}</strong>
+            <span>{{ selected.username }} · {{ selected.email }}</span>
+            <span>{{ selected.documentType }} {{ selected.documentNumber }}</span>
+          </div>
+          <p-button type="button" label="Quitar" icon="pi pi-times" [text]="true" (onClick)="clearRepresentative()" />
+        </div>
+      } @else {
+        @if (representativeCandidates().length > 0) {
+          <div class="representative-results">
+            @for (candidate of representativeCandidates(); track candidate.userId) {
+              <button type="button" class="representative-result" (click)="selectRepresentative(candidate)">
+                <strong>{{ candidate.firstName }} {{ candidate.lastName }}</strong>
+                <span>{{ candidate.username }} · {{ candidate.email }}</span>
+                <span>{{ candidate.documentType }} {{ candidate.documentNumber }}</span>
+              </button>
+            }
+          </div>
+        } @else if (representativeSearchAttempted()) {
+          <small class="representative-empty">No se encontraron usuarios con esos datos.</small>
+        }
+
+        @if (form.controls.representativeUserId.touched && form.controls.representativeUserId.invalid) {
+          <small class="field-error">Selecciona el usuario que será el representante legal.</small>
+        }
+      }
     } @else {
       <label for="representativeFullName">Nombre completo</label>
       <input id="representativeFullName" pInputText formControlName="representativeFullName" />
@@ -90,14 +165,10 @@
   </form>
 </p-dialog>
 
-<p-dialog [(visible)]="membershipDialogVisible" [modal]="true" [style]="{ width: '420px' }" [header]="'Miembros de ' + (selectedCompany()?.business_name ?? '')">
-  <form [formGroup]="membershipForm" (ngSubmit)="assignMembership()" class="form-grid">
-    <label for="memberUser">Usuario</label>
-    <p-select id="memberUser" formControlName="userId" [options]="memberCandidates()" optionLabel="username" optionValue="user_id" [filter]="true" filterBy="username,email" />
-
-    <label for="memberRole">Rol</label>
-    <p-select id="memberRole" formControlName="roleCode" [options]="roleCodes" optionLabel="label" optionValue="value" />
-
-    <p-button type="submit" label="Vincular" />
-  </form>
-</p-dialog>
+<app-company-users-dialog
+  [(visible)]="directorsDialogVisible"
+  [companyId]="directorsCompany()?.companyId ?? null"
+  [companyName]="directorsCompany()?.businessName ?? ''"
+  roleCode="DIRECTOR"
+  mode="admin"
+/>

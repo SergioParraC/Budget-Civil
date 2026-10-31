@@ -54,6 +54,26 @@ public sealed class BaselineSchemaTests(DatabaseFixture fixture) : IClassFixture
         Assert.Contains("requires_auditor", configurationColumns);
     }
 
+    [Fact]
+    public async Task La_pertenencia_vive_en_users_company_y_users_ya_no_tiene_company_id()
+    {
+        await using var context = SqlServerTestDatabase.CreateContext(fixture.ConnectionString);
+
+        var tables = await ReadTableNamesAsync(context);
+        Assert.Contains("users_company", tables);
+
+        var membershipColumns = await ReadColumnNamesAsync(context, "users_company");
+        Assert.Contains("user_id", membershipColumns);
+        Assert.Contains("company_id", membershipColumns);
+        Assert.Contains("account_enable", membershipColumns);
+        Assert.Contains("created_at", membershipColumns);
+        Assert.Contains("updated_at", membershipColumns);
+
+        // D-98 revisado: la compania vigente ya no se duplica en `users`.
+        var userColumns = await ReadColumnNamesAsync(context, "users");
+        Assert.DoesNotContain("company_id", userColumns);
+    }
+
     private static async Task<List<string>> ReadTableNamesAsync(BudgetCivilDbContext context)
     {
         return await ReadStringsAsync(

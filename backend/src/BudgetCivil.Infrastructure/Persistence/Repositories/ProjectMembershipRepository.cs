@@ -33,7 +33,9 @@ public sealed class ProjectMembershipRepository(BudgetCivilDbContext dbContext)
     public Task<bool> IsUserAffiliatedToCompanyAsync(Guid userId, Guid companyId, CancellationToken cancellationToken = default)
     {
         return DbContext.UserAccounts.AnyAsync(
-            user => user.Id == userId && user.CompanyId == companyId,
+            user =>
+                user.Id == userId &&
+                user.Memberships.Any(membership => membership.AccountEnabled && membership.CompanyId == companyId),
             cancellationToken);
     }
 
@@ -75,6 +77,46 @@ public sealed class ProjectMembershipRepository(BudgetCivilDbContext dbContext)
     {
         DbContext.ProjectMembers.Remove(member);
         await DbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ProjectMemberRow>> GetMembersAsync(
+        Guid projectId,
+        CancellationToken cancellationToken = default)
+    {
+        return await DbContext.ProjectMembers
+            .AsNoTracking()
+            .Where(member => member.ProjectId == projectId)
+            .Join(
+                DbContext.UserAccounts.AsNoTracking(),
+                member => member.UserId,
+                user => user.Id,
+                (member, user) => new
+                {
+                    member.Id,
+                    member.UserId,
+                    user.FirstName,
+                    user.LastName,
+                    user.Username,
+                    user.Email,
+                    RoleCode = user.Role.Code,
+                    RoleName = user.Role.Name,
+                    user.AccountEnabled,
+                    member.AssignedAtUtc
+                })
+            .OrderBy(row => row.FirstName)
+            .ThenBy(row => row.LastName)
+            .Select(row => new ProjectMemberRow(
+                row.Id,
+                row.UserId,
+                row.FirstName,
+                row.LastName,
+                row.Username,
+                row.Email,
+                row.RoleCode,
+                row.RoleName,
+                row.AccountEnabled,
+                row.AssignedAtUtc))
+            .ToListAsync(cancellationToken);
     }
 
     private static bool IsUniqueViolation(DbUpdateException exception)

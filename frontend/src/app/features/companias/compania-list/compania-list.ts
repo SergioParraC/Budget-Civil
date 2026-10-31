@@ -6,18 +6,21 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { CompanyService } from '../../../core/services/company.service';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { UserService } from '../../../core/services/user.service';
-import { Company, CompanyType, RepresentativeMode, RoleCode } from '../../../core/models/company.model';
+import { Company, CompanyType, RepresentativeMode } from '../../../core/models/company.model';
+import { resolveApiError } from '../../../core/http/api-error';
 import { Country, Department, DocumentType, Municipality } from '../../../core/models/catalog.model';
 import { UserListItem } from '../../../core/models/user.model';
+import { CompanyUsersDialog } from '../company-users-dialog/company-users-dialog';
 
 @Component({
   selector: 'app-compania-list',
-  imports: [TableModule, TagModule, ButtonModule, DialogModule, ReactiveFormsModule, InputTextModule, SelectModule],
+  imports: [TableModule, TagModule, ButtonModule, DialogModule, ReactiveFormsModule, InputTextModule, SelectModule, TooltipModule, CompanyUsersDialog],
   templateUrl: './compania-list.html',
   styleUrl: './compania-list.scss'
 })
@@ -43,6 +46,11 @@ export class CompaniaList {
   readonly municipalities = signal<Municipality[]>([]);
   readonly documentTypes = signal<DocumentType[]>([]);
 
+  readonly representativeCandidates = signal<UserListItem[]>([]);
+  readonly representativeSearching = signal(false);
+  readonly representativeSearchAttempted = signal(false);
+  readonly selectedRepresentative = signal<UserListItem | null>(null);
+
   readonly companyTypes: { label: string; value: CompanyType }[] = [
     { label: 'Privada', value: 'PRIVADA' },
     { label: 'Pública', value: 'PUBLICA' }
@@ -53,19 +61,8 @@ export class CompaniaList {
     { label: 'Datos manuales', value: 'MANUAL_DATA' }
   ];
 
-  readonly membershipDialogVisible = signal(false);
-  readonly selectedCompany = signal<Company | null>(null);
-  readonly memberCandidates = signal<UserListItem[]>([]);
-  readonly roleCodes: { label: string; value: RoleCode }[] = [
-    { label: 'Director de proyectos', value: 'GERENTE_PROYECTOS' },
-    { label: 'Presupuestador', value: 'PRESUPUESTADOR' },
-    { label: 'Auditor', value: 'AUDITOR' }
-  ];
-
-  readonly membershipForm = this.fb.nonNullable.group({
-    userId: ['', Validators.required],
-    roleCode: ['PRESUPUESTADOR' as RoleCode, Validators.required]
-  });
+  readonly directorsDialogVisible = signal(false);
+  readonly directorsCompany = signal<Company | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     businessName: ['', Validators.required],
@@ -82,9 +79,37 @@ export class CompaniaList {
     representativeDocumentNumber: ['']
   });
 
+  /** Búsqueda del representante legal por documento (tipo y número obligatorios). */
+  readonly representativeSearchForm = this.fb.nonNullable.group({
+    documentType: ['', Validators.required],
+    documentNumber: ['', Validators.required],
+    username: [''],
+    email: ['']
+  });
+
   constructor() {
-    this.catalogService.countries().subscribe((res) => this.countries.set(res.items));
-    this.catalogService.documentTypes().subscribe((res) => this.documentTypes.set(res.items));
+    this.loadCatalogs();
+
+    this.form.controls.representativeMode.valueChanges.subscribe((mode) => this.syncRepresentativeMode(mode));
+  }
+
+  private loadCatalogs() {
+    this.catalogService.countries().subscribe({
+      next: (res) => this.countries.set(res.items),
+      error: (error: unknown) => this.showCatalogError('los países', error)
+    });
+    this.catalogService.documentTypes().subscribe({
+      next: (res) => this.documentTypes.set(res.items),
+      error: (error: unknown) => this.showCatalogError('los tipos de documento', error)
+    });
+  }
+
+  private showCatalogError(resource: string, error: unknown) {
+    this.messageService.add({
+      severity: 'error',
+      summary: `No se pudieron cargar ${resource}`,
+      detail: resolveApiError(error).message
+    });
   }
 
   load(event: TableLazyLoadEvent) {
@@ -96,7 +121,7 @@ export class CompaniaList {
     this.companyService.list({ pageNumber, pageSize }).subscribe({
       next: (response) => {
         this.companies.set(response.items);
-        this.totalRecords.set(response.total_items);
+        this.totalRecords.set(response.totalItems);
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -114,7 +139,10 @@ export class CompaniaList {
       this.departments.set([]);
       return;
     }
-    this.catalogService.departments(countryId).subscribe((res) => this.departments.set(res.items));
+    this.catalogService.departments(countryId).subscribe({
+      next: (res) => this.departments.set(res.items),
+      error: (error: unknown) => this.showCatalogError('los departamentos', error)
+    });
   }
 
   onDepartmentChange(departmentId: string) {
@@ -123,35 +151,119 @@ export class CompaniaList {
       this.municipalities.set([]);
       return;
     }
-    this.catalogService.municipalities(departmentId).subscribe((res) => this.municipalities.set(res.items));
+    this.catalogService.municipalities(departmentId).subscribe({
+      next: (res) => this.municipalities.set(res.items),
+      error: (error: unknown) => this.showCatalogError('los municipios', error)
+    });
+  }
+
+  onRepresentativeModeChange(mode: RepresentativeMode) {
+    this.syncRepresentativeMode(mode);
+    if (mode === 'MANUAL_DATA') {
+      this.clearRepresentative();
+    }
+  }
+
+  searchRepresentative() {
+    if (this.representativeSearchForm.invalid) {
+      this.representativeSearchForm.markAllAsTouched();
+      return;
+    }
+
+    const { documentType, documentNumber, username, email } = this.representativeSearchForm.getRawValue();
+    this.representativeSearching.set(true);
+    this.representativeSearchAttempted.set(true);
+
+    this.userService.searchRepresentativeCandidates({ documentType, documentNumber, username, email }).subscribe({
+      next: (users) => {
+        this.representativeCandidates.set(users);
+        this.representativeSearching.set(false);
+      },
+      error: (error: unknown) => {
+        this.representativeSearching.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'No se pudo buscar el usuario',
+          detail: resolveApiError(error).message
+        });
+      }
+    });
+  }
+
+  selectRepresentative(user: UserListItem) {
+    this.selectedRepresentative.set(user);
+    this.representativeCandidates.set([]);
+    this.representativeSearchAttempted.set(false);
+    this.form.patchValue({ representativeUserId: user.userId });
+    this.form.controls.representativeUserId.markAsTouched();
+  }
+
+  clearRepresentative() {
+    this.selectedRepresentative.set(null);
+    this.representativeCandidates.set([]);
+    this.representativeSearchAttempted.set(false);
+    this.form.patchValue({ representativeUserId: '' });
+  }
+
+  private resetRepresentativeSearch() {
+    this.representativeSearchForm.reset();
+    this.selectedRepresentative.set(null);
+    this.representativeCandidates.set([]);
+    this.representativeSearchAttempted.set(false);
+  }
+
+  private syncRepresentativeMode(mode: RepresentativeMode) {
+    const control = this.form.controls.representativeUserId;
+    control.setValidators(mode === 'USER_REFERENCE' ? [Validators.required] : []);
+    control.updateValueAndValidity({ emitEvent: false });
   }
 
   openCreate() {
+    this.loadCatalogs();
     this.editingCompanyId.set(null);
     this.form.reset({ companyType: 'PRIVADA', representativeMode: 'MANUAL_DATA' });
+    this.resetRepresentativeSearch();
     this.departments.set([]);
     this.municipalities.set([]);
     this.dialogVisible.set(true);
   }
 
   openEdit(company: Company) {
-    this.editingCompanyId.set(company.company_id);
+    this.loadCatalogs();
+    this.editingCompanyId.set(company.companyId);
     this.form.setValue({
-      businessName: company.business_name,
-      taxId: company.tax_id,
-      companyType: company.company_type,
-      territorialLevel: company.territorial_level ?? '',
-      countryId: company.country_id,
-      departmentId: company.department_id,
-      municipalityId: company.municipality_id,
-      representativeMode: company.representative_mode,
-      representativeUserId: company.representative_user_id ?? '',
-      representativeFullName: company.representative_full_name ?? '',
-      representativeDocumentTypeId: company.representative_document_type_id ?? '',
-      representativeDocumentNumber: company.representative_document_number ?? ''
+      businessName: company.businessName,
+      taxId: company.taxId,
+      companyType: company.companyType ?? 'PRIVADA',
+      territorialLevel: company.territorialLevel ?? '',
+      countryId: company.countryId ?? '',
+      departmentId: company.departmentId ?? '',
+      municipalityId: company.municipalityId ?? '',
+      representativeMode: company.representativeMode ?? 'MANUAL_DATA',
+      representativeUserId: company.representativeUserId ?? '',
+      representativeFullName: company.representativeFullName ?? '',
+      representativeDocumentTypeId: company.representativeDocumentTypeId ?? '',
+      representativeDocumentNumber: company.representativeDocumentNumber ?? ''
     });
-    this.catalogService.departments(company.country_id).subscribe((res) => this.departments.set(res.items));
-    this.catalogService.municipalities(company.department_id).subscribe((res) => this.municipalities.set(res.items));
+
+    this.resetRepresentativeSearch();
+    this.syncRepresentativeMode(company.representativeMode ?? 'MANUAL_DATA');
+
+    if (company.representativeMode === 'USER_REFERENCE' && company.representativeUserId) {
+      this.userService.getById(company.representativeUserId).subscribe({
+        next: (user) => this.selectedRepresentative.set(user),
+        error: () => this.selectedRepresentative.set(null)
+      });
+    }
+
+    if (company.countryId) {
+      this.catalogService.departments(company.countryId).subscribe((res) => this.departments.set(res.items));
+    }
+
+    if (company.departmentId) {
+      this.catalogService.municipalities(company.departmentId).subscribe((res) => this.municipalities.set(res.items));
+    }
+
     this.dialogVisible.set(true);
   }
 
@@ -163,19 +275,19 @@ export class CompaniaList {
 
     const value = this.form.getRawValue();
     const payload = {
-      business_name: value.businessName,
-      tax_id: value.taxId,
-      company_type: value.companyType,
-      territorial_level: value.companyType === 'PUBLICA' ? value.territorialLevel : undefined,
-      country_id: value.countryId,
-      department_id: value.departmentId,
-      municipality_id: value.municipalityId,
+      businessName: value.businessName,
+      taxId: value.taxId,
+      companyType: value.companyType,
+      territorialLevel: value.companyType === 'PUBLICA' ? value.territorialLevel : undefined,
+      countryId: value.countryId,
+      departmentId: value.departmentId,
+      municipalityId: value.municipalityId,
       representative: {
         mode: value.representativeMode,
-        user_id: value.representativeMode === 'USER_REFERENCE' ? value.representativeUserId : undefined,
-        full_name: value.representativeMode === 'MANUAL_DATA' ? value.representativeFullName : undefined,
-        document_type_id: value.representativeMode === 'MANUAL_DATA' ? value.representativeDocumentTypeId : undefined,
-        document_number: value.representativeMode === 'MANUAL_DATA' ? value.representativeDocumentNumber : undefined
+        userId: value.representativeMode === 'USER_REFERENCE' ? value.representativeUserId : undefined,
+        fullName: value.representativeMode === 'MANUAL_DATA' ? value.representativeFullName : undefined,
+        documentTypeId: value.representativeMode === 'MANUAL_DATA' ? value.representativeDocumentTypeId : undefined,
+        documentNumber: value.representativeMode === 'MANUAL_DATA' ? value.representativeDocumentNumber : undefined
       }
     };
 
@@ -188,9 +300,13 @@ export class CompaniaList {
         this.messageService.add({ severity: 'success', summary: editingId ? 'Compañía actualizada' : 'Compañía creada' });
         this.reload();
       },
-      error: () => {
+      error: (error: unknown) => {
         this.saving.set(false);
-        this.messageService.add({ severity: 'error', summary: 'No se pudo guardar la compañía' });
+        this.messageService.add({
+          severity: 'error',
+          summary: 'No se pudo guardar la compañía',
+          detail: resolveApiError(error).message
+        });
       }
     };
 
@@ -203,45 +319,31 @@ export class CompaniaList {
 
   toggleActive(company: Company) {
     this.confirmationService.confirm({
-      header: company.is_active ? 'Desactivar compañía' : 'Activar compañía',
-      message: `¿Confirmas ${company.is_active ? 'desactivar' : 'activar'} "${company.business_name}"?`,
+      header: company.isActive ? 'Desactivar compañía' : 'Activar compañía',
+      message: `¿Confirmas ${company.isActive ? 'desactivar' : 'activar'} "${company.businessName}"?`,
       accept: () => {
-        const request = company.is_active
-          ? this.companyService.disable(company.company_id, 'Desactivada desde administración')
-          : this.companyService.enable(company.company_id);
+        const request = company.isActive
+          ? this.companyService.disable(company.companyId, 'Desactivada desde administración')
+          : this.companyService.enable(company.companyId);
 
         request.subscribe({
           next: () => {
             this.messageService.add({ severity: 'success', summary: 'Estado actualizado' });
             this.reload();
           },
-          error: () => this.messageService.add({ severity: 'error', summary: 'No se pudo cambiar el estado' })
+          error: (error: unknown) =>
+            this.messageService.add({
+              severity: 'error',
+              summary: 'No se pudo cambiar el estado',
+              detail: resolveApiError(error).message
+            })
         });
       }
     });
   }
 
-  openMemberships(company: Company) {
-    this.selectedCompany.set(company);
-    this.membershipForm.reset({ roleCode: 'PRESUPUESTADOR' });
-    this.userService.listAll().subscribe((users) => this.memberCandidates.set(users));
-    this.membershipDialogVisible.set(true);
-  }
-
-  assignMembership() {
-    const company = this.selectedCompany();
-    if (!company || this.membershipForm.invalid) {
-      this.membershipForm.markAllAsTouched();
-      return;
-    }
-
-    const { userId, roleCode } = this.membershipForm.getRawValue();
-    this.companyService.assignMembership(company.company_id, userId, roleCode).subscribe({
-      next: () => {
-        this.messageService.add({ severity: 'success', summary: 'Usuario vinculado a la compañía' });
-        this.membershipForm.reset({ roleCode: 'PRESUPUESTADOR' });
-      },
-      error: () => this.messageService.add({ severity: 'error', summary: 'No se pudo vincular el usuario' })
-    });
+  openDirectors(company: Company) {
+    this.directorsCompany.set(company);
+    this.directorsDialogVisible.set(true);
   }
 }

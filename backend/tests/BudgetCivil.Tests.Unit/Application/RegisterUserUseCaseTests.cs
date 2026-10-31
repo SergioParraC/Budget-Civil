@@ -15,7 +15,6 @@ namespace BudgetCivil.Tests.Unit.Application;
 public sealed class RegisterUserUseCaseTests
 {
     private readonly Mock<IAuthRepository> _authRepository = new();
-    private readonly Mock<IEmailVerificationTokenRepository> _emailVerificationRepository = new();
     private readonly Mock<IGeographicCatalogRepository> _catalogRepository = new();
     private readonly Mock<IPasswordHasher> _passwordHasher = new();
     private readonly Mock<IEmailSender> _emailSender = new();
@@ -45,13 +44,6 @@ public sealed class RegisterUserUseCaseTests
             .Setup(repository => repository.AddUserAsync(It.IsAny<UserAccount>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _emailVerificationRepository
-            .Setup(repository => repository.AddTokenAsync(It.IsAny<EmailVerificationToken>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        _emailVerificationRepository
-            .Setup(repository => repository.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
         _passwordHasher
             .Setup(hasher => hasher.HashPassword("ClaveSegura1!"))
             .Returns("hash-generado");
@@ -76,8 +68,8 @@ public sealed class RegisterUserUseCaseTests
 
         response.AssignedRole.Should().Be("Presupuestador");
         response.CompanyId.Should().BeNull();
-        // D-80: la cuenta no se habilita hasta verificar el correo.
-        response.AccountEnabled.Should().BeFalse();
+        // El autorregistro nace habilitado; el administrador puede inhabilitarlo después.
+        response.AccountEnabled.Should().BeTrue();
 
         _authRepository.Verify(
             repository => repository.AddUserAsync(
@@ -87,7 +79,7 @@ public sealed class RegisterUserUseCaseTests
                     user.Email == request.Email &&
                     user.Username == request.Username &&
                     user.PasswordHash == "hash-generado" &&
-                    user.AccountEnabled == false &&
+                    user.AccountEnabled &&
                     user.FirstName == "Ana" &&
                     user.MiddleName == "Maria" &&
                     user.LastName == "Perez" &&
@@ -111,23 +103,14 @@ public sealed class RegisterUserUseCaseTests
     }
 
     [Fact]
-    public async Task El_autorregistro_guarda_el_hash_del_token_y_envia_el_token_en_el_correo()
+    public async Task El_autorregistro_envia_un_correo_de_cuenta_creada_sin_contrasena()
     {
         var request = RegisterUserRequestValidatorTests.CreateRequest();
 
         await CreateUseCase().ExecuteAsync(request);
 
         _sentBody.Should().NotBeNullOrWhiteSpace();
-        var rawToken = _sentBody!.Split(':').Last().Trim();
-        rawToken.Should().NotBeNullOrWhiteSpace();
-
-        _emailVerificationRepository.Verify(
-            repository => repository.AddTokenAsync(
-                It.Is<EmailVerificationToken>(token =>
-                    token.TokenHash == TokenHash.Compute(rawToken) &&
-                    token.ExpiresAtUtc > DateTime.UtcNow),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        _sentBody.Should().Contain("cuenta fue creada").And.Contain("iniciar sesion");
 
         // El correo no contiene la contraseña ni su hash.
         _sentBody.Should().NotContain("ClaveSegura1!").And.NotContain("hash-generado");
@@ -209,7 +192,6 @@ public sealed class RegisterUserUseCaseTests
 
     private RegisterUserUseCase CreateUseCase() => new(
         _authRepository.Object,
-        _emailVerificationRepository.Object,
         _catalogRepository.Object,
         _passwordHasher.Object,
         _emailSender.Object,

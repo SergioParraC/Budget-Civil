@@ -1,5 +1,7 @@
 using BudgetCivil.Application.Memberships.Repositories;
+using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Users.Entities;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetCivil.Infrastructure.Persistence.Repositories;
@@ -27,37 +29,93 @@ public sealed class CompanyMembershipRepository(BudgetCivilDbContext dbContext)
             .SingleOrDefaultAsync(company => company.Id == companyId, cancellationToken);
     }
 
-    public async Task<bool> TryAssignCompanyAsync(
-        Guid userId,
-        Guid companyId,
-        DateTime utcNow,
-        CancellationToken cancellationToken = default)
+    public Task<Company?> GetCompanyWithDetailsAsync(Guid companyId, CancellationToken cancellationToken = default)
     {
-        var affectedRows = await DbContext.UserAccounts
-            .Where(user => user.Id == userId && user.CompanyId == null)
-            .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(user => user.CompanyId, (Guid?)companyId)
-                    .SetProperty(user => user.UpdatedAtUtc, utcNow),
-                cancellationToken);
-
-        return affectedRows == 1;
+        return DbContext.Companies
+            .AsNoTracking()
+            .Include(company => company.Country)
+            .Include(company => company.Department)
+            .Include(company => company.Municipality)
+            .SingleOrDefaultAsync(company => company.Id == companyId, cancellationToken);
     }
 
-    public async Task<bool> TryUnassignCompanyAsync(
+    public async Task<bool> AssignAsync(
         Guid userId,
         Guid companyId,
         DateTime utcNow,
         CancellationToken cancellationToken = default)
     {
-        var affectedRows = await DbContext.UserAccounts
-            .Where(user => user.Id == userId && user.CompanyId == companyId)
-            .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(user => user.CompanyId, (Guid?)null)
-                    .SetProperty(user => user.UpdatedAtUtc, utcNow),
+        var user = await DbContext.UserAccounts
+            .SingleOrDefaultAsync(userAccount => userAccount.Id == userId, cancellationToken);
+
+        if (user is null)
+        {
+            return false;
+        }
+
+        // Reutiliza la fila histórica de la misma compañía (reactivación) o inserta una nueva.
+        CompanyMembershipAssignment.Attach(user, companyId, utcNow);
+        user.UpdatedAtUtc = utcNow;
+
+        try
+        {
+            await DbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException exception) when (IsUniqueViolation(exception))
+        {
+            // El índice único filtrado impide dos vínculos vigentes (`BR-001`) incluso en carrera.
+            return false;
+        }
+    }
+
+    public async Task<bool> DeactivateAsync(
+        Guid userId,
+        Guid companyId,
+        DateTime utcNow,
+        CancellationToken cancellationToken = default)
+    {
+        var membership = await DbContext.CompanyMemberships
+            .SingleOrDefaultAsync(
+                candidate =>
+                    candidate.UserId == userId &&
+                    candidate.CompanyId == companyId &&
+                    candidate.AccountEnabled,
                 cancellationToken);
 
-        return affectedRows == 1;
+        if (membership is null)
+        {
+            return false;
+        }
+
+        membership.Deactivate(utcNow);
+
+        var user = await DbContext.UserAccounts
+            .SingleOrDefaultAsync(userAccount => userAccount.Id == userId, cancellationToken);
+
+        if (user is not null)
+        {
+            user.UpdatedAtUtc = utcNow;
+        }
+
+        await DbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public Task<int> RemoveProjectMembershipsAsync(
+        Guid userId,
+        Guid companyId,
+        CancellationToken cancellationToken = default)
+    {
+        return DbContext.ProjectMembers
+            .Where(member =>
+                member.UserId == userId &&
+                DbContext.Projects.Any(project => project.Id == member.ProjectId && project.CompanyId == companyId))
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    private static bool IsUniqueViolation(DbUpdateException exception)
+    {
+        return exception.InnerException is SqlException { Number: 2601 or 2627 };
     }
 }

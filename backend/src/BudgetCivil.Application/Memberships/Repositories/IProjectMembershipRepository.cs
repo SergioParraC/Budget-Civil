@@ -4,6 +4,18 @@ using BudgetCivil.Domain.Users.Entities;
 
 namespace BudgetCivil.Application.Memberships.Repositories;
 
+public sealed record ProjectMemberRow(
+    Guid MembershipId,
+    Guid UserId,
+    string FirstName,
+    string LastName,
+    string Username,
+    string Email,
+    string RoleCode,
+    string RoleName,
+    bool AccountEnabled,
+    DateTime AssignedAtUtc);
+
 public interface IProjectMembershipRepository
 {
     Task<UserAccount?> GetActorByIdAsync(Guid actorUserId, CancellationToken cancellationToken = default);
@@ -28,4 +40,11 @@ public interface IProjectMembershipRepository
     Task<bool> TryAddMembershipAsync(ProjectMember member, CancellationToken cancellationToken = default);
 
     Task RemoveMembershipAsync(ProjectMember member, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Miembros vigentes del proyecto con los datos del usuario y su rol (`project_members`).
+    /// </summary>
+    Task<IReadOnlyList<ProjectMemberRow>> GetMembersAsync(
+        Guid projectId,
+        CancellationToken cancellationToken = default);
 }

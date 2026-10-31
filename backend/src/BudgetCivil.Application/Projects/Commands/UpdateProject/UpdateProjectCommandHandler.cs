@@ -136,6 +136,49 @@ public sealed class UpdateProjectCommandHandler(
         var configuration = project.Configuration
             ?? throw new ConflictAppException("Project configuration was not found.", "PROJECT_CONFIGURATION_NOT_FOUND");
 
+        // `D-112`: el Director es el único que configura los parámetros del proyecto. El Presupuestador
+        // conserva la edición de datos generales (nombre, código, descripción y objetivo).
+        if (actor.Role.Code == ProjectStatusTransitionPolicy.EstimatorRoleCode)
+        {
+            var requestedSignatureMode = string.IsNullOrWhiteSpace(command.SigningMode)
+                ? null
+                : Project.NormalizeSignatureModeOrDefault(command.SigningMode);
+
+            var changesSignatureMode = requestedSignatureMode is not null &&
+                !string.Equals(requestedSignatureMode, configuration.SignatureMode, StringComparison.Ordinal);
+
+            var changesSigner = command.SignerUserId != configuration.SignerUserId;
+
+            var changesAuditorRequirement = command.RequiresAuditor.HasValue &&
+                command.RequiresAuditor.Value != configuration.RequiresAuditor;
+
+            if (changesSignatureMode || changesSigner || changesAuditorRequirement)
+            {
+                throw new ForbiddenAppException(
+                    "Only Director de proyectos can change the signature mode, the signer or the auditor requirement.",
+                    "PROJECT_SIGNATURE_CONFIGURATION_FORBIDDEN");
+            }
+
+            var changesLocation =
+                (command.CountryId.HasValue && command.CountryId != project.CountryId) ||
+                (command.DepartmentId.HasValue && command.DepartmentId != project.DepartmentId) ||
+                (command.MunicipalityId.HasValue && command.MunicipalityId != project.MunicipalityId);
+
+            var changesFinancialConfiguration =
+                (command.BaseCurrencyId.HasValue && command.BaseCurrencyId != configuration.BaseCurrencyId) ||
+                (command.BudgetLimit.HasValue && command.BudgetLimit != configuration.BudgetLimit) ||
+                (command.AiuAdminPercent.HasValue && command.AiuAdminPercent != configuration.AiuAdminPercent) ||
+                (command.AiuUnforeseenPercent.HasValue && command.AiuUnforeseenPercent != configuration.AiuUnforeseenPercent) ||
+                (command.AiuProfitPercent.HasValue && command.AiuProfitPercent != configuration.AiuProfitPercent);
+
+            if (changesLocation || changesFinancialConfiguration)
+            {
+                throw new ForbiddenAppException(
+                    "Only Director de proyectos can change the project configuration.",
+                    "PROJECT_CONFIGURATION_FORBIDDEN");
+            }
+        }
+
         var countryId = command.CountryId ?? project.CountryId;
         var departmentId = command.DepartmentId ?? project.DepartmentId;
         var municipalityId = command.MunicipalityId ?? project.MunicipalityId;

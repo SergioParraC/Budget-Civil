@@ -20,6 +20,9 @@ public sealed class DeactivateCompanyMemberResponse
     public bool IsActive { get; init; }
 
     public DateTime DeactivatedAtUtc { get; init; }
+
+    /// <summary>Pertenecen a proyectos de la compañía que se retiraron al desvincular.</summary>
+    public int ProjectsDetached { get; init; }
 }
 
 public sealed class DeactivateCompanyMemberCommandHandler(
@@ -48,17 +51,30 @@ public sealed class DeactivateCompanyMemberCommandHandler(
         var targetUser = await repository.GetUserByIdAsync(userId, cancellationToken)
             ?? throw new ConflictAppException("User was not found.", "USER_NOT_FOUND");
 
+        try
+        {
+            CompanyMembershipPolicy.EnsureActorCanManageTargetRole(actor.Role.Code, targetUser.Role.Code);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new ForbiddenAppException(
+                "Actor cannot deactivate this company member.",
+                "COMPANY_MEMBER_DEACTIVATE_FORBIDDEN");
+        }
+
         if (targetUser.CompanyId != companyId)
         {
             throw new ConflictAppException("Company membership was not found.", "COMPANY_MEMBERSHIP_NOT_FOUND");
         }
 
         var utcNow = DateTime.UtcNow;
-        var removed = await repository.TryUnassignCompanyAsync(userId, companyId, utcNow, cancellationToken);
+        var removed = await repository.DeactivateAsync(userId, companyId, utcNow, cancellationToken);
         if (!removed)
         {
             throw new ConflictAppException("Company membership was not found.", "COMPANY_MEMBERSHIP_NOT_FOUND");
         }
+
+        var projectsDetached = await repository.RemoveProjectMembershipsAsync(userId, companyId, cancellationToken);
 
         await securityAuditService.WriteAsync(
             new SecurityAuditWriteRequest(
@@ -77,7 +93,8 @@ public sealed class DeactivateCompanyMemberCommandHandler(
             CompanyId = companyId,
             UserId = userId,
             IsActive = false,
-            DeactivatedAtUtc = utcNow
+            DeactivatedAtUtc = utcNow,
+            ProjectsDetached = projectsDetached
         };
     }
 

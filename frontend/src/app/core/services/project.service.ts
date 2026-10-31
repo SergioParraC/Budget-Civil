@@ -7,10 +7,12 @@ import {
   Project,
   ProjectFormValue,
   ProjectListItem,
+  ProjectMemberAssignment,
+  ProjectMembersResponse,
   ProjectStatus,
   ProjectStatusChangeRequest
 } from '../models/project.model';
-import { Membership, RoleCode } from '../models/company.model';
+import { RoleCode } from '../models/company.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProjectService {
@@ -33,51 +35,64 @@ export class ProjectService {
   }
 
   create(value: ProjectFormValue) {
-    return this.http.post<{ project_id: string; status: ProjectStatus; created_at_utc: string }>(this.baseUrl, value);
+    return this.http.post<{
+      projectId: string;
+      companyId: string;
+      status: ProjectStatus;
+      countryId: string;
+      departmentId: string;
+      municipalityId: string;
+      baseCurrencyId: string;
+      createdAtUtc: string;
+    }>(this.baseUrl, value);
   }
 
   update(projectId: string, value: ProjectFormValue) {
-    return this.http.put<{ project_id: string; updated_at_utc: string }>(`${this.baseUrl}/${projectId}`, value);
+    return this.http.put<{ projectId: string; updatedAtUtc: string }>(`${this.baseUrl}/${projectId}`, value);
   }
 
   changeStatus(projectId: string, request: ProjectStatusChangeRequest) {
-    return this.http.patch<{ project_id: string; previous_status: ProjectStatus; new_status: ProjectStatus }>(
-      `${this.baseUrl}/${projectId}/status`,
-      request
-    );
+    return this.http.patch<{
+      projectId: string;
+      previousStatus: ProjectStatus;
+      newStatus: ProjectStatus;
+      changedAtUtc: string;
+      changedByUserId: string;
+    }>(`${this.baseUrl}/${projectId}/status`, request);
   }
 
   reactivate(projectId: string, reason?: string) {
-    return this.http.patch<{ project_id: string; previous_status: ProjectStatus; new_status: ProjectStatus }>(
-      `${this.baseUrl}/${projectId}/status/reactivate`,
-      { reason }
-    );
+    return this.http.patch<{
+      projectId: string;
+      previousStatus: ProjectStatus;
+      newStatus: ProjectStatus;
+      changedAtUtc: string;
+      changedByUserId: string;
+    }>(`${this.baseUrl}/${projectId}/status/reactivate`, { reason });
   }
 
   changeVisibility(projectId: string, isPublic: boolean, reason?: string) {
-    return this.http.patch<{ project_id: string; new_is_public: boolean }>(`${this.baseUrl}/${projectId}/visibility`, {
-      is_public: isPublic,
-      reason
-    });
+    return this.http.patch<{
+      projectId: string;
+      previousIsPublic: boolean;
+      newIsPublic: boolean;
+      changedAtUtc: string;
+    }>(`${this.baseUrl}/${projectId}/visibility`, { isPublic, reason });
   }
 
   assignMembership(projectId: string, userId: string, roleCode: RoleCode) {
-    return this.http.post<Membership>(`${this.baseUrl}/${projectId}/memberships`, { user_id: userId, role_code: roleCode });
+    return this.http.post<ProjectMemberAssignment>(`${this.baseUrl}/${projectId}/memberships`, { userId, roleCode });
+  }
+
+  /** Miembros del proyecto con su rol y fecha de asignación. */
+  listMembers(projectId: string) {
+    return this.http.get<ProjectMembersResponse>(`${this.baseUrl}/${projectId}/members`);
   }
 
   deactivateMembership(projectId: string, membershipId: string) {
-    return this.http.patch<{ membership_id: string; is_active: boolean }>(
+    return this.http.patch<{ membershipId: string; isActive: boolean; deactivatedAtUtc: string }>(
       `${this.baseUrl}/${projectId}/memberships/${membershipId}/deactivate`,
       {}
     );
-  }
-
-  listMembers(projectId: string, query: PageQuery = {}) {
-    let params = new HttpParams();
-    if (query.search) params = params.set('search', query.search);
-    params = params.set('pageNumber', query.pageNumber ?? 1);
-    params = params.set('pageSize', query.pageSize ?? 10);
-
-    return this.http.get<PagedResult<unknown>>(`${this.baseUrl}/${projectId}/users`, { params });
   }
 }

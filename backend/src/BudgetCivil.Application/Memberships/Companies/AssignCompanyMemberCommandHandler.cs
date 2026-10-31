@@ -74,6 +74,7 @@ public sealed class AssignCompanyMemberCommandHandler(
         try
         {
             CompanyMembershipPolicy.EnsureActorCanAssign(companyId, actor.Role.Code, actor.CompanyId);
+            CompanyMembershipPolicy.EnsureActorCanManageTargetRole(actor.Role.Code, requestedRoleCode);
         }
         catch (InvalidOperationException)
         {
@@ -93,7 +94,7 @@ public sealed class AssignCompanyMemberCommandHandler(
         }
 
         var utcNow = DateTime.UtcNow;
-        var assigned = await repository.TryAssignCompanyAsync(targetUser.Id, companyId, utcNow, cancellationToken);
+        var assigned = await repository.AssignAsync(targetUser.Id, companyId, utcNow, cancellationToken);
         if (!assigned)
         {
             // Otra solicitud asignó una compañía entre la lectura y la escritura (SC-IDENTIDAD-31).

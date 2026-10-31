@@ -1,0 +1,129 @@
+<p-dialog [(visible)]="visible" [modal]="true" [style]="{ width: '960px' }" [header]="title()" [dismissableMask]="true">
+  <div class="company-users">
+    <section class="company-users__search">
+      <p class="company-users__hint">{{ searchHint() }}</p>
+      <div class="company-users__search-row">
+        <p-select
+          class="company-users__filter"
+          fluid
+          appendTo="body"
+          [panelStyle]="{ width: '220px' }"
+          [options]="filterOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="filter()"
+          (ngModelChange)="onFilterChange($event)"
+          placeholder="Filtrar por"
+        />
+
+        @if (filter() === 'document') {
+          <p-select
+            class="company-users__document-type"
+            fluid
+            appendTo="body"
+            [panelStyle]="{ width: '190px' }"
+            [options]="documentTypes()"
+            optionLabel="name"
+            optionValue="code"
+            [ngModel]="selectedDocumentType()"
+            (ngModelChange)="selectedDocumentType.set($event)"
+            placeholder="Tipo de documento"
+          />
+          <input
+            class="company-users__document-number"
+            pInputText
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
+            placeholder="Número de documento"
+            (keyup.enter)="search(searchTerm())"
+          />
+        } @else {
+          <input
+            class="company-users__term"
+            pInputText
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
+            [placeholder]="searchPlaceholder()"
+            (keyup.enter)="search(searchTerm())"
+          />
+        }
+
+        <p-button label="Buscar" icon="pi pi-search" [loading]="searching()" (onClick)="search(searchTerm())" />
+      </div>
+
+      @if (candidates().length > 0) {
+        <ul class="company-users__candidates">
+          @for (candidate of candidates(); track candidate.userId) {
+            <li>
+              <div class="company-users__candidate">
+                <strong>{{ candidate.firstName }} {{ candidate.lastName }}</strong>
+                <span>{{ candidate.username }} · {{ candidate.email }}</span>
+                @if (showRoleColumn()) {
+                  <span>{{ roleLabel(candidate.roleCode) }}</span>
+                }
+              </div>
+              <p-button
+                label="Vincular"
+                icon="pi pi-plus"
+                size="small"
+                [loading]="assigningUserId() === candidate.userId"
+                (onClick)="assign(candidate)"
+              />
+            </li>
+          }
+        </ul>
+      } @else if (searchAttempted() && !searching()) {
+        <small class="company-users__empty">No hay usuarios disponibles con ese criterio.</small>
+      }
+    </section>
+
+    <p-table [value]="members()" [loading]="loading()" [paginator]="true" [rows]="5" dataKey="userId">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Nombre</th>
+          <th>Usuario</th>
+          <th>Correo</th>
+          @if (showRoleColumn()) {
+            <th>Rol</th>
+          }
+          <th>Fecha de vinculación</th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-member>
+        <tr>
+          <td>{{ member.firstName }} {{ member.lastName }}</td>
+          <td>{{ member.username }}</td>
+          <td>{{ member.email }}</td>
+          @if (showRoleColumn()) {
+            <td><p-tag [value]="roleLabel(member.roleCode)" /></td>
+          }
+          <td>
+            @if (member.linkedAtUtc) {
+              {{ member.linkedAtUtc | date: 'dd/MM/yyyy' }}
+              @if (member.membershipUpdatedAtUtc && member.membershipUpdatedAtUtc !== member.linkedAtUtc) {
+                <span
+                  class="company-users__reactivated"
+                  [title]="'Reactivado el ' + (member.membershipUpdatedAtUtc | date: 'dd/MM/yyyy')"
+                  >*</span
+                >
+              }
+            } @else {
+              —
+            }
+          </td>
+          <td class="company-users__actions">
+            @if (canRemove(member)) {
+              <p-button icon="pi pi-user-minus" [text]="true" severity="danger" (onClick)="remove(member)" />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td [attr.colspan]="showRoleColumn() ? 6 : 5">La compañía no tiene usuarios vinculados.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</p-dialog>

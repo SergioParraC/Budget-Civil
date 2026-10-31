@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace BudgetCivil.Application.Users.Search;
 
 public sealed class UserSearchResult
@@ -24,5 +22,15 @@ public sealed class UserSearchResult
 
     public string? SecondLastName { get; init; }
 
+    public string DocumentType { get; init; } = string.Empty;
+
     public string DocumentNumber { get; init; } = string.Empty;
+
+    public string RoleName { get; init; } = string.Empty;
+
+    /// <summary>Fecha de vinculación con su compañía vigente (`users_company.created_at`).</summary>
+    public DateTime? LinkedAtUtc { get; init; }
+
+    /// <summary>Última actualización del vínculo vigente (reactivaciones incluidas).</summary>
+    public DateTime? MembershipUpdatedAtUtc { get; init; }
 }

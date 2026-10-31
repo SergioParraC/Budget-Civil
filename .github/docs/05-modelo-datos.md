@@ -126,7 +126,7 @@
 | `aiu_admin`, `aiu_unforeseen`, `aiu_profit` | DECIMAL(5,2) | Sí | 0–100 |
 | `signature_mode` | VARCHAR(50) | No | `SIN_FIRMA`, `UNICA_POR_PRESUPUESTADOR_ASIGNADO` o `INDEPENDIENTE_POR_PROFESIONAL_RESPONSABLE` |
 | `signer_user_id` | UUID | Sí | Firmante designado |
-| `requires_auditor` | BOOLEAN | No | Default `false` |
+| `requires_auditor` | BOOLEAN | No | Default `false`. Es independiente de `signature_mode`: con el check activo el proyecto admite auditores en cualquier modo. Desactivarlo conserva los `project_members` de rol `AUDITOR` (`D-112`) |
 | `row_version` | ROWVERSION | No | Concurrencia de la configuración |
 
 ### `ProjectMember`

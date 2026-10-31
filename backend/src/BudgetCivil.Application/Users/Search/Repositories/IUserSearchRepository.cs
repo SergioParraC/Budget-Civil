@@ -6,4 +6,14 @@ public interface IUserSearchRepository
         Guid actorUserId,
         UserSearchQuery query,
         CancellationToken cancellationToken = default);
+
+    Task<UserSearchResult?> GetByIdAsync(
+        Guid actorUserId,
+        Guid targetUserId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<UserSearchResult>> SearchRepresentativeCandidatesAsync(
+        Guid actorUserId,
+        UserSearchQuery query,
+        CancellationToken cancellationToken = default);
 }

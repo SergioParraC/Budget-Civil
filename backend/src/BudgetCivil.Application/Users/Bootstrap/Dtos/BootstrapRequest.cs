@@ -1,13 +1,12 @@
-using System.Text.Json.Serialization;
-using BudgetCivil.Application.Companies.Dtos;
-
 namespace BudgetCivil.Application.Users.Bootstrap.Dtos;
 
+/// <summary>
+/// `REQ-IDENTIDAD-27` / `SC-IDENTIDAD-69`: el bootstrap crea **solo** al primer Administrador, que no
+/// pertenece a ninguna compañía. La empresa demo, si se necesita, se crea después con `POST /companies`.
+/// </summary>
 public sealed class BootstrapRequest
 {
     public BootstrapAdminProfileRequest AdminProfile { get; init; } = new();
-
-    public BootstrapCompanyRequest Company { get; init; } = new();
 }
 
 public sealed class BootstrapAdminProfileRequest
@@ -20,34 +19,24 @@ public sealed class BootstrapAdminProfileRequest
 
     public string DocumentNumber { get; init; } = string.Empty;
 
+    public DateOnly BirthDate { get; init; }
+
     public string Email { get; init; } = string.Empty;
 
     public string Username { get; init; } = string.Empty;
 
     public string Password { get; init; } = string.Empty;
 
-    public Guid CountryId { get; init; }
+    // La residencia es opcional en el bootstrap: el Administrador no opera dentro de una compañía y
+    // puede completarla después en su perfil (REQ-IDENTIDAD-08).
+    public Guid? CountryId { get; init; }
 
-    public Guid DepartmentId { get; init; }
+    public Guid? DepartmentId { get; init; }
 
-    public Guid MunicipalityId { get; init; }
-}
+    public Guid? MunicipalityId { get; init; }
 
-public sealed class BootstrapCompanyRequest
-{
-    public string BusinessName { get; init; } = string.Empty;
+    public bool HasResidence => CountryId.HasValue || DepartmentId.HasValue || MunicipalityId.HasValue;
 
-    public string TaxId { get; init; } = string.Empty;
-
-    public string CompanyType { get; init; } = string.Empty;
-
-    public string? TerritorialLevel { get; init; }
-
-    public Guid CountryId { get; init; }
-
-    public Guid DepartmentId { get; init; }
-
-    public Guid MunicipalityId { get; init; }
-
-    public LegalRepresentativePayload? Representative { get; init; }
+    public bool HasCompleteResidence =>
+        CountryId.HasValue && DepartmentId.HasValue && MunicipalityId.HasValue;
 }

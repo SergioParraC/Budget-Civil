@@ -52,6 +52,8 @@ public sealed class ScopedUserListItem
 
     public string RoleCode { get; init; } = string.Empty;
 
+    public string RoleName { get; init; } = string.Empty;
+
     public bool AccountEnabled { get; init; }
 
     public string FirstName { get; init; } = string.Empty;
@@ -63,6 +65,12 @@ public sealed class ScopedUserListItem
     public string? SecondLastName { get; init; }
 
     public string DocumentNumber { get; init; } = string.Empty;
+
+    /// <summary>Fecha de vinculación con la compañía (`users_company.created_at`).</summary>
+    public DateTime? LinkedAtUtc { get; init; }
+
+    /// <summary>Última actualización del vínculo (reactivaciones incluidas).</summary>
+    public DateTime? MembershipUpdatedAtUtc { get; init; }
 }
 
 public sealed class GetScopedUsersQueryHandler(
@@ -112,12 +120,15 @@ public sealed class GetScopedUsersQueryHandler(
                 Email = row.Email,
                 Username = row.Username,
                 RoleCode = row.RoleCode,
+                RoleName = row.RoleName,
                 AccountEnabled = row.AccountEnabled,
                 FirstName = row.FirstName,
                 MiddleName = row.MiddleName,
                 LastName = row.LastName,
                 SecondLastName = row.SecondLastName,
-                DocumentNumber = row.DocumentNumber
+                DocumentNumber = row.DocumentNumber,
+                LinkedAtUtc = row.LinkedAtUtc,
+                MembershipUpdatedAtUtc = row.MembershipUpdatedAtUtc
             }).ToArray(),
             Page = pagination.Page,
             PageSize = pagination.PageSize,

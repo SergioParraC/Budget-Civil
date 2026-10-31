@@ -1,13 +1,22 @@
+/** Campos por los que se puede filtrar la búsqueda de usuarios (`GET /api/v1/users`). */
+export type UserSearchFilter = 'all' | 'email' | 'username' | 'fullName' | 'document';
+
 export interface UserListItem {
-  user_id: string;
-  company_id: string | null;
+  userId: string;
+  companyId: string | null;
   email: string;
   username: string;
-  role_code: string;
-  estado_cuenta: boolean;
-  primer_nombre: string;
-  segundo_nombre?: string | null;
-  primer_apellido: string;
-  segundo_apellido?: string | null;
-  numero_documento: string;
+  roleCode: string;
+  roleName?: string;
+  accountEnabled: boolean;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  secondLastName: string | null;
+  documentType: string;
+  documentNumber: string;
+  /** Fecha de vinculación con la compañía (`users_company.created_at`). */
+  linkedAtUtc?: string | null;
+  /** Última actualización del vínculo (reactivaciones incluidas). */
+  membershipUpdatedAtUtc?: string | null;
 }

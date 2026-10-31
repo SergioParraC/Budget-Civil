@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BudgetCivil.Tests.Integration;
 
-/// <summary>T-I-29: `User.company_id` y `ProjectMember` sin tablas de membresía (`D-98`).</summary>
+/// <summary>T-I-29: la pertenencia vive en `users_company` con historial (`D-98` revisado).</summary>
 public sealed class MembershipPersistenceTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
     [Fact]
@@ -24,7 +24,6 @@ public sealed class MembershipPersistenceTests(DatabaseFixture fixture) : IClass
             var target = new UserAccount
             {
                 Id = Guid.NewGuid(),
-                CompanyId = null,
                 RoleId = estimatorRole.Id,
                 Email = $"target.{Guid.NewGuid():N}@example.com",
                 Username = $"target_{Guid.NewGuid():N}",
@@ -49,15 +48,16 @@ public sealed class MembershipPersistenceTests(DatabaseFixture fixture) : IClass
         var secondRepository = new CompanyMembershipRepository(secondContext);
 
         var results = await Task.WhenAll(
-            firstRepository.TryAssignCompanyAsync(targetUserId, companyId, DateTime.UtcNow),
-            secondRepository.TryAssignCompanyAsync(targetUserId, companyId, DateTime.UtcNow));
+            firstRepository.AssignAsync(targetUserId, companyId, DateTime.UtcNow),
+            secondRepository.AssignAsync(targetUserId, companyId, DateTime.UtcNow));
 
         // SC-IDENTIDAD-31: solo una asignación queda efectiva.
         Assert.Equal(1, results.Count(result => result));
 
         await using var verificationContext = SqlServerTestDatabase.CreateContext(fixture.ConnectionString);
-        var storedUser = await verificationContext.UserAccounts.SingleAsync(user => user.Id == targetUserId);
-        Assert.Equal(companyId, storedUser.CompanyId);
+        var storedMembership = await verificationContext.CompanyMemberships
+            .SingleAsync(membership => membership.UserId == targetUserId && membership.AccountEnabled);
+        Assert.Equal(companyId, storedMembership.CompanyId);
     }
 
     [Fact]

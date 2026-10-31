@@ -1,3 +1,89 @@
-<p-card header="Bienvenido">
-  <p>Hola, {{ currentUser()?.username }}. Rol: {{ currentUser()?.role }}</p>
-</p-card>
+<div class="dashboard">
+  <p-card [header]="'Bienvenido, ' + (currentUser()?.username ?? '')">
+    <p class="dashboard__role">Rol: <strong>{{ roleLabel() }}</strong></p>
+  </p-card>
+
+  @if (company(); as companyInfo) {
+    <p-card [header]="companyInfo.businessName">
+      <div class="dashboard__company">
+        <div class="dashboard__field">
+          <span>Tipo de empresa</span>
+          <strong>{{ companyTypeLabel(companyInfo.companyType) }}</strong>
+        </div>
+        <div class="dashboard__field">
+          <span>NIT</span>
+          <strong>{{ companyInfo.taxId }}</strong>
+        </div>
+        @if (companyInfo.territorialLevel) {
+          <div class="dashboard__field">
+            <span>Nivel territorial</span>
+            <strong>{{ companyInfo.territorialLevel }}</strong>
+          </div>
+        }
+        <div class="dashboard__field">
+          <span>Ubicación</span>
+          <strong>{{ location(companyInfo) }}</strong>
+        </div>
+        <div class="dashboard__field">
+          <span>Representante legal</span>
+          <strong>{{ companyInfo.representativeFullName || '—' }}</strong>
+        </div>
+        @if (companyInfo.linkedAtUtc) {
+          <div class="dashboard__field">
+            <span>Vinculado desde</span>
+            <strong>{{ companyInfo.linkedAtUtc | date: 'dd/MM/yyyy' }}</strong>
+          </div>
+        }
+      </div>
+
+      @if (isDirector()) {
+        <div class="dashboard__actions">
+          <p-button label="Configurar compañía" icon="pi pi-building" (onClick)="openCompanyForm()" />
+          <p-button label="Editar usuarios de mi compañía" icon="pi pi-users" (onClick)="openMembers('PRESUPUESTADOR')" />
+          <p-button
+            label="Editar usuarios auditores de la compañía"
+            icon="pi pi-shield"
+            (onClick)="openMembers('AUDITOR')"
+          />
+        </div>
+      }
+
+      @if (canLeaveCompany()) {
+        <div class="dashboard__actions">
+          <p-button
+            label="Salir de la compañía"
+            icon="pi pi-sign-out"
+            severity="danger"
+            (onClick)="confirmLeaveCompany()"
+          />
+        </div>
+      }
+    </p-card>
+  } @else {
+    @if (isDirector()) {
+      <p-card header="Mi compañía">
+        <p class="dashboard__hint">
+          Aún no tienes una compañía vinculada. Créala para gestionar sus usuarios y proyectos.
+        </p>
+        <p-button label="Crear compañía" icon="pi pi-plus" (onClick)="openCompanyForm()" />
+      </p-card>
+    } @else if (isEstimator()) {
+      <p-message
+        severity="warn"
+        text="El usuario no pertenece a ninguna compañía, solicite al administrador o a un director de proyectos que permita vincularlo a la compañía"
+      />
+    } @else if (isAuditor()) {
+      <p-message severity="warn" text="El usuario no pertenece a ninguna compañía, no hay compañía o proyecto a auditar" />
+    }
+  }
+</div>
+
+<app-company-form-dialog [(visible)]="companyFormVisible" [company]="company()" (saved)="onCompanySaved()" />
+
+<app-company-users-dialog
+  [(visible)]="membersVisible"
+  [companyId]="company()?.companyId ?? null"
+  [companyName]="company()?.businessName ?? ''"
+  [roleCode]="membersRole()"
+  mode="director"
+/>

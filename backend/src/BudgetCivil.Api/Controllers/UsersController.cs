@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using BudgetCivil.Api.Auth;
+using BudgetCivil.Api.Middleware;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Listings.Queries;
 using BudgetCivil.Application.Dtos;
@@ -20,21 +21,30 @@ public sealed class UsersController(
     CreateUserUseCase createUserUseCase,
     UpdateUserUseCase updateUserUseCase,
     DeactivateUserUseCase deactivateUserUseCase,
+    EnableUserUseCase enableUserUseCase,
     ChangeUserRoleUseCase changeUserRoleUseCase,
     ChangeUserCompanyUseCase changeUserCompanyUseCase,
     EnableUserPasswordRecoveryUseCase enableUserPasswordRecoveryUseCase,
     SearchUsersUseCase searchUsersUseCase,
+    GetUserByIdUseCase getUserByIdUseCase,
+    SearchRepresentativeCandidatesUseCase searchRepresentativeCandidatesUseCase,
     RejectProjectAssignmentGuard rejectProjectAssignmentGuard,
     GetScopedUsersQueryHandler getScopedUsersQueryHandler) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = AuthorizationPolicies.UsersRead)]
+    [AllowWithoutCompanyContext]
     [ProducesResponseType(typeof(IReadOnlyList<UserSearchResult>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<UserSearchResult>>> SearchUsers(
         [FromQuery(Name = "email")] string? email,
         [FromQuery(Name = "username")] string? username,
         [FromQuery(Name = "nombre_apellidos")] string? fullName,
+        [FromQuery(Name = "tipo_documento")] string? documentType,
         [FromQuery(Name = "numero_documento")] string? documentNumber,
+        [FromQuery(Name = "search")] string? search,
+        [FromQuery(Name = "roleCode")] string? roleCode,
+        [FromQuery(Name = "unassignedOnly")] bool? unassignedOnly,
+        [FromQuery(Name = "companyId")] Guid? companyId,
         [FromQuery(Name = "estado_cuenta")] bool? accountEnabled,
         CancellationToken cancellationToken)
     {
@@ -45,11 +55,60 @@ public sealed class UsersController(
             Email = email,
             Username = username,
             FullName = fullName,
+            DocumentType = documentType,
             DocumentNumber = documentNumber,
+            Search = search,
+            RoleCode = roleCode,
+            UnassignedOnly = unassignedOnly ?? false,
+            CompanyId = companyId,
             AccountEnabled = accountEnabled
         };
 
         var response = await searchUsersUseCase.ExecuteAsync(actorUserId, query, cancellationToken);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Candidatos a representante legal de una compañía (`D-87`): exige tipo y número de documento y
+    /// admite nombre de usuario y correo como filtros opcionales.
+    /// </summary>
+    [HttpGet("representative-candidates")]
+    [Authorize(Policy = AuthorizationPolicies.UsersRead)]
+    [AllowWithoutCompanyContext]
+    [ProducesResponseType(typeof(IReadOnlyList<UserSearchResult>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<UserSearchResult>>> SearchRepresentativeCandidates(
+        [FromQuery(Name = "documentType")] string? documentType,
+        [FromQuery(Name = "documentNumber")] string? documentNumber,
+        [FromQuery(Name = "username")] string? username,
+        [FromQuery(Name = "email")] string? email,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+
+        var response = await searchRepresentativeCandidatesUseCase.ExecuteAsync(
+            actorUserId,
+            new UserSearchQuery
+            {
+                DocumentType = documentType,
+                DocumentNumber = documentNumber,
+                Username = username,
+                Email = email
+            },
+            cancellationToken);
+
+        return Ok(response);
+    }
+
+    [HttpGet("{userId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.UsersRead)]
+    [AllowWithoutCompanyContext]
+    [ProducesResponseType(typeof(UserSearchResult), StatusCodes.Status200OK)]
+    public async Task<ActionResult<UserSearchResult>> GetUserById(
+        [FromRoute] Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        var response = await getUserByIdUseCase.ExecuteAsync(actorUserId, userId, cancellationToken);
         return Ok(response);
     }
 
@@ -152,6 +211,19 @@ public sealed class UsersController(
 
         var actorUserId = GetActorUserId();
         var response = await deactivateUserUseCase.ExecuteAsync(actorUserId, userId, request, cancellationToken);
+
+        return Ok(response);
+    }
+
+    [HttpPatch("{userId:guid}/enable")]
+    [Authorize(Policy = AuthorizationPolicies.UsersDeactivate)]
+    [ProducesResponseType(typeof(EnableUserResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<EnableUserResponse>> EnableUser(
+        [FromRoute] Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        var response = await enableUserUseCase.ExecuteAsync(actorUserId, userId, cancellationToken);
 
         return Ok(response);
     }

@@ -45,7 +45,7 @@ public sealed class LoginUseCase(
                     }),
                 cancellationToken);
 
-            throw new LockedAppException(AccountNotEnabledMessage, "ACCOUNT_NOT_ENABLED");
+                throw new LockedAppException(AccountNotEnabledMessage, "ACCOUNT_NOT_ENABLED");
         }
 
         if (!passwordHasher.VerifyHashedPassword(userAccount.PasswordHash, request.Password))

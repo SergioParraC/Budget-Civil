@@ -6,6 +6,7 @@ using BudgetCivil.Application.Catalogs;
 using BudgetCivil.Application.Catalogs.Repositories;
 using BudgetCivil.Application.Users.Administration.Dtos;
 using BudgetCivil.Application.Users.Administration.Repositories;
+using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Users.Entities;
 using FluentValidation;
 
@@ -74,7 +75,6 @@ public sealed class CreateUserUseCase(
         var userAccount = new UserAccount
         {
             Id = userId,
-            CompanyId = assignedCompany?.Id,
             RoleId = assignedRole.Id,
             Email = request.Email.Trim(),
             Username = request.Username.Trim(),
@@ -98,6 +98,12 @@ public sealed class CreateUserUseCase(
             ProfessionalCardIssuedAt = request.ProfessionalCardIssuedAt,
             ProfessionalCardFilePath = NormalizeOptionalText(request.ProfessionalCardFilePath)
         };
+
+        if (assignedCompany is not null)
+        {
+            // `users_company` es la única fuente de verdad de la pertenencia (`D-98` revisado).
+            CompanyMembershipAssignment.Attach(userAccount, assignedCompany.Id, utcNow);
+        }
 
         await repository.AddUserAsync(userAccount, cancellationToken);
 

@@ -3,11 +3,13 @@ using BudgetCivil.Application.Common.Security;
 using BudgetCivil.Application.Catalogs.Queries;
 using BudgetCivil.Application.Companies.ChangeCompanyStatus;
 using BudgetCivil.Application.Companies.CreateCompany;
+using BudgetCivil.Application.Companies.GetMyCompany;
 using BudgetCivil.Application.Companies.ListCompanies;
 using BudgetCivil.Application.Companies.UseCases;
 using BudgetCivil.Application.Companies.UpdateCompany;
 using BudgetCivil.Application.Listings.Queries;
 using BudgetCivil.Application.Memberships.Companies;
+using BudgetCivil.Application.Memberships.LeaveCompany;
 using BudgetCivil.Application.Memberships.Projects;
 using BudgetCivil.Application.Projects.Commands.ChangeProjectStatus;
 using BudgetCivil.Application.Projects.Commands.ChangeProjectVisibility;
@@ -41,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<CreateUserUseCase>();
         services.AddScoped<UpdateUserUseCase>();
         services.AddScoped<DeactivateUserUseCase>();
+        services.AddScoped<EnableUserUseCase>();
         services.AddScoped<ChangeUserRoleUseCase>();
         services.AddScoped<ChangeUserCompanyUseCase>();
         services.AddScoped<CreateCompanyUseCase>();
@@ -61,8 +64,11 @@ public static class DependencyInjection
         services.AddScoped<ChangeProjectVisibilityCommandHandler>();
         services.AddScoped<AssignCompanyMemberCommandHandler>();
         services.AddScoped<DeactivateCompanyMemberCommandHandler>();
+        services.AddScoped<GetMyCompanyQueryHandler>();
+        services.AddScoped<LeaveCompanyCommandHandler>();
         services.AddScoped<AssignProjectMemberCommandHandler>();
         services.AddScoped<DeactivateProjectMemberCommandHandler>();
+        services.AddScoped<GetProjectMembersQueryHandler>();
         services.AddScoped<GetProjectsQueryHandler>();
         services.AddScoped<GetProjectByIdQueryHandler>();
         services.AddScoped<GetProjectConfigurationQueryHandler>();
@@ -71,6 +77,8 @@ public static class DependencyInjection
         services.AddScoped<ChangeMyPasswordUseCase>();
         services.AddScoped<EnableUserPasswordRecoveryUseCase>();
         services.AddScoped<SearchUsersUseCase>();
+        services.AddScoped<GetUserByIdUseCase>();
+        services.AddScoped<SearchRepresentativeCandidatesUseCase>();
 
         services.AddScoped<RequestPasswordRecoveryUseCase>();
         services.AddScoped<ConfirmPasswordRecoveryUseCase>();

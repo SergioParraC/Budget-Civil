@@ -1,12 +1,12 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using BudgetCivil.Domain.Catalogs;
+using BudgetCivil.Domain.Memberships;
 
 namespace BudgetCivil.Domain.Users.Entities;
 
 public sealed class UserAccount
 {
     public Guid Id { get; set; }
-
-    public Guid? CompanyId { get; set; }
 
     public Guid RoleId { get; set; }
 
@@ -54,8 +54,6 @@ public sealed class UserAccount
 
     public string? ProfessionalCardFilePath { get; set; }
 
-    public Company? Company { get; set; }
-
     public Role Role { get; set; } = null!;
 
     public Country? Country { get; set; }
@@ -63,6 +61,27 @@ public sealed class UserAccount
     public Department? Department { get; set; }
 
     public Municipality? Municipality { get; set; }
+
+    /// <summary>
+    /// Historial de vínculos con compañías (tabla <c>users_company</c>). Se autocarga en las consultas
+    /// porque <see cref="CompanyId"/> se deriva de la membresía vigente.
+    /// </summary>
+    public ICollection<CompanyMembership> Memberships { get; set; } = new List<CompanyMembership>();
+
+    /// <summary>Membresía vigente del usuario, si tiene una.</summary>
+    [NotMapped]
+    public CompanyMembership? ActiveMembership =>
+        Memberships
+            .Where(membership => membership.AccountEnabled)
+            .OrderByDescending(membership => membership.UpdatedAtUtc)
+            .FirstOrDefault();
+
+    /// <summary>
+    /// Compañía vigente del usuario. No es una columna: se deriva de <c>users_company</c>
+    /// (<c>account_enable = 1</c>), que es la única fuente de verdad de la pertenencia.
+    /// </summary>
+    [NotMapped]
+    public Guid? CompanyId => ActiveMembership?.CompanyId;
 
     public ICollection<PasswordRecoveryGrant> RecoveryGrants { get; set; } = new List<PasswordRecoveryGrant>();
 

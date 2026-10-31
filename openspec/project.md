@@ -95,6 +95,7 @@ en requisito elementos marcados `DERIVADO` o `POR CONFIRMAR`.
 | Elemento | Convención | Decisión |
 |---|---|---|
 | Esquema | Uno solo, con `company_id` y `project_id` donde aplica | `D-95`, `D-36` |
+| Pertenencia usuario-compañía | Tabla `users_company` (`user_id`, `company_id`, `account_enable`, `created_at`, `updated_at`) como única fuente de verdad, con historial y un solo vínculo vigente por usuario | `D-98` (revisado) |
 | Claves | `uniqueidentifier`; enumeraciones como `VARCHAR` con `CHECK` | `3.3.1` |
 | Fechas | UTC | `3.3.1` |
 | Concurrencia | `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource`; la API responde `409` | `D-50`, `D-97` |

@@ -14,7 +14,11 @@ public sealed class ListingRepository(BudgetCivilDbContext dbContext)
             .Where(user => user.Id == actorUserId)
             .Select(user => new ListingActorSnapshot(
                 user.Id,
-                user.CompanyId,
+                user.Memberships
+                    .Where(membership => membership.AccountEnabled)
+                    .OrderByDescending(membership => membership.UpdatedAtUtc)
+                    .Select(membership => (Guid?)membership.CompanyId)
+                    .FirstOrDefault(),
                 user.Role.Code,
                 user.AccountEnabled,
                 user.AccountLocked,
@@ -56,16 +60,28 @@ public sealed class ListingRepository(BudgetCivilDbContext dbContext)
             .Take(pageSize)
             .Select(user => new ListingUserRow(
                 user.Id,
-                user.CompanyId,
+                user.Memberships
+                    .Where(membership => membership.AccountEnabled)
+                    .Select(membership => (Guid?)membership.CompanyId)
+                    .FirstOrDefault(),
                 user.Email,
                 user.Username,
                 user.Role.Code,
+                user.Role.Name,
                 user.AccountEnabled,
                 user.FirstName,
                 user.MiddleName,
                 user.LastName,
                 user.SecondLastName,
-                user.DocumentNumber))
+                user.DocumentNumber,
+                user.Memberships
+                    .Where(membership => membership.AccountEnabled)
+                    .Select(membership => (DateTime?)membership.CreatedAtUtc)
+                    .FirstOrDefault(),
+                user.Memberships
+                    .Where(membership => membership.AccountEnabled)
+                    .Select(membership => (DateTime?)membership.UpdatedAtUtc)
+                    .FirstOrDefault()))
             .ToListAsync(cancellationToken);
     }
 
@@ -115,7 +131,8 @@ public sealed class ListingRepository(BudgetCivilDbContext dbContext)
 
         if (companyId.HasValue)
         {
-            query = query.Where(user => user.CompanyId == companyId.Value);
+            query = query.Where(user =>
+                user.Memberships.Any(membership => membership.AccountEnabled && membership.CompanyId == companyId.Value));
         }
 
         if (!string.IsNullOrWhiteSpace(search))

@@ -171,7 +171,7 @@ El sistema DEBE (MUST) insertar un registro independiente por cada cambio de vis
 
 ### Requirement: REQ-PROYECTOS-10 Configuración del proyecto como entidad propia
 
-El sistema DEBE (MUST) mantener exactamente una configuración por proyecto, con divisa base, componentes del AIU, modo de firma y requisito de auditor. Citas: RF-03; D-90, D-93, D-94.
+El sistema DEBE (MUST) mantener exactamente una configuración por proyecto, con divisa base, componentes del AIU, modo de firma y requisito de auditor. Solo el Director de proyectos puede modificar esos parámetros (`D-112`). Citas: RF-03; D-90, D-93, D-94, D-112.
 
 #### Scenario: SC-PROYECTOS-22 Configuración única del proyecto
 
@@ -256,6 +256,12 @@ El sistema DEBE (MUST) permitir asignar usuarios al proyecto al Director con usu
 - **Dado** un Director de proyectos de la compañía A
 - **Cuando** intenta asignar al proyecto un usuario de la compañía B
 - **Entonces** el sistema rechaza la operación y no crea la pertenencia
+
+#### Scenario: SC-PROYECTOS-52 El Administrador intenta asignar usuarios
+
+- **Dado** un Administrador autenticado
+- **Cuando** intenta asignar o retirar un usuario del proyecto
+- **Entonces** el sistema rechaza la operación con `403` porque solo lee información (`D-112`)
 
 ### Requirement: REQ-PROYECTOS-14 Aislamiento por proyecto
 
@@ -352,3 +358,54 @@ El sistema DEBE (MUST) permitir al Director de proyectos reabrir un proyecto en 
 - **Dado** un Presupuestador, un Auditor o un Administrador autenticado
 - **Cuando** intenta reabrir el proyecto finalizado
 - **Entonces** el sistema rechaza la operación con `403`
+
+### Requirement: REQ-PROYECTOS-20 Configuración del proyecto reservada al Director
+
+El sistema DEBE (MUST) reservar al Director de proyectos la edición de los parámetros del proyecto (ubicación, divisa base, tope presupuestal, AIU, modo de firma, firmante y requisito de auditor); el Presupuestador solo puede editar nombre, descripción y objetivo. Citas: RF-03; D-112; matriz `1.3.2`.
+
+#### Scenario: SC-PROYECTOS-46 El Presupuestador intenta cambiar los parámetros
+
+- **Dado** un Presupuestador asignado al proyecto
+- **Cuando** envía un cambio de divisa, AIU, tope o ubicación
+- **Entonces** el sistema responde `403 PROJECT_CONFIGURATION_FORBIDDEN` y no aplica cambios
+
+#### Scenario: SC-PROYECTOS-47 El Presupuestador edita los datos generales
+
+- **Dado** un Presupuestador asignado al proyecto
+- **Cuando** cambia el nombre, la descripción o el objetivo sin tocar los parámetros
+- **Entonces** el sistema aplica el cambio
+
+#### Scenario: SC-PROYECTOS-48 El Administrador intenta configurar el proyecto
+
+- **Dado** un Administrador autenticado
+- **Cuando** intenta actualizar la configuración del proyecto
+- **Entonces** el sistema rechaza la operación con `403`
+
+### Requirement: REQ-PROYECTOS-21 Auditoría independiente del modo de firma
+
+El sistema DEBE (MUST) admitir auditores en el proyecto cuando `requires_auditor` está activo, con independencia del modo de firma, y conservarlos asignados si el requisito se desactiva. La aprobación del auditor por APU solo se exige cuando el requisito está activo. Citas: RF-12, RF-13; D-03, D-14, D-52, D-112.
+
+#### Scenario: SC-PROYECTOS-49 Asignación de auditor con cualquier modo de firma
+
+- **Dado** un proyecto con `requires_auditor = true` y cualquier modo de firma, incluido `SIN_FIRMA`
+- **Cuando** el Director o el Presupuestador asignan un Auditor de la compañía
+- **Entonces** el sistema crea la pertenencia y el proyecto queda auditable
+
+#### Scenario: SC-PROYECTOS-50 Se desactiva el requisito de auditor con auditores asignados
+
+- **Dado** un proyecto con auditores asignados y `requires_auditor = true`
+- **Cuando** el Director desactiva el requisito
+- **Entonces** el sistema guarda el cambio y conserva las pertenencias de los auditores en el proyecto
+
+#### Scenario: SC-PROYECTOS-51 El Auditor consulta un proyecto sin auditoría habilitada
+
+- **Dado** un Auditor asignado a un proyecto con `requires_auditor = false`
+- **Cuando** abre el proyecto
+- **Entonces** el sistema le muestra una advertencia de que la auditoría no está habilitada y mantiene la vista en solo lectura
+
+#### Scenario: SC-PROYECTOS-53 Cierre sin aprobación del auditor cuando el requisito está inactivo
+
+- **Dado** un proyecto con `requires_auditor = false`
+- **Cuando** el Director lo cierra a `FINALIZADO` con los demás requisitos cumplidos
+- **Entonces** el sistema no exige aprobación del auditor
+

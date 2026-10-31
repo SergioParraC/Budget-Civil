@@ -1,0 +1,38 @@
+.registro {
+  min-height: 100vh;
+  display: flex;
+  padding: 2rem 1rem;
+
+  &__card {
+    width: 100%;
+    max-width: 520px;
+    margin: auto;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__hint {
+    color: var(--p-text-muted-color);
+  }
+
+  &__done {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__back {
+    display: inline-block;
+    margin-top: 1rem;
+    color: var(--p-primary-color);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

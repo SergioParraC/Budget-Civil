@@ -65,7 +65,6 @@ public sealed class UserModelTests(DatabaseFixture fixture) : IClassFixture<Data
         return new UserAccount
         {
             Id = Guid.NewGuid(),
-            CompanyId = null,
             RoleId = roleId,
             Email = email ?? $"usuario.{suffix}@example.com",
             Username = username ?? $"usuario_{suffix}",

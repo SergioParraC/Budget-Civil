@@ -205,6 +205,49 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.ToTable("municipalities", (string)null);
                 });
 
+            modelBuilder.Entity("BudgetCivil.Domain.Memberships.CompanyMembership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AccountEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("account_enable");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_users_company");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_dbo_users_company_user_id")
+                        .HasFilter("[account_enable] = 1");
+
+                    b.HasIndex("CompanyId", "AccountEnabled")
+                        .HasDatabaseName("IX_dbo_users_company_company_id_account_enable");
+
+                    b.ToTable("users_company", (string)null);
+                });
+
             modelBuilder.Entity("BudgetCivil.Domain.Memberships.ProjectMember", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1020,10 +1063,6 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("birth_date");
 
-                    b.Property<Guid?>("CompanyId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("company_id");
-
                     b.Property<Guid?>("CountryId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("country_id");
@@ -1143,15 +1182,12 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.HasIndex("MunicipalityId")
                         .HasDatabaseName("IX_dbo_users_municipality_id");
 
-                    b.HasIndex("RoleId")
-                        .HasDatabaseName("IX_dbo_users_role_id");
-
                     b.HasIndex("Username")
                         .IsUnique()
                         .HasDatabaseName("UQ_dbo_users_username");
 
-                    b.HasIndex("CompanyId", "RoleId", "AccountEnabled")
-                        .HasDatabaseName("IX_dbo_users_company_id_role_id_account_enabled");
+                    b.HasIndex("RoleId", "AccountEnabled")
+                        .HasDatabaseName("IX_dbo_users_role_id_account_enabled");
 
                     b.ToTable("users", (string)null);
                 });
@@ -1216,6 +1252,23 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_dbo_municipalities_departments_department_id");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Memberships.CompanyMembership", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_users_company_companies_company_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany("Memberships")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_users_company_users_user_id");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Memberships.ProjectMember", b =>
@@ -1480,12 +1533,6 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.UserAccount", b =>
                 {
-                    b.HasOne("BudgetCivil.Domain.Users.Entities.Company", "Company")
-                        .WithMany("UserAccounts")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("FK_dbo_users_companies_company_id");
-
                     b.HasOne("BudgetCivil.Domain.Catalogs.Country", "Country")
                         .WithMany()
                         .HasForeignKey("CountryId")
@@ -1511,8 +1558,6 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_dbo_users_roles_role_id");
 
-                    b.Navigation("Company");
-
                     b.Navigation("Country");
 
                     b.Navigation("Department");
@@ -1526,11 +1571,6 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                 {
                     b.Navigation("Configuration")
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.Company", b =>
-                {
-                    b.Navigation("UserAccounts");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.Permission", b =>
@@ -1548,6 +1588,8 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.UserAccount", b =>
                 {
                     b.Navigation("EnabledRecoveryGrants");
+
+                    b.Navigation("Memberships");
 
                     b.Navigation("RecoveryGrants");
 

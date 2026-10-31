@@ -16,6 +16,8 @@ public static class AuthorizationPolicies
     public const string CompaniesDeactivate = "CompaniesDeactivate";
     public const string CompaniesReactivate = "CompaniesReactivate";
     public const string CompaniesRead = "CompaniesRead";
+    public const string CompanyProfileReadSelf = "CompanyProfileReadSelf";
+    public const string CompanyLeaveSelf = "CompanyLeaveSelf";
     public const string CompanyMembersAssign = "CompanyMembersAssign";
     public const string CompanyMembersDeactivate = "CompanyMembersDeactivate";
     public const string ProjectsCreate = "ProjectsCreate";

@@ -53,7 +53,7 @@ Prefijos de identificadores: `P` problema, `H` hipótesis, `N` necesidad, `ACT` 
 |---|---|---|---|
 | D-01 | Plataforma SaaS multiempresa. El Administrador designa directores de proyecto; el Administrador o un Director sin compañía crean compañías; un Director no puede tener más de una compañía. | Tenancy, onboarding, RBAC | CONFIRMADO |
 | D-02 | Cuatro roles: Administrador (plataforma, sin compañía), Director de proyectos, Presupuestador y Auditor. Reemplazan `PROJECT_MANAGER`, `ESTIMATOR` y `READ_ONLY`. | Actores, autorización, modelo de datos | CONFIRMADO (`D-15`, `D-21`) |
-| D-03 | Firma configurable **por proyecto**, editable solo por el Director: (1) sin firma; (2) firma de presupuestador (firmante único o firma por cada APU modificado/creado); (3) firma de presupuestador + aprobación de auditor por APU. | Flujo de aprobación, estados, modelo de datos | MODIFICADO por `D-52` (aprobación única por APU) |
+| D-03 | Firma configurable **por proyecto**, editable solo por el Director: (1) sin firma; (2) firma de presupuestador (firmante único o firma por cada APU modificado/creado); (3) firma de presupuestador + aprobación de auditor por APU. **La auditoría se desacopla del modo de firma por `D-112`.** | Flujo de aprobación, estados, modelo de datos | MODIFICADO por `D-52` (aprobación única por APU) y `D-112` (auditoría independiente del modo) |
 | D-04 | Un presupuesto solo pasa a `FINALIZADO` si todos los insumos están `COTIZADO`; el cambio de estado puede ser masivo. | Regla de cierre | REFORMULADO por `D-89`: la precondición se valida al pasar a `COTIZADO` y `FINALIZADO` solo se alcanza desde allí |
 | D-05 | Un APU pertenece a un solo proyecto. Se crea desde cero, o se copia desde un APU de la empresa o desde el catálogo abierto. Los insumos son por proyecto y al copiar se detectan similitudes para que el usuario decida. La Matriz es un insumo compuesto reutilizable en varios APUs. | Modelo APU/insumo, copia, catálogo | CONFIRMADO (`D-12`, `D-13`, `D-16`) |
 | D-06 | Fórmulas: insumo → cantidad requerida = cantidad unitaria × rendimiento en APU; mano de obra → valor total = unidad de esfuerzo (hora-hombre o día-hombre, configurable) × rendimiento en APUs. | Motor de cálculo | PARCIAL (X-15) |
@@ -64,7 +64,7 @@ Prefijos de identificadores: `P` problema, `H` hipótesis, `N` necesidad, `ACT` 
 | D-11 | Autoría y aprobación (deriva de Q-01 = A): último usuario modificador por APU e insumo; un registro de aprobación por APU con usuario, rol, fecha y modo; estado del presupuesto. Sin historial de valores ni congelamiento de versión. | Modelo de datos, flujo de aprobación | MODIFICADO por `D-52` (registro único de aprobación) |
 | D-12 | Catálogo abierto global, alimentado automáticamente por APUs e insumos que las empresas publiquen y sin curaduría. La condición de público/privado se configura por proyecto y por defecto es privada. El contenido publicado se define en `D-23` y `X-21`. | Catálogo, visibilidad, modelo de datos | CONFIRMADO (Q-08, Q-18; `X-21`) |
 | D-13 | Copia de APUs: solo desde APUs públicos o desde proyectos de la misma compañía del usuario. Está prohibido consultar o copiar APUs privados o de otras compañías. | Copia, aislamiento multitenant | CONFIRMADO (Q-10; X-18) |
-| D-14 | La transición a `FINALIZADO` la ejecuta únicamente el Director y exige que todos los APUs estén aprobados por el profesional correspondiente, según el modo configurado en el proyecto. | Flujo de cierre | CONFIRMADO (Q-04; `D-52`) |
+| D-14 | La transición a `FINALIZADO` la ejecuta únicamente el Director y exige que todos los APUs estén aprobados por el profesional correspondiente, según el modo configurado en el proyecto. Si `requires_auditor` está activo, la aprobación del auditor también se exige (`D-112`); si está inactivo, no. | Flujo de cierre | CONFIRMADO (Q-04; `D-52`; `D-112`) |
 | D-15 | El rol Auditor es requisito para auditar y puede ser interno o externo. El Presupuestador administra todas las características del EDT. Director y Presupuestador cambian insumos a `COTIZADO` de forma masiva. El Administrador solo edita datos de registro de la compañía. | Actores, autorización | CONFIRMADO (Q-03, Q-05, Q-06, Q-07; X-16) |
 | D-16 | Relación APU–ítem 1:1. La Matriz se reutiliza dentro del proyecto y puede copiarse a otro. La copia conserva vínculo solo cuando proviene del catálogo abierto. La unicidad de insumos es una sugerencia, no una restricción. | Modelo, copia, deduplicación | CONFIRMADO (Q-09, Q-11, Q-15, Q-16; X-19) |
 | D-17 | Notificaciones por correo limitadas a creación de cuenta y recuperación de contraseña. | Alcance, infraestructura | CONFIRMADO (Q-13) |
@@ -84,7 +84,7 @@ Prefijos de identificadores: `P` problema, `H` hipótesis, `N` necesidad, `ACT` 
 | D-31 | El código del ítem vive en la EDT (`WbsItem`). El APU no almacena código propio, aunque la vista de edición del APU muestra el código del ítem. | Modelo de datos | CONFIRMADO (definición EDT) |
 | D-32 | Base de cálculo por tipo: materiales por unidad de obra (`consumo × cantidad del ítem`); mano de obra por jornada o cuadrilla con unidad de esfuerzo configurable. La fórmula exacta se cierra en el capítulo 3. | Motor de cálculo | CONFIRMADO (base de cálculo; `X-15`) |
 | D-33 | El listado de insumos muestra el conteo de uso para todos los tipos de insumo: suma por ítem de `consumo del insumo × cantidad de obra`. La consulta pertenece a `M-06` y se implementa en `I-3b`, cuando ya existen APUs y cantidades. | EDT, APUs, plan | CONFIRMADO (reparto de incrementos) |
-| D-34 | Precisión de autorización: el Director puede buscar usuarios para agregarlos o retirarlos de la compañía y de los proyectos; el Presupuestador solo lee los datos de la compañía y de sus proyectos asignados; el Administrador no edita parámetros de proyectos, APUs ni insumos (solo usuarios, roles y compañías); el Director no firma APUs, solo los usuarios que elaboraron el presupuesto; Auditores y Administradores solo leen información (el Auditor además aprueba APUs); todos editan su perfil. | Autorización, actores | CONFIRMADO (revisión de capítulos 1 y 2) |
+| D-34 | Precisión de autorización: el Director puede buscar usuarios para agregarlos o retirarlos de la compañía y de los proyectos y configura todos los parámetros del proyecto; el Presupuestador busca usuarios de su compañía, asigna y retira Presupuestadores y Auditores en sus proyectos y edita solo los datos generales del proyecto (`D-112`); el Administrador no edita parámetros de proyectos, APUs ni insumos (solo usuarios, roles y compañías); el Director no firma APUs, solo los usuarios que elaboraron el presupuesto; Auditores y Administradores solo leen información (el Auditor además aprueba APUs cuando `requires_auditor` está activo); todos editan su perfil. | Autorización, actores | CONFIRMADO (revisión de capítulos 1 y 2; ajustado por `D-112`) |
 | D-35 | El catálogo público permite copiar APUs e insumos de forma independiente. | Catálogo, copia | CONFIRMADO (revisión de capítulos 1 y 2) |
 | D-36 | Aislamiento multitenant mediante filtro global por compañía y un único bypass controlado para el catálogo público. | Persistencia, seguridad | CONFIRMADO (Q-27 = A) |
 | D-37 | El cálculo se implementa como servicio de dominio puro; la capa de aplicación orquesta y persiste. | Arquitectura, pruebas | CONFIRMADO (Q-28 = A) |
@@ -135,7 +135,7 @@ Prefijos de identificadores: `P` problema, `H` hipótesis, `N` necesidad, `ACT` 
 | D-82 | La autorización de endpoints privados se decide por **`permission_key` activo** (`Permission` + `RolePermission` con `seed` versionado e idempotente); la matriz `1.3.2` es **referencia funcional**, no control hardcodeado. Política **fail-closed**: rol inactivo o permiso ausente ⇒ `403` + evento de seguridad. Los cuatro roles base son inmutables. | Autorización, modelo, seguridad | CONFIRMADO (Q-64.9 = B; modifica `D-02` y `D-34`) |
 | D-83 | El Administrador **lee** APUs e insumos, sin editarlos; el `BR-006` de `specs/001` que se lo prohibía queda `OBSOLETO`. | Matriz `1.3.2` | CONFIRMADO (Q-64.10 = A) |
 | D-84 | El Auditor puede **buscar y listar usuarios de su propia compañía en solo lectura**; no crea, edita ni asigna. | Matriz `1.3.2`, `RF-01` | CONFIRMADO (Q-64.11 = B) |
-| D-85 | El Presupuestador puede **crear proyectos** —con asignación automática del Director activo más antiguo como responsable cuando el creador no sea Director— y **asignar o deshabilitar en proyecto** solo a Presupuestadores y Auditores ya afiliados a su compañía. | Matriz `1.3.2`, `RF-01`, `RF-03` | CONFIRMADO (Q-64.12 = B; criterio de `specs/002`) |
+| D-85 | El Presupuestador puede **crear proyectos** —con asignación automática del Director activo más antiguo como responsable cuando el creador no sea Director—, **buscar usuarios de su compañía** y **asignar o deshabilitar en proyecto** solo a Presupuestadores y Auditores ya afiliados a su compañía. **No configura los parámetros del proyecto** (`D-112`): solo edita nombre, descripción y objetivo. | Matriz `1.3.2`, `RF-01`, `RF-03` | CONFIRMADO (Q-64.12 = B; criterio de `specs/002`; ajustado por `D-112`) |
 | D-86 | El Administrador **no crea ni edita proyectos**: solo consulta (`R-08`). | Matriz `1.3.2` | CONFIRMADO (Q-64.13 = A) |
 | D-87 | `Company` adopta el modelo ampliado de `specs/002`: tipo (`PUBLICA`/`PRIVADA`), nivel territorial, país/departamento/municipio, representante legal (por referencia de usuario o datos manuales) y trazabilidad de creación/modificación. El **Administrador inhabilita o reactiva cualquier compañía**; el **Director, únicamente la propia**. | `3.3.2`, matriz `1.3.2`, `S-02` | CONFIRMADO (Q-64.14 = B; reescribe `X-08`) |
 | D-88 | El proyecto tiene cinco estados: `POR_COTIZAR` (inicial), `FALTA_INFORMACION`, `COTIZADO`, `FINALIZADO` e `INHABILITADO`. Todo cambio posterior a la creación es un comando explícito. Un proyecto `INHABILITADO` solo es visible para Administrador y Director. | `RF-03`, estados, `3.3` | CONFIRMADO (Q-64.15 = A; formaliza `specs/002`) |
@@ -162,6 +162,8 @@ Prefijos de identificadores: `P` problema, `H` hipótesis, `N` necesidad, `ACT` 
 | D-109 | El frontend queda **fuera del alcance** de `E-1b` y `E-2`: el contrato v1 se congela, el impacto se registra en `4.8.6` (`IF-01`…`IF-06`) y el cliente Angular se regenera al abrir la etapa de interfaz (`D-56`). No se mantienen contratos paralelos. | Frontend, contrato | CONFIRMADO (Q-64.36 = A) |
 | D-110 | El primer Administrador se crea por **semilla** en local y por **bootstrap idempotente y auditado** en demo, con bandera de entorno; ambos caminos se excluyen entre sí y el bootstrap se cierra al existir un Administrador. | Operación, seguridad | CONFIRMADO (Q-64.37 = C) |
 | D-111 | Se mantiene `SecurityAuditEvent` para un **conjunto cerrado** de eventos de seguridad (inicio de sesión fallido, bloqueo, denegación de autorización, bootstrap y cambio de rol), como excepción explícita a `D-08`; no registra valores de negocio. | Auditoría, seguridad | CONFIRMADO (Q-64.38 = A) |
+| D-112 | **Auditoría desacoplada del modo de firma.** Se mantienen los tres modos de firma de `D-03`/`D-90`; el proyecto admite auditores cuando `requires_auditor = true`, con independencia del modo (incluido `SIN_FIRMA`). La aprobación del auditor por APU (`D-52`, `D-91`) se exige solo si `requires_auditor` está activo. El Director es el único que configura los parámetros del proyecto; el Presupuestador busca usuarios de su compañía, asigna y retira Presupuestadores y Auditores, y edita solo los datos generales (nombre, descripción y objetivo); el Administrador y el Auditor quedan en lectura (el Auditor conserva la aprobación por APU). Desactivar `requires_auditor` conserva a los auditores asignados en `project_members`. | Autorización, auditoría, cierre, modelo | CONFIRMADO (autor, 31/10/2026) |
+
 
 ### 0.6 Contradicciones y vacíos vigentes
 Este registro es la lista de trabajo para los siguientes capítulos. Ningún punto marcado como `PENDIENTE` puede convertirse en requisito.
@@ -193,7 +195,7 @@ Este registro es la lista de trabajo para los siguientes capítulos. Ningún pun
 | X-23 | Registro de insumos a nivel de compañía: `D-27` permite reutilizarlos, pero `D-05` los define por proyecto. No se sabía si existe una entidad propia de insumos de compañía o si se reutilizan desde los proyectos existentes. | `D-27` ↔ `D-05` | **Resuelto por Q-24:** no existe registro propio; se copian insumos y APUs desde otros proyectos de la misma compañía | S-05, M-04 |
 | X-24 | Numeración de hijos bajo un código personalizado: si un capítulo se renombra a `CIM`, no estaba definido si sus hijos se numeran `CIM.1` o `1.1`. | `D-30` (interno) | **Resuelto por Q-26 = A:** los hijos heredan el código del padre como prefijo | S-04, M-03 |
 | X-25 | `BR-001` exige que todo usuario tenga compañía; `D-02` define al Administrador sin compañía y `D-72` admite usuarios autorregistrados sin compañía. | `BR-001` ↔ `D-02`, `D-72` | **Resuelto por `D-02`, `D-34` y `D-72`:** `company_id` es nullable para el rol Administrador y para el usuario autorregistrado pendiente de asignación; `02 §3` debe actualizarse | 3.3, `05` |
-| X-26 | El modo 3 exigía que uno o más auditores aprobaran cada APU; con `D-52` solo se conserva la última aprobación. | `D-03` ↔ `D-52` | **Resuelto por D-52:** el modo 3 se limita a una aprobación por APU; no se valida la aprobación de varios auditores | S-10, RF-12 |
+| X-26 | El modo 3 exigía que uno o más auditores aprobaran cada APU; con `D-52` solo se conserva la última aprobación. | `D-03` ↔ `D-52` | **Resuelto por D-52 y `D-112`:** la aprobación del auditor depende de `requires_auditor`, no del modo de firma, y se limita a un registro por APU | S-10, RF-12 |
 | X-27 | Autorregistro: `E-11` lo excluía del alcance y `A-03` suponía que solo el Administrador creaba usuarios, mientras la aclaración del autor lo exige como capacidad del sistema. | `E-11`, `A-03` ↔ `D-72` | **Resuelto por `D-72` y `D-73`:** el autorregistro entra en alcance; `E-11` queda `OBSOLETO` y `A-03` se reescribe como confirmado | S-01, RF-23, capítulo 3 |
 | X-28 | Nombre del rol: "Gerente de proyectos" en `specs/001` frente a "Director de proyectos" en `D-02` y `specs/002`. | `specs/001` ↔ `D-02` | **Resuelto por `D-74`:** el nombre canónico es Director de proyectos; el anterior queda como evidencia histórica | 1.3, semillas, contratos |
 | X-29 | Rol inicial del autorregistrado: `D-72` lo dejaba `DERIVADO` y `specs/001` fijaba Presupuestador. | `D-72` ↔ `specs/001` | **Resuelto por `D-75`:** rol Presupuestador | S-01, RF-23 |
@@ -371,14 +373,14 @@ Las celdas se cerraron con la revisión de capítulos 1 y 2 (`D-34`) y se ajusta
 | Capacidad | ACT-01 Administrador | ACT-02 Director | ACT-03 Presupuestador | ACT-04 Auditor |
 |---|---|---|---|---|
 | Crear usuarios (alta administrativa) | sí (global) | no | no | no |
-| Buscar usuarios | sí | sí (para gestionar su compañía y sus proyectos) | no | sí (solo lectura, su compañía, `D-84`) |
+| Buscar usuarios | sí | sí (para gestionar su compañía y sus proyectos) | sí (solo su compañía, `D-112`) | sí (solo lectura, su compañía, `D-84`) |
 | Cambiar rol de un usuario | sí (global) | sí, solo en su compañía y entre Director / Presupuestador / Auditor | no | no |
 | Crear compañía | sí (ilimitadas) | sí (una sola, solo si no tiene) | no | no |
 | Editar datos de la compañía | sí (registro de cualquier compañía, `D-87`) | sí (solo la propia) | no | no |
 | Inhabilitar / reactivar compañía | sí (cualquiera) | sí (solo la propia, `D-87`) | no | no |
 | Leer compañía | sí | sí (la propia) | sí (solo lectura) | sí (la de sus proyectos) |
 | Crear / editar proyecto | no (lectura, `D-86`) | sí | sí (crea y edita donde está asignado, `D-85`) | no |
-| Configurar proyecto (divisa, AIU, topes, firma, requisito de auditor) | no | sí (todos los parámetros) | sí, salvo modo de firma y requisito de auditor (`D-03`, `D-85`) | no |
+| Configurar proyecto (divisa, AIU, topes, firma, requisito de auditor) | no | sí (todos los parámetros) | no (`D-112`; solo edita nombre, descripción y objetivo) | no |
 | Crear / editar EDT | no | sí | sí (todas las características) | no (lectura) |
 | Crear / editar APU | no (lectura) | sí | sí | no (lectura) |
 | Crear / editar insumos | no (lectura) | sí | sí | no (lectura) |
@@ -386,8 +388,8 @@ Las celdas se cerraron con la revisión de capítulos 1 y 2 (`D-34`) y se ajusta
 | Asignar usuarios a proyectos | no | sí (solo usuarios de su compañía) | sí (solo Presupuestador/Auditor de su compañía, `D-85`) | no |
 | Añadir / eliminar usuarios de una compañía | sí (asignación a compañías, salvo rol Administrador) | sí (su compañía, si el usuario no está en otra) | no | no |
 | Configurar el modo de firma | no | sí | no | no |
-| Firmar APU | no | no | sí en modos 2b y 3 (`D-03`, `D-34`) | no |
-| Aprobar APU (visto bueno) | no | no | no | sí (modo 3, sin editar contenido) |
+| Firmar APU | no | no | sí en los modos con firma (`D-03`, `D-34`) | no |
+| Aprobar APU (visto bueno) | no | no | no | sí (si `requires_auditor`, sin editar contenido; `D-112`) |
 | Cambiar insumos a `COTIZADO` | no | sí (masivo) | sí (masivo) | no |
 | Ejecutar la transición a `FINALIZADO` | no | sí (único habilitado) | no | no |
 | Consultar el catálogo abierto | sí (lectura) | sí | sí | sí (lectura) |
@@ -521,7 +523,7 @@ No quedan vacíos abiertos de actores. Permanecen `X-21` (contenido publicado de
 | Motor de cálculo | Sí | `00 §7`, `D-06`, `D-07` | CONFIRMADO como necesidad |
 | Autoría y aprobaciones por APU | Sí | `D-08`, `D-11` | CONFIRMADO |
 | Cierre con el 100 % de insumos cotizados | Sí | `D-04` | CONFIRMADO |
-| Los tres modos de firma | Sí | `D-03`, `D-14` | CONFIRMADO |
+| Los tres modos de firma | Sí | `D-03`, `D-14`; la auditoría es un eje independiente (`D-112`) | CONFIRMADO |
 | Catálogo abierto | Sí | `D-12` | CONFIRMADO |
 | Alertas de tope presupuestal | Sí | `D-18` | CONFIRMADO |
 | Notificaciones por correo (dos casos) | Sí | `D-17` | CONFIRMADO |
@@ -719,7 +721,7 @@ La frontera del MVP está fijada por `D-18` (alertas sí; importación/exportaci
 | RF-09 | Matrices reutilizables dentro del proyecto y copiables | M-05 | Alta | Sí | `S-07`, `D-16` |
 | RF-10 | Motor de cálculo: consumos, costo directo, AIU y redondeo | M-06 | Alta | Sí | `S-09`, `D-06`, `D-07` |
 | RF-11 | Cotización de insumos y cambio masivo a `COTIZADO` | M-07 | Alta | Sí | `S-10`, `D-04`, `D-15` |
-| RF-12 | Firma y aprobación por APU según los tres modos configurados | M-07 | Alta | Sí | `S-10`, `D-03`, `D-26`, `D-90`, `D-91` |
+| RF-12 | Firma por APU según el modo configurado y aprobación del auditor cuando `requires_auditor` está activo | M-07 | Alta | Sí | `S-10`, `D-03`, `D-26`, `D-90`, `D-91`, `D-112` |
 | RF-13 | Registro único de aprobación por APU (último aprobador, rol, fecha y evidencia de firma) | M-07 | Alta | Sí | `S-11`, `D-52`, `D-91` |
 | RF-14 | Autoría de la última modificación en APU e insumo | M-07 | Media | Sí | `S-11`, `D-08` |
 | RF-15 | Catálogo abierto: consulta y copia de APUs e insumos publicados, de forma independiente | M-08 | Media | Sí | `S-08`, `D-12`, `D-22`, `D-28`, `D-35` |

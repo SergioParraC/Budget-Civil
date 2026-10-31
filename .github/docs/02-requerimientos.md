@@ -44,7 +44,7 @@
 
 | ID | Regla |
 |---|---|
-| BR-001 | Un usuario pertenece a una sola compañía. Excepción: el Administrador y el usuario autorregistrado pendiente de asignación tienen `company_id` nulo (`D-02`, `D-72`, `X-25`) |
+| BR-001 | Un usuario pertenece a una sola compañía vigente, registrada en la tabla `users_company` (`account_enable = 1`), que conserva el historial de vínculos. Excepción: el Administrador y el usuario autorregistrado pendiente de asignación no tienen vínculo vigente (`D-02`, `D-72`, `X-25`) |
 | BR-002 | Un proyecto pertenece a una compañía; sus APUs e insumos pertenecen a ese proyecto |
 | BR-003 | Cambiar precio, consumo o rendimiento recalcula ítem, capítulo y proyecto |
 | BR-004 | Se registra el último usuario que modificó cada APU o insumo y una aprobación por APU |
@@ -74,14 +74,14 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | Autorregistro | Crear cuenta propia | — (anónimo) | — | — | — | — |
 | Usuarios | Crear | `USERS_CREATE` | Sí | No | No | No |
 | Usuarios | Editar o desactivar una cuenta | `USERS_UPDATE`, `USERS_DEACTIVATE` | Sí | No | No | No |
-| Usuarios | Buscar | `USERS_READ` | Sí | Sí (su compañía) | No | Sí (lectura) |
+| Usuarios | Buscar | `USERS_READ` | Sí | Sí (su compañía) | Sí (su compañía, `D-112`) | Sí (lectura) |
 | Usuarios | Cambiar rol | `USERS_ROLE_CHANGE` | Sí | Sí (su compañía, sin elevar a Administrador) | No | No |
 | Usuarios | Asignar a compañía | `USERS_COMPANY_CHANGE` | Sí | Sí (su compañía) | No | No |
 | Compañía | Crear | `COMPANIES_CREATE` | Sí (ilimitadas) | Sí (una) | No | No |
 | Compañía | Editar datos de registro | `COMPANIES_UPDATE` | Sí | Sí (la propia) | No | No |
 | Compañía | Inhabilitar o reactivar | `COMPANIES_DEACTIVATE`, `COMPANIES_REACTIVATE` | Sí (cualquiera) | Solo la propia | No | No |
 | Proyectos | Crear | `PROJECTS_CREATE` | No | Sí | Sí | No |
-| Proyectos | Editar y configurar | `PROJECTS_UPDATE` | No (solo lectura) | Sí | Sí | No |
+| Proyectos | Editar y configurar | `PROJECTS_UPDATE` | No (solo lectura) | Sí (todos los parámetros) | Solo datos generales: nombre, descripción y objetivo (`D-112`) | No |
 | Proyectos | Leer | `PROJECTS_READ` | Sí | Sí | Sí (asignados) | Sí (asignados) |
 | Proyectos | Cambiar estado | `PROJECTS_STATUS_CHANGE` | No | Sí | Sí (solo entre `FALTA_INFORMACION` y `COTIZADO`) | No |
 | Proyectos | Inhabilitar o reactivar | `PROJECTS_STATUS_CHANGE` | No | Sí | No | No |
@@ -109,6 +109,8 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | `POST /projects` | `name` no vacío; ubicación y `baseCurrencyId` válidos; `aiuAdmin`, `aiuUnforeseen` y `aiuProfit` entre 0 y 100; `budgetLimit` mayor que cero; `signingMode` en `SIN_FIRMA`, `UNICA_POR_PRESUPUESTADOR_ASIGNADO` o `INDEPENDIENTE_POR_PROFESIONAL_RESPONSABLE`; `requiresAuditor` e `isPublic` booleanos; se rechaza si la compañía no tiene Director activo (`D-93`, DEC-24) |
 | `GET /projects/{id}/configuration` | Requiere `PROJECTS_READ`; devuelve la configuración única del proyecto |
 | `PATCH /projects/{id}/status` | Transición válida del dominio; actor por transición (`DEC-22`); `409` si el estado no lo permite |
+| `PUT /projects/{id}` | `name` no vacío; `signingMode` válido; AIU 0–100 con máximo dos decimales; `budgetLimit` > 0 con máximo dos decimales. El Director de proyectos es el único que puede cambiar ubicación, divisa, tope, AIU, modo de firma, firmante y `requiresAuditor` (`D-112`); el Presupuestador que intente cambiarlos recibe `403 PROJECT_CONFIGURATION_FORBIDDEN` o `403 PROJECT_SIGNATURE_CONFIGURATION_FORBIDDEN` |
+| `POST /projects/{id}/memberships` | Rol objetivo en `DIRECTOR`, `PRESUPUESTADOR` o `AUDITOR`; el usuario debe pertenecer a la compañía del proyecto; el Administrador y el Auditor no gestionan membresías; se permite asignar auditores con `requiresAuditor = false` (`D-112`) |
 | `POST /projects/{id}/wbs` | `code` único por proyecto; 1–10 caracteres en capítulos y 1–5 en ítems; `parentId` del mismo proyecto; `quantityWork` > 0 en ítems |
 | `POST /projects/{id}/resources` | `description` obligatoria; `unitPrice` ≥ 0; `unit` y `brand` requeridos para salir de `FALTA_INFORMACION`; `resourceTypeId` válido; opcionales sin bloquear |
 | `POST /apus` | `description` no vacía; `unit` no vacía; `yield` > 0; `projectId` con pertenencia validada |

@@ -1,9 +1,11 @@
 <div class="proyecto-list">
   <div class="proyecto-list__header">
     <h2>Proyectos</h2>
-    <a routerLink="/proyectos/nuevo">
-      <p-button label="Nuevo proyecto" icon="pi pi-plus" />
-    </a>
+    @if (canCreate) {
+      <a routerLink="/proyectos/nuevo">
+        <p-button label="Nuevo proyecto" icon="pi pi-plus" />
+      </a>
+    }
   </div>
 
   <p-table
@@ -28,9 +30,9 @@
       <tr>
         <td>{{ project.name }}</td>
         <td><p-tag [value]="project.status" [severity]="statusSeverity(project.status)" /></td>
-        <td>{{ project.is_public ? 'Público' : 'Privado' }}</td>
+        <td>{{ project.isPublic ? 'Público' : 'Privado' }}</td>
         <td>
-          <a [routerLink]="['/proyectos', project.project_id]">
+          <a [routerLink]="['/proyectos', project.projectId]">
             <p-button icon="pi pi-eye" [text]="true" />
           </a>
         </td>

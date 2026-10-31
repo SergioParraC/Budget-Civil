@@ -15,9 +15,6 @@ public sealed class UserAccountConfiguration : IEntityTypeConfiguration<UserAcco
         builder.Property(userAccount => userAccount.Id)
             .HasColumnName("id");
 
-        builder.Property(userAccount => userAccount.CompanyId)
-            .HasColumnName("company_id");
-
         builder.Property(userAccount => userAccount.RoleId)
             .HasColumnName("role_id")
             .IsRequired();
@@ -124,11 +121,6 @@ public sealed class UserAccountConfiguration : IEntityTypeConfiguration<UserAcco
         // D-77: el numero de documento no es unico; solo se indexa para busqueda.
         builder.HasIndex(userAccount => userAccount.DocumentNumber);
 
-        builder.HasOne(userAccount => userAccount.Company)
-            .WithMany(company => company.UserAccounts)
-            .HasForeignKey(userAccount => userAccount.CompanyId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         builder.HasOne(userAccount => userAccount.Role)
             .WithMany(role => role.UserAccounts)
             .HasForeignKey(userAccount => userAccount.RoleId)
@@ -148,5 +140,10 @@ public sealed class UserAccountConfiguration : IEntityTypeConfiguration<UserAcco
             .WithMany()
             .HasForeignKey(userAccount => userAccount.MunicipalityId)
             .OnDelete(DeleteBehavior.Restrict);
+        // `users_company` es la única fuente de verdad de la pertenencia. La membresía se autocarga
+        // para que `UserAccount.CompanyId` (propiedad derivada) esté disponible sin consultas extra.
+        builder.Navigation(userAccount => userAccount.Memberships).AutoInclude();
+
+
     }
 }

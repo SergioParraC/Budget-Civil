@@ -1,4 +1,5 @@
 using BudgetCivil.Api.Auth;
+using BudgetCivil.Api.Middleware;
 using BudgetCivil.Application.Catalogs.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,10 +8,12 @@ namespace BudgetCivil.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/catalogs")]
+[AllowWithoutCompanyContext]
 public sealed class CatalogsController(GetCatalogItemsQueryHandler getCatalogItemsQueryHandler) : ControllerBase
 {
+    // Anónimo: el autorregistro público selecciona la residencia sin sesión.
+    [AllowAnonymous]
     [HttpGet("countries")]
-    [Authorize(Policy = AuthorizationPolicies.CatalogsRead)]
     [ProducesResponseType(typeof(CatalogListingResponse<CountryCatalogItem>), StatusCodes.Status200OK)]
     public async Task<ActionResult<CatalogListingResponse<CountryCatalogItem>>> GetCountries(
         [FromQuery] string? search,
@@ -30,8 +33,8 @@ public sealed class CatalogsController(GetCatalogItemsQueryHandler getCatalogIte
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpGet("departments")]
-    [Authorize(Policy = AuthorizationPolicies.CatalogsRead)]
     [ProducesResponseType(typeof(CatalogListingResponse<DepartmentCatalogItem>), StatusCodes.Status200OK)]
     public async Task<ActionResult<CatalogListingResponse<DepartmentCatalogItem>>> GetDepartments(
         [FromQuery] Guid? countryId,
@@ -53,8 +56,8 @@ public sealed class CatalogsController(GetCatalogItemsQueryHandler getCatalogIte
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpGet("municipalities")]
-    [Authorize(Policy = AuthorizationPolicies.CatalogsRead)]
     [ProducesResponseType(typeof(CatalogListingResponse<MunicipalityCatalogItem>), StatusCodes.Status200OK)]
     public async Task<ActionResult<CatalogListingResponse<MunicipalityCatalogItem>>> GetMunicipalities(
         [FromQuery] Guid? departmentId,
@@ -97,8 +100,8 @@ public sealed class CatalogsController(GetCatalogItemsQueryHandler getCatalogIte
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpGet("document-types")]
-    [Authorize(Policy = AuthorizationPolicies.CatalogsRead)]
     [ProducesResponseType(typeof(CatalogListingResponse<DocumentTypeCatalogItem>), StatusCodes.Status200OK)]
     public async Task<ActionResult<CatalogListingResponse<DocumentTypeCatalogItem>>> GetDocumentTypes(
         [FromQuery] string? search,

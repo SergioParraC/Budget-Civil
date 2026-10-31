@@ -1,0 +1,139 @@
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [style]="{ width: '520px' }"
+  [header]="company() ? 'Configurar compañía' : 'Crear compañía'"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" class="company-form">
+    <label for="businessName">Razón social</label>
+    <input id="businessName" pInputText formControlName="businessName" />
+
+    <label for="taxId">NIT</label>
+    <input id="taxId" pInputText formControlName="taxId" />
+
+    <label for="companyType">Tipo de empresa</label>
+    <p-select id="companyType" formControlName="companyType" [options]="companyTypes" optionLabel="label" optionValue="value" />
+
+    @if (form.value.companyType === 'PUBLICA') {
+      <label for="territorialLevel">Nivel territorial</label>
+      <input id="territorialLevel" pInputText formControlName="territorialLevel" />
+    }
+
+    <label for="country">País</label>
+    <p-select
+      id="country"
+      formControlName="countryId"
+      [options]="countries()"
+      optionLabel="name"
+      optionValue="id"
+      (onChange)="onCountryChange($event.value)"
+    />
+
+    <label for="department">Departamento</label>
+    <p-select
+      id="department"
+      formControlName="departmentId"
+      [options]="departments()"
+      optionLabel="name"
+      optionValue="id"
+      (onChange)="onDepartmentChange($event.value)"
+    />
+
+    <label for="municipality">Municipio</label>
+    <p-select id="municipality" formControlName="municipalityId" [options]="municipalities()" optionLabel="name" optionValue="id" />
+
+    <label for="representativeMode">Representante legal</label>
+    <p-select
+      id="representativeMode"
+      formControlName="representativeMode"
+      [options]="representativeModes"
+      optionLabel="label"
+      optionValue="value"
+      (onChange)="onRepresentativeModeChange($event.value)"
+    />
+
+    @if (form.value.representativeMode === 'USER_REFERENCE') {
+      <div class="representative-picker" [formGroup]="representativeSearchForm">
+        <p class="representative-picker__hint">
+          Busca al usuario que será el representante legal por su tipo y número de documento.
+        </p>
+
+        <label for="representativeDocumentType">Tipo de documento</label>
+        <p-select
+          id="representativeDocumentType"
+          formControlName="documentType"
+          [options]="documentTypes()"
+          optionLabel="name"
+          optionValue="code"
+        />
+
+        <label for="representativeDocumentNumber">Número de documento</label>
+        <input id="representativeDocumentNumber" pInputText formControlName="documentNumber" />
+
+        <label for="representativeUsername">Usuario (opcional)</label>
+        <input id="representativeUsername" pInputText formControlName="username" />
+
+        <label for="representativeEmail">Correo (opcional)</label>
+        <input id="representativeEmail" pInputText formControlName="email" />
+
+        <p-button
+          type="button"
+          label="Buscar usuario"
+          icon="pi pi-search"
+          [loading]="representativeSearching()"
+          (onClick)="searchRepresentative()"
+        />
+
+        @if (representativeSearchForm.invalid && representativeSearchForm.touched) {
+          <small class="field-error">El tipo y el número de documento son obligatorios.</small>
+        }
+      </div>
+
+      @if (selectedRepresentative(); as selected) {
+        <div class="representative-selected">
+          <div>
+            <strong>{{ selected.firstName }} {{ selected.lastName }}</strong>
+            <span>{{ selected.username }} · {{ selected.email }}</span>
+            <span>{{ selected.documentType }} {{ selected.documentNumber }}</span>
+          </div>
+          <p-button type="button" label="Quitar" icon="pi pi-times" [text]="true" (onClick)="clearRepresentative()" />
+        </div>
+      } @else {
+        @if (representativeCandidates().length > 0) {
+          <div class="representative-results">
+            @for (candidate of representativeCandidates(); track candidate.userId) {
+              <button type="button" class="representative-result" (click)="selectRepresentative(candidate)">
+                <strong>{{ candidate.firstName }} {{ candidate.lastName }}</strong>
+                <span>{{ candidate.username }} · {{ candidate.email }}</span>
+                <span>{{ candidate.documentType }} {{ candidate.documentNumber }}</span>
+              </button>
+            }
+          </div>
+        } @else if (representativeSearchAttempted()) {
+          <small class="representative-empty">No se encontraron usuarios con esos datos.</small>
+        }
+
+        @if (form.controls.representativeUserId.touched && form.controls.representativeUserId.invalid) {
+          <small class="field-error">Selecciona el usuario que será el representante legal.</small>
+        }
+      }
+    } @else {
+      <label for="representativeFullName">Nombre completo</label>
+      <input id="representativeFullName" pInputText formControlName="representativeFullName" />
+
+      <label for="representativeDocumentTypeId">Tipo de documento</label>
+      <p-select
+        id="representativeDocumentTypeId"
+        formControlName="representativeDocumentTypeId"
+        [options]="documentTypes()"
+        optionLabel="name"
+        optionValue="id"
+      />
+
+      <label for="representativeDocumentNumber">Número de documento</label>
+      <input id="representativeDocumentNumber" pInputText formControlName="representativeDocumentNumber" />
+    }
+
+    <p-button type="submit" label="Guardar" [loading]="saving()" />
+  </form>
+</p-dialog>
