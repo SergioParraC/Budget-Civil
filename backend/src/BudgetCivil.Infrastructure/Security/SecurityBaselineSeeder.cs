@@ -9,7 +9,7 @@ public sealed class SecurityBaselineSeeder(
     BudgetCivilDbContext dbContext,
     ILogger<SecurityBaselineSeeder> logger) : ISecurityBaselineSeeder
 {
-    private const string SeedVersion = "v3";
+    private const string SeedVersion = "v4";
 
     private static readonly string[] PermissionKeys =
     {
@@ -37,6 +37,8 @@ public sealed class SecurityBaselineSeeder(
         "PROJECTS_READ",
         "PROJECT_MEMBERS_ASSIGN",
         "PROJECT_MEMBERS_DEACTIVATE",
+        "RESOURCES_READ",
+        "RESOURCES_WRITE",
         "PROFILE_READ_SELF",
         "PROFILE_UPDATE_SELF",
         "PROFILE_CHANGE_PASSWORD_SELF",
@@ -72,6 +74,7 @@ public sealed class SecurityBaselineSeeder(
             "COMPANY_MEMBERS_ASSIGN",
             "COMPANY_MEMBERS_DEACTIVATE",
             "PROJECTS_READ",
+            "RESOURCES_READ",
             "USERS_PASSWORD_RECOVERY_ENABLE",
             "AUDIT_BOOTSTRAP_READ",
             "PROFILE_READ_SELF",
@@ -97,6 +100,8 @@ public sealed class SecurityBaselineSeeder(
             "PROJECTS_READ",
             "PROJECT_MEMBERS_ASSIGN",
             "PROJECT_MEMBERS_DEACTIVATE",
+            "RESOURCES_READ",
+            "RESOURCES_WRITE",
             "PROFILE_READ_SELF",
             "PROFILE_UPDATE_SELF",
             "PROFILE_CHANGE_PASSWORD_SELF"
@@ -114,6 +119,8 @@ public sealed class SecurityBaselineSeeder(
             "PROJECTS_READ",
             "PROJECT_MEMBERS_ASSIGN",
             "PROJECT_MEMBERS_DEACTIVATE",
+            "RESOURCES_READ",
+            "RESOURCES_WRITE",
             "PROFILE_READ_SELF",
             "PROFILE_UPDATE_SELF",
             "PROFILE_CHANGE_PASSWORD_SELF"
@@ -126,6 +133,7 @@ public sealed class SecurityBaselineSeeder(
             "COMPANY_PROFILE_READ_SELF",
             "COMPANY_LEAVE_SELF",
             "PROJECTS_READ",
+            "RESOURCES_READ",
             "PROFILE_READ_SELF",
             "PROFILE_UPDATE_SELF",
             "PROFILE_CHANGE_PASSWORD_SELF"

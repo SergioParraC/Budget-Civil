@@ -23,19 +23,32 @@ idempotente y versionado (`D-82`).
    - un solo esquema (`dbo`), sin `param`, `iam`, `audit` ni `log` (`D-95`);
    - tablas en `snake_case` y restricciones con prefijo `PK_`/`FK_`/`IX_`/`UQ_`/`CK_` (`D-107`);
    - sin `user_company_memberships`, `project_user_memberships` ni `user_profiles` (`D-98`, `D-78`);
-   - `project_configurations` con clave `project_id` y `projects` sin `base_currency_id` ni AIU (`D-93`).
+   - `project_configurations` con clave `project_id` y `projects` sin `base_currency_id` ni AIU (`D-93`);
+   - `resources` con `project_id`, `resource_type_id`, `municipality_id`, `row_version`, autoría y baja
+     lógica; `resource_types` con exactamente siete tipos (`D-49`, `D-50`, `D-96`).
 5. **Aplicar** en la ventana de mantenimiento:
    `sqlcmd -S .\SQLEXPRESS -d BudgetCivilDb -i artifacts/migracion.sql`
    o, contra la cadena configurada,
    `dotnet ef database update --project backend/src/BudgetCivil.Infrastructure --startup-project backend/src/BudgetCivil.Api`.
 6. **Verificar** después de aplicar:
    - `SELECT * FROM __EFMigrationsHistory;` contiene la migración aplicada;
-   - existen `users`, `projects`, `project_members`, `project_configurations` y los catálogos;
+   - existen `users`, `projects`, `project_members`, `project_configurations`, `resources`,
+     `resource_types` y los catálogos;
    - `dotnet ef migrations list` no reporta migraciones pendientes.
 7. **Registrar** la versión aplicada (fecha, migración, responsable) en el control de cambios del
    proyecto.
 
 Si el paso 6 falla, se restaura el respaldo del paso 1 y no se continúa con el despliegue.
+
+La API **no aplica migraciones** al arrancar (`D-40`). Antes del `seed` verifica si hay migraciones
+pendientes y, si las hay, se detiene con un mensaje que indica el comando. Desde Visual Studio puedes
+aplicarlas con la Consola del Administrador de paquetes:
+
+```powershell
+Update-Database -ProjectName BudgetCivil.Infrastructure -StartupProjectName BudgetCivil.Api
+```
+
+o desde la terminal con el comando `dotnet ef database update` mostrado en el mensaje.
 
 ## 3. Baseline vigente
 
@@ -43,6 +56,8 @@ Si el paso 6 falla, se restaura el respaldo del paso 1 y no se continúa con el 
 |---|---|---|
 | `202610300438_e1b_reconciliacion_baseline` | Esquema completo del modelo reconciliado de `E-1b`, sin migración de datos (base vacía, `D-98`/`D-95`/`D-107`) | 29/10/2026 |
 | `202610300527_e1b_email_verification` | Tabla `email_verification_tokens` para la verificación de correo del autorregistro (`D-80`, `REQ-IDENTIDAD-07`) | 30/10/2026 |
+| `20261031201251_e3b_users_company` | Historial de pertenencia `users_company` para la asignación a compañías (`D-98`) | 31/10/2026 |
+| `202611040532_resources_add_e3a` | Tablas `resources` y `resource_types`, con índices, FKs, `CHECK` y `rowversion` (`REQ-INSUMOS-01`…`04`, `D-49`, `D-50`, `D-96`, `D-107`) | 04/11/2026 |
 
 La baseline se aplica sobre una base **vacía**. No existen migraciones intermedias: la cadena anterior se
 eliminó porque la base fue vaciada por el autor (`DEC-19`).
@@ -61,4 +76,5 @@ CREATE DATABASE BudgetCivilDb;
 ```
 
 Después de crearla, aplicar la baseline con el procedimiento de la sección 2. El `seed` de seguridad
-(roles, permisos, administrador inicial y catálogos) se ejecuta en el siguiente arranque de la API.
+(roles, permisos y administrador inicial), el `seed` de los siete tipos de insumo y los catálogos se
+ejecutan en el siguiente arranque de la API.

@@ -151,7 +151,7 @@ que `E-4a` añada la transición sin migrar datos.
 1. Resuelve el proyecto destino y exige escritura.
 2. Carga el insumo de origen y exige lectura sobre su proyecto; si es de otra compañía, responde como
    inexistente.
-3. Crea una entidad nueva con `ProjectId` destino, los mismos datos y precio, `OriginResourceId = null`,
+3. Crea una entidad nueva con `ProjectId` destino, los mismos datos y precio, `OriginResourceId = source.Id`,
    `LastModifiedByUserId = actor`, `LastModifiedAtUtc = now` y estado recalculado por completitud.
 4. Guarda en una sola transacción. No copia vínculos, aprobaciones ni componentes de Matriz.
 
@@ -168,7 +168,7 @@ cascada (`R-17`, `D-29`). La copia de componentes de Matriz se añade en `E-3b`.
 
 ### D10. Migración y datos iniciales
 
-- Una migración nueva `YYYYMMDDHHMM_e3a_resources` con `resources`, `resource_types`, FKs, `CHECK` e
+- Una migración nueva `YYYYMMDDHHMM_resources_add_e3a` con `resources`, `resource_types`, FKs, `CHECK` e
   índices (`D-107`). No migra datos: la tabla nace vacía.
 - `ResourceTypeSeeder` idempotente, con GUID fijos y clave `code`:
   `MATERIAL`, `LABOR`, `TOOL`, `EQUIPMENT`, `AUXILIARY`, `WORK`, `MATRIX`, con los nombres en español del
@@ -200,7 +200,7 @@ cascada (`R-17`, `D-29`). La copia de componentes de Matriz se añade en `E-3b`.
 ## Migration Plan
 
 1. Respaldo de la base y revisión de la cadena (`dotnet ef migrations list`).
-2. Generar `YYYYMMDDHHMM_e3a_resources` y revisar el script (`dotnet ef migrations script`).
+2. Generar `YYYYMMDDHHMM_resources_add_e3a` y revisar el script (`dotnet ef migrations script`).
 3. Aplicar en ventana de mantenimiento; ejecutar el `seed` y verificar los siete tipos.
 4. Verificar `CHECK`, FKs, índices y `rowversion`; ejecutar la suite unitaria y la integración manual.
 5. Reversión: `Down` de la migración y restauración del respaldo si hubiera datos.

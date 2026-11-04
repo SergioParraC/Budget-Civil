@@ -1,16 +1,19 @@
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Notifications;
 using BudgetCivil.Application.Common.Security;
+using BudgetCivil.Application.Common.Startup;
 using BudgetCivil.Application.Catalogs.Repositories;
 using BudgetCivil.Application.Companies.Repositories;
 using BudgetCivil.Application.Listings.Repositories;
 using BudgetCivil.Application.Memberships.Repositories;
 using BudgetCivil.Application.Projects.Repositories;
 using BudgetCivil.Application.Repositories;
+using BudgetCivil.Application.Resources.Repositories;
 using BudgetCivil.Application.Users.Administration.Repositories;
 using BudgetCivil.Application.Users.Auth.Repositories;
 using BudgetCivil.Application.Users.Bootstrap.Repositories;
 using BudgetCivil.Application.Users.Search.Repositories;
+using BudgetCivil.Infrastructure.Catalogs;
 using BudgetCivil.Infrastructure.Persistence;
 using BudgetCivil.Infrastructure.Persistence.Repositories;
 using BudgetCivil.Infrastructure.Security;
@@ -47,6 +50,8 @@ public static class DependencyInjection
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IProjectMembershipRepository, ProjectMembershipRepository>();
         services.AddScoped<IProjectTransitionRepository, ProjectTransitionRepository>();
+        services.AddScoped<IResourceRepository, ResourceRepository>();
+        services.AddScoped<IResourceProjectAccessReader, ResourceProjectAccessReader>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IPasswordRecoveryRepository, PasswordRecoveryRepository>();
         services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
@@ -55,6 +60,8 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, IdentityPasswordHasher>();
         services.AddScoped<IEmailSender, LoggingEmailSender>();
         services.AddScoped<ISecurityBaselineSeeder, SecurityBaselineSeeder>();
+        services.AddScoped<IResourceTypeSeeder, ResourceTypeSeeder>();
+        services.AddScoped<IStartupDatabaseValidator, StartupDatabaseValidator>();
 
         return services;
     }

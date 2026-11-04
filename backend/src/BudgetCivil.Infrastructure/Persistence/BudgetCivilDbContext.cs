@@ -2,6 +2,7 @@ using BudgetCivil.Domain.Users.Entities;
 using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Catalogs;
+using BudgetCivil.Domain.Resources;
 using BudgetCivil.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,6 +50,10 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
 
     public DbSet<CompanyMembership> CompanyMemberships => Set<CompanyMembership>();
+
+    public DbSet<Resource> Resources => Set<Resource>();
+
+    public DbSet<ResourceType> ResourceTypes => Set<ResourceType>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

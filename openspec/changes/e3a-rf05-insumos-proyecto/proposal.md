@@ -56,8 +56,8 @@ implementación** hasta que `E-2` esté archivado (`PLAN §4.2`, `§4.5.1`).
 - `COTIZADO` y el cambio masivo de estado: `RF-11`, etapa `E-4a` (`D-04`, `D-15`, `D-89`).
 - Composición de la Matriz, `ApuResource`, copia de APUs y **reconciliación de insumos al incorporar un
   APU**: `E-3b` (`RF-07`, `RF-08`, `RF-09`, `D-25`).
-- Copia desde el catálogo abierto y publicación: `E-5` (`RF-15`, `D-28`, `D-35`). Por eso
-  `origin_resource_id` queda nulo en este cambio.
+- Copia desde el catálogo abierto y publicación: `E-5` (`RF-15`, `D-28`, `D-35`). La copia de compañía
+  registra su procedencia en `origin_resource_id`, sin crear un vínculo de actualización.
 - Conteo de uso (`RF-22`), cálculo (`RF-10`) y cierre (`RF-21`).
 - Baja lógica del insumo: `D-49` la fija, pero ninguna `RF` de `E-3a` la expone; se especifica cuando se
   asigne a una etapa.
@@ -78,7 +78,7 @@ implementación** hasta que `E-2` esté archivado (`PLAN §4.2`, `§4.5.1`).
 | Punto | Decisión | Motivo |
 |---|---|---|
 | Estado `COTIZADO` | No se especifica su transición; solo `FALTA_INFORMACION` y `POR_COTIZAR` | `RF-11` es de `E-4a` y `D-89` la separa de `RF-05` |
-| `origin_resource_id` | Nulo en la copia de compañía; solo registra procedencia del catálogo | `PLAN §3.3.2` limita el campo a `Q-16`; el catálogo es `E-5` |
+| `origin_resource_id` | Apunta al insumo de origen en la copia de compañía; no propaga cambios | El ajuste del estudiante pide registrar la procedencia; `PLAN §3.3.2` debe actualizarse en ese punto |
 | Alcance del Director | Proyectos de su compañía; el Presupuestador, solo los asignados | `REQ-PROYECTOS-14` y matriz `1.3.2` ya fijan ese alcance |
 | Filtros | Tipo y estado obligatorios; marca, municipio y rango de precio añadidos | `RF-20` y `02 §2` los enumeran; `E-3a` es el único cambio de `M-04` |
 | Copia | Un insumo por operación; la copia múltiple no se especifica | `RF-06` no la exige y `E-3b` añade la copia de APU |

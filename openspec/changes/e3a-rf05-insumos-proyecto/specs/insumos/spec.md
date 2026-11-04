@@ -252,8 +252,8 @@ destino con permiso de escritura, conservando tipo, datos, precio y municipio. C
 
 El sistema DEBE (MUST) crear la copia como registro independiente y DEBE (MUST) garantizar que los cambios
 posteriores de precio o datos no se propaguen en ningún sentido. El estado de la copia DEBE (MUST)
-derivarse de su completitud y `origin_resource_id` DEBE (MUST) quedar nulo en la copia de compañía.
-Citas: RF-06; R-17; D-27, D-29.
+derivarse de su completitud y `origin_resource_id` DEBE (MUST) apuntar al insumo de origen en la copia de
+compañía. Citas: RF-06; R-17; D-27, D-29.
 
 #### Scenario: SC-INSUMOS-31 Cambio de precio en el destino
 
@@ -271,7 +271,8 @@ Citas: RF-06; R-17; D-27, D-29.
 
 - **Dado** un insumo copiado desde otro proyecto de la compañía
 - **Cuando** se consulta la copia
-- **Entonces** su `origin_resource_id` es nulo y no existe un vínculo compartido con el insumo de origen
+- **Entonces** su `origin_resource_id` es el identificador del insumo de origen y no existe un vínculo de
+  actualización con él
 
 ### Requirement: REQ-INSUMOS-11 Autoría de la última modificación
 

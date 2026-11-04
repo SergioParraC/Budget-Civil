@@ -1781,8 +1781,8 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | RF-02 | T-I-02, T-S-05, T-I-26 | Integración y seguridad |
 | RF-03 | T-I-03, T-I-30, T-I-32, T-U-12 | Integración y unitaria |
 | RF-04 | T-U-01, T-I-04 | Unitaria e integración |
-| RF-05 | T-U-02, T-I-05 | Unitaria e integración |
-| RF-06 | T-I-06 | Integración |
+| RF-05 | T-U-02, T-I-05, T-U-13, T-I-33 | Unitaria e integración |
+| RF-06 | T-I-06, T-I-34 | Integración |
 | RF-07 | T-I-07, T-E-01 | Integración y E2E |
 | RF-08 | T-U-03, T-I-08 | Unitaria e integración |
 | RF-09 | T-U-04, T-I-09 | Unitaria e integración |
@@ -1792,11 +1792,11 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | RF-13 | T-I-12 | Integración |
 | RF-14 | T-I-13 | Integración |
 | RF-15 | T-I-14, T-S-02, T-S-06 | Integración y seguridad |
-| RF-16 | T-U-08, T-I-15 | Unitaria e integración |
+| RF-16 | T-U-08, T-I-15, T-I-34 | Unitaria e integración |
 | RF-17 | T-U-09, T-I-16 | Unitaria e integración |
 | RF-18 | T-I-17, T-I-22, T-S-12 | Integración con proveedor simulado |
 | RF-19 | — | Fuera del MVP (`D-18`) |
-| RF-20 | T-I-18 | Integración |
+| RF-20 | T-I-18, T-I-35 | Integración |
 | RF-21 | T-U-10, T-I-19, T-U-12, T-I-32 | Unitaria e integración |
 | RF-22 | T-U-11, T-I-20 | Unitaria e integración |
 | RF-23 | T-I-21, T-S-07 | Integración y seguridad |
@@ -1852,6 +1852,18 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | T-A-02 | Reglas de capas y módulos con `NetArchTest` | Arquitectura en CI |
 | T-S-07 | Autorregistro: límite por IP y verificación de correo | Seguridad manual |
 | T-S-08 | La imagen de firma no se expone en DTO públicos ni en logs | Seguridad manual |
+
+### 5.6.6 Verificación de la etapa `E-3a`
+| Verificación | Qué comprueba | Nivel |
+|---|---|---|
+| T-U-13 | Completitud, autoría e independencia de la copia de insumos (`REQ-INSUMOS-04`, `REQ-INSUMOS-10`, `REQ-INSUMOS-11`) | Unitaria |
+| T-U-14 | Alcance por rol en lectura y escritura de insumos (`REQ-INSUMOS-13`, `REQ-INSUMOS-14`) | Unitaria |
+| T-I-33 | Persistencia de `resources`: `CHECK`, FKs, índices, `rowversion` y baja lógica (`REQ-INSUMOS-01`…`04`) | Integración manual |
+| T-I-34 | Copia independiente y sugerencia de similitud (`REQ-INSUMOS-05`, `REQ-INSUMOS-09`, `REQ-INSUMOS-10`) | Integración manual |
+| T-I-35 | Búsqueda, filtros y paginación del listado (`REQ-INSUMOS-06`…`08`) | Integración manual |
+| T-S-13 | Aislamiento entre compañías y solo lectura de Administrador y Auditor (`REQ-INSUMOS-14`, `REQ-INSUMOS-15`) | Seguridad manual |
+| T-S-14 | Fail-closed y matriz de permisos de insumos (`REQ-INSUMOS-13`, `REQ-INSUMOS-14`) | Seguridad manual |
+| T-C-02 | Contrato v1 de insumos: `camelCase`, `ProblemDetails` y paginación (`REQ-INSUMOS-03`, `REQ-INSUMOS-08`) | Contrato en CI |
 
 ## 5.7 Herramientas de prueba
 | Herramienta | Uso | Estado |
