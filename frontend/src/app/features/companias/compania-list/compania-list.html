@@ -59,7 +59,15 @@
     <input id="taxId" pInputText formControlName="taxId" />
 
     <label for="companyType">Tipo</label>
-    <p-select id="companyType" formControlName="companyType" [options]="companyTypes" optionLabel="label" optionValue="value" />
+    <!-- appendTo="body" evita que el panel quede recortado por el overflow del diálogo -->
+    <p-select
+      id="companyType"
+      formControlName="companyType"
+      appendTo="body"
+      [options]="companyTypes"
+      optionLabel="label"
+      optionValue="value"
+    />
 
     @if (form.value.companyType === 'PUBLICA') {
       <label for="territorialLevel">Nivel territorial</label>
@@ -67,18 +75,42 @@
     }
 
     <label for="country">País</label>
-    <p-select id="country" formControlName="countryId" [options]="countries()" optionLabel="name" optionValue="id" (onChange)="onCountryChange($event.value)" />
+    <p-select
+      id="country"
+      formControlName="countryId"
+      appendTo="body"
+      [options]="countries()"
+      optionLabel="name"
+      optionValue="id"
+      (onChange)="onCountryChange($event.value)"
+    />
 
     <label for="department">Departamento</label>
-    <p-select id="department" formControlName="departmentId" [options]="departments()" optionLabel="name" optionValue="id" (onChange)="onDepartmentChange($event.value)" />
+    <p-select
+      id="department"
+      formControlName="departmentId"
+      appendTo="body"
+      [options]="departments()"
+      optionLabel="name"
+      optionValue="id"
+      (onChange)="onDepartmentChange($event.value)"
+    />
 
     <label for="municipality">Municipio</label>
-    <p-select id="municipality" formControlName="municipalityId" [options]="municipalities()" optionLabel="name" optionValue="id" />
+    <p-select
+      id="municipality"
+      formControlName="municipalityId"
+      appendTo="body"
+      [options]="municipalities()"
+      optionLabel="name"
+      optionValue="id"
+    />
 
     <label for="representativeMode">Representante</label>
     <p-select
       id="representativeMode"
       formControlName="representativeMode"
+      appendTo="body"
       [options]="representativeModes"
       optionLabel="label"
       optionValue="value"
@@ -95,6 +127,7 @@
         <p-select
           id="representativeDocumentType"
           formControlName="documentType"
+          appendTo="body"
           [options]="documentTypes()"
           optionLabel="name"
           optionValue="code"

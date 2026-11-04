@@ -57,7 +57,14 @@
 
 <p-dialog [(visible)]="roleDialogVisible" [modal]="true" [style]="{ width: '360px' }" header="Cambiar rol">
   <form [formGroup]="roleForm" (ngSubmit)="submitRole()" class="form-grid">
-    <p-select formControlName="roleCode" [options]="roleOptions" optionLabel="label" optionValue="value" />
+    <!-- appendTo="body" evita que el panel quede recortado por el overflow del diálogo -->
+    <p-select
+      formControlName="roleCode"
+      appendTo="body"
+      [options]="roleOptions"
+      optionLabel="label"
+      optionValue="value"
+    />
     <p-button type="submit" label="Guardar" />
   </form>
 </p-dialog>
@@ -65,7 +72,15 @@
 <p-dialog [(visible)]="companyDialogVisible" [modal]="true" [style]="{ width: '360px' }" header="Cambiar compañía">
   <form [formGroup]="companyForm" (ngSubmit)="submitCompany()" class="form-grid">
     @if (canListCompanies) {
-      <p-select formControlName="companyId" [options]="companies()" optionLabel="businessName" optionValue="companyId" [filter]="true" filterBy="businessName" />
+      <p-select
+        formControlName="companyId"
+        appendTo="body"
+        [options]="companies()"
+        optionLabel="businessName"
+        optionValue="companyId"
+        [filter]="true"
+        filterBy="businessName"
+      />
     } @else {
       <input pInputText formControlName="companyId" placeholder="00000000-0000-0000-0000-000000000000" />
     }
