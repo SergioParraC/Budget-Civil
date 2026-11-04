@@ -25,6 +25,8 @@ public static class AuthorizationPolicies
     public const string ProjectsStatusChange = "ProjectsStatusChange";
     public const string ProjectsVisibilityChange = "ProjectsVisibilityChange";
     public const string ProjectsRead = "ProjectsRead";
+    public const string ResourcesRead = "ResourcesRead";
+    public const string ResourcesWrite = "ResourcesWrite";
     public const string ProjectMembersAssign = "ProjectMembersAssign";
     public const string ProjectMembersDeactivate = "ProjectMembersDeactivate";
     public const string ProfileReadSelf = "ProfileReadSelf";

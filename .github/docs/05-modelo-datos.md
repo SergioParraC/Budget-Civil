@@ -188,19 +188,22 @@ Sin `code` (`D-31`) y sin `is_public` (`D-22`).
 | `id` | UUID | No | PK |
 | `project_id` | UUID | No | FK `Project` |
 | `resource_type_id` | UUID | No | FK `ResourceType` |
-| `city_id` | UUID | Sí | FK `City` |
+| `municipality_id` | UUID | No | FK `Municipality` (`D-96`) |
 | `description` | VARCHAR(255) | No | Obligatoria |
 | `unit` | VARCHAR(20) | Sí | Requerida para cotizar |
 | `unit_price` | DECIMAL(18,2) | Sí | ≥ 0 |
 | `brand` | VARCHAR(100) | Sí | Requerida para cotizar |
-| `distributor` | VARCHAR(150) | Sí | Opcional |
+| `distributor` | VARCHAR(150) | Sí | Obsoleto; la fuente es el proveedor |
 | `user_key` | VARCHAR(50) | Sí | Editable; el sistema sugiere unicidad, no la impone (`Q-09`) |
 | `details` | TEXT | Sí | Opcional |
-| `contact_number` | VARCHAR(50) | Sí | Opcional |
+| `contact_number` | VARCHAR(50) | Sí | Obsoleto; la fuente es el proveedor |
 | `quotation_status` | VARCHAR(30) | No | `POR_COTIZAR`, `FALTA_INFORMACION`, `COTIZADO` |
-| `origin_resource_id` | UUID | Sí | FK `Resource`; procedencia del catálogo |
-| `last_modified_by` | UUID | Sí | FK `User` |
-| `last_modified_at` | TIMESTAMP | Sí | UTC |
+| `origin_resource_id` | UUID | Sí | FK `Resource`; procedencia de la copia, sin vínculo de actualización |
+| `last_modified_by` | UUID | No | FK `User` |
+| `last_modified_at` | TIMESTAMP | No | UTC |
+| `row_version` | ROWVERSION | No | Concurrencia optimista (`D-50`) |
+| `is_active` | BIT | No | Baja lógica (`D-49`) |
+| `deleted_at` | TIMESTAMP | Sí | Baja lógica (`D-49`) |
 
 Sin `is_public`; la visibilidad es del proyecto.
 
@@ -237,8 +240,9 @@ Sin `is_public`; la visibilidad es del proyecto.
 | Entidad | Campos |
 |---|---|
 | `Country` | `id`, `code` único, `name` |
-| `City` | `id`, `country_id`, `name` |
-| `ResourceType` | `id`, `code` único (`MATERIAL`, `LABOR`, `TOOL`, `EQUIPMENT`, `AUXILIARY`, `WORK`, `MATRIX`), `name` |
+| `Department` | `id`, `country_id`, `code` único por país, `name` |
+| `Municipality` | `id`, `department_id`, `code` único por departamento, `name` (`D-96`) |
+| `ResourceType` | `id`, `code` único (`MATERIAL`, `LABOR`, `TOOL`, `EQUIPMENT`, `AUXILIARY`, `WORK`, `MATRIX`), `name`, `is_active` |
 
 ## 4. Reglas de integridad
 | Regla | Implementación |

@@ -3,7 +3,9 @@ using System.Threading.RateLimiting;
 using BudgetCivil.Api.Auth;
 using BudgetCivil.Api.Middleware;
 using BudgetCivil.Application;
+using BudgetCivil.Application.Common.Startup;
 using BudgetCivil.Infrastructure;
+using BudgetCivil.Infrastructure.Catalogs;
 using BudgetCivil.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -14,6 +16,11 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 const string LocalDevelopmentCorsPolicy = "LocalDevelopmentCorsPolicy";
+
+// El proveedor de EventLog de Windows no tiene permisos para crear la fuente ".NET Runtime" en
+// equipos de desarrollo; si EF registra un error, ese fallo de logging oculta la excepción real.
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -245,6 +252,18 @@ builder.Services.AddAuthorization(options =>
             .RequirePermission("PROJECTS_READ"));
 
     options.AddPolicy(
+        AuthorizationPolicies.ResourcesRead,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("RESOURCES_READ"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.ResourcesWrite,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("RESOURCES_WRITE"));
+
+    options.AddPolicy(
         AuthorizationPolicies.ProjectMembersAssign,
         policy => policy
             .RequireAuthenticatedUser()
@@ -357,9 +376,34 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 using (var scope = app.Services.CreateScope())
 {
     // D-40: el esquema se aplica manualmente con el runbook (docs/runbook-migraciones.md).
+    var databaseValidator = scope.ServiceProvider.GetRequiredService<IStartupDatabaseValidator>();
+
+    IReadOnlyList<string> pendingMigrations;
+    try
+    {
+        pendingMigrations = await databaseValidator.GetPendingMigrationsAsync();
+    }
+    catch (Exception exception)
+    {
+        throw new InvalidOperationException(
+            "No se pudo conectar a la base de datos. Revisa la cadena 'BudgetCivilDatabase' y aplica " +
+            "las migraciones con docs/runbook-migraciones.md.",
+            exception);
+    }
+
+    if (pendingMigrations.Count > 0)
+    {
+        throw new InvalidOperationException(
+            $"La base de datos tiene migraciones pendientes: {string.Join(", ", pendingMigrations)}. " +
+            "Aplícalas con 'dotnet ef database update --project backend/src/BudgetCivil.Infrastructure " +
+            "--startup-project backend/src/BudgetCivil.Api' antes de iniciar la API.");
+    }
+
     var securityBaselineSeeder = scope.ServiceProvider.GetRequiredService<ISecurityBaselineSeeder>();
+    var resourceTypeSeeder = scope.ServiceProvider.GetRequiredService<IResourceTypeSeeder>();
 
     await securityBaselineSeeder.SeedAsync();
+    await resourceTypeSeeder.SeedAsync();
 }
 
 app.Run();

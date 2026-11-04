@@ -1,3 +1,4 @@
+using BudgetCivil.Infrastructure.Catalogs;
 using BudgetCivil.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -20,6 +21,9 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
         var seeder = new SecurityBaselineSeeder(context, NullLogger<SecurityBaselineSeeder>.Instance);
         await seeder.SeedAsync();
+
+        var resourceTypeSeeder = new ResourceTypeSeeder(context, NullLogger<ResourceTypeSeeder>.Instance);
+        await resourceTypeSeeder.SeedAsync();
     }
 
     public Task DisposeAsync() => Task.CompletedTask;

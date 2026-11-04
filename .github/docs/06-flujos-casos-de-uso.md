@@ -80,10 +80,10 @@ Los roles base son inmutables y la autorización se decide por `permission_key` 
 - **Precondiciones:** proyecto con catálogo de tipos cargado.
 - **Postcondiciones:** insumo creado o copiado, con estado de cotización calculado.
 - **Flujo:**
-  1. Se crea el insumo con descripción, tipo, unidad, precio, marca y datos opcionales.
+  1. Se crea el insumo con descripción, tipo, municipio, unidad, precio, marca y datos opcionales.
   2. El sistema evalúa los cuatro campos obligatorios y asigna `FALTA_INFORMACION` o `POR_COTIZAR`.
-  3. Se listan los insumos con filtros por tipo, estado, marca, descripción, ciudad y precio.
-  4. Se puede copiar un insumo desde otro proyecto de la compañía; la copia es independiente.
+  3. Se listan los insumos con búsqueda por descripción y filtros por tipo, estado, marca, municipio y precio.
+  4. Se puede copiar un insumo desde otro proyecto de la compañía; la copia es independiente y conserva la procedencia.
   5. Al copiar un APU se sugiere un insumo similar y el usuario decide.
 - **Alternos:** cambio de estado a `COTIZADO`; edición de precio y marca.
 - **Errores:** tipo inexistente; precio negativo; insumo de otro proyecto.

@@ -88,7 +88,8 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | Proyectos | Cambiar visibilidad | `PROJECTS_VISIBILITY_CHANGE` | No | Sí | No | No |
 | Pertenencia | Asignar miembros al proyecto | `PROJECT_MEMBERS_ASSIGN` | No | Sí (su compañía) | Sí (Presupuestadores y Auditores) | No |
 | EDT | Crear y editar | — | No (lectura) | Sí | Sí | No (lectura) |
-| Insumos | Crear y editar | — | No (lectura) | Sí | Sí | No (lectura) |
+| Insumos | Crear, editar y copiar | `RESOURCES_WRITE` | No (lectura) | Sí | Sí | No (lectura) |
+| Insumos | Consultar y filtrar | `RESOURCES_READ` | Sí | Sí | Sí (asignados) | Sí (asignados) |
 | APUs y matrices | Crear, editar y copiar | — | No (lectura) | Sí | Sí | No (lectura) |
 | Cotización | Cambio masivo a `COTIZADO` | — | No | Sí | Sí | No |
 | Aprobación | Firmar APU | — | No | No | Sí | No |
@@ -112,7 +113,8 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | `PUT /projects/{id}` | `name` no vacío; `signingMode` válido; AIU 0–100 con máximo dos decimales; `budgetLimit` > 0 con máximo dos decimales. El Director de proyectos es el único que puede cambiar ubicación, divisa, tope, AIU, modo de firma, firmante y `requiresAuditor` (`D-112`); el Presupuestador que intente cambiarlos recibe `403 PROJECT_CONFIGURATION_FORBIDDEN` o `403 PROJECT_SIGNATURE_CONFIGURATION_FORBIDDEN` |
 | `POST /projects/{id}/memberships` | Rol objetivo en `DIRECTOR`, `PRESUPUESTADOR` o `AUDITOR`; el usuario debe pertenecer a la compañía del proyecto; el Administrador y el Auditor no gestionan membresías; se permite asignar auditores con `requiresAuditor = false` (`D-112`) |
 | `POST /projects/{id}/wbs` | `code` único por proyecto; 1–10 caracteres en capítulos y 1–5 en ítems; `parentId` del mismo proyecto; `quantityWork` > 0 en ítems |
-| `POST /projects/{id}/resources` | `description` obligatoria; `unitPrice` ≥ 0; `unit` y `brand` requeridos para salir de `FALTA_INFORMACION`; `resourceTypeId` válido; opcionales sin bloquear |
+| `POST /projects/{id}/resources` | `description` obligatoria; `unitPrice` ≥ 0; `unit` y `brand` requeridos para salir de `FALTA_INFORMACION`; `resourceTypeId` válido y `municipalityId` existente y obligatorio (`D-96`); `rowVersion` obligatorio en la edición; opcionales sin bloquear |
+| `GET /projects/{id}/resources` | Búsqueda parcial por `description`; filtros por `resourceTypeId`, `quotationStatus`, `brand`, `municipalityId` y rango de precio; orden por `description`, `unitPrice`, `quotationStatus` o `lastModifiedAt`; paginación `page`/`pageSize` (`D-101`) |
 | `POST /apus` | `description` no vacía; `unit` no vacía; `yield` > 0; `projectId` con pertenencia validada |
 | `POST /apus/{id}/resources` | `resourceId` del mismo proyecto; `consumption` > 0; `wastePercentage` entre 0 y 100 |
 | `POST /apus/{id}/approval` | APU del actor; `signatureCapture` como evidencia temporal; frase de confirmación no vacía |
