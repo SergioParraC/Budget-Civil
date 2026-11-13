@@ -40,3 +40,7 @@ appsettings.*.local.json
 Thumbs.db
 *.tmp
 *.swp
+
+# Cadena de conexió BD
+appsettings.json
+appsettings.Development.json
