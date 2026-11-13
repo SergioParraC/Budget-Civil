@@ -111,10 +111,11 @@ etapas siguientes **añadan** capacidades sin reestructurar el árbol.
 
 | Capacidad | Ruta de la especificación | Funcionalidades | Módulo | Etapa | Estado |
 |---|---|---|---|---|---|
-| Identidad | `openspec/specs/identidad/spec.md` | RF-01, RF-02, RF-18, RF-23 | M-01 | E-1b | En este cambio (`reconciliacion-e1b`) |
-| Proyectos | `openspec/specs/proyectos/spec.md` | RF-03 y la parte de RF-01 ya implementada | M-02 | E-1b | En este cambio (`reconciliacion-e1b`) |
+| Identidad | `openspec/specs/identidad/spec.md` | RF-01, RF-02, RF-18, RF-23 | M-01 | E-1b | Vigente (`2026-10-30-reconciliacion-e1b`) |
+| Proyectos | `openspec/specs/proyectos/spec.md` | RF-03 y la parte de RF-01 ya implementada | M-02 | E-1b | Vigente (`2026-10-30-reconciliacion-e1b`) |
 | EDT | `openspec/specs/edt/spec.md` | RF-04 | M-03 | E-2 | Prevista |
-| Insumos | `openspec/specs/insumos/spec.md` | RF-05, RF-06, RF-16, RF-20 | M-04 | E-3a | Prevista |
+| Insumos | `openspec/specs/insumos/spec.md` | RF-05, RF-06, RF-16, RF-20 | M-04 | E-3a | Vigente (`2026-11-13-e3a-rf05-insumos-proyecto`) |
+| Proveedores | `openspec/specs/proveedores/spec.md` | RF-05, RF-06 | M-04 | E-3a | Vigente (`2026-11-13-e3a-rf05-proveedores`) |
 | APUs | `openspec/specs/apus/spec.md` | RF-07, RF-08, RF-09, RF-22 | M-05 | E-3b | Prevista |
 | Cálculo | `openspec/specs/calculo/spec.md` | RF-10 | M-06 | E-4a | Prevista |
 | Aprobaciones | `openspec/specs/aprobaciones/spec.md` | RF-11, RF-12, RF-13, RF-14, RF-21 | M-07 | E-4b | Prevista |

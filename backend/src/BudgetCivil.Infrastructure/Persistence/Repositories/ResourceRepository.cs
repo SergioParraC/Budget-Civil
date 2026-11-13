@@ -8,13 +8,23 @@ namespace BudgetCivil.Infrastructure.Persistence.Repositories;
 public sealed class ResourceRepository(BudgetCivilDbContext dbContext) : IResourceRepository
 {
     private BudgetCivilDbContext DbContext { get; } = dbContext;
+    private IQueryable<Resource> WithSupplier(IQueryable<Resource> query)
+    {
+        return query
+            .Include(resource => resource.Supplier)
+            .ThenInclude(supplier => supplier!.Country)
+            .Include(resource => resource.Supplier)
+            .ThenInclude(supplier => supplier!.Department)
+            .Include(resource => resource.Supplier)
+            .ThenInclude(supplier => supplier!.Municipality);
+    }
+
     public Task<Resource?> GetByIdAsync(
         Guid projectId,
         Guid resourceId,
         CancellationToken cancellationToken = default)
     {
-        return DbContext.Resources
-            .Include(resource => resource.ResourceType)
+        return WithSupplier(DbContext.Resources.Include(resource => resource.ResourceType))
             .SingleOrDefaultAsync(
                 resource => resource.ProjectId == projectId && resource.Id == resourceId,
                 cancellationToken);
@@ -22,8 +32,7 @@ public sealed class ResourceRepository(BudgetCivilDbContext dbContext) : IResour
 
     public Task<Resource?> GetByIdAsync(Guid resourceId, CancellationToken cancellationToken = default)
     {
-        return DbContext.Resources
-            .Include(resource => resource.ResourceType)
+        return WithSupplier(DbContext.Resources.Include(resource => resource.ResourceType))
             .SingleOrDefaultAsync(resource => resource.Id == resourceId, cancellationToken);
     }
 
@@ -128,9 +137,8 @@ public sealed class ResourceRepository(BudgetCivilDbContext dbContext) : IResour
 
     private IQueryable<Resource> BuildFilterQuery(ResourceFilter filter)
     {
-        var query = DbContext.Resources
+        var query = WithSupplier(DbContext.Resources.Include(resource => resource.ResourceType))
             .AsNoTracking()
-            .Include(resource => resource.ResourceType)
             .Where(resource => resource.ProjectId == filter.ProjectId);
 
         if (!string.IsNullOrWhiteSpace(filter.Search))

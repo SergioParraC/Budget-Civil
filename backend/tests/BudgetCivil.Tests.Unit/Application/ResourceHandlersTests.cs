@@ -8,7 +8,9 @@ using BudgetCivil.Application.Resources.Commands.UpdateResource;
 using BudgetCivil.Application.Resources.Queries;
 using BudgetCivil.Application.Resources.Repositories;
 using BudgetCivil.Application.Resources.Services;
+using BudgetCivil.Application.Suppliers.Repositories;
 using BudgetCivil.Domain.Resources;
+using BudgetCivil.Domain.Suppliers;
 using FluentAssertions;
 using Moq;
 
@@ -22,6 +24,7 @@ public sealed class ResourceHandlersTests
     private static readonly Guid ActorId = Guid.NewGuid();
     private static readonly Guid ResourceTypeId = Guid.NewGuid();
     private static readonly Guid MunicipalityId = Guid.NewGuid();
+    private static readonly Guid SupplierId = Guid.NewGuid();
 
     [Fact]
     public async Task Create_crea_el_insumo_con_estado_autor_y_tipo()
@@ -43,6 +46,7 @@ public sealed class ResourceHandlersTests
         var handler = new CreateResourceCommandHandler(
             AccessService(Actor("DIRECTOR", CompanyId), CompanyId, isMember: false),
             repository.Object,
+            ActiveSupplierRepository(),
             new CreateResourceCommandValidator());
 
         var response = await handler.ExecuteAsync(
@@ -55,13 +59,15 @@ public sealed class ResourceHandlersTests
                 Description = "Cemento gris",
                 Unit = "m2",
                 UnitPrice = 10m,
-                Brand = "Marca"
+                Brand = "Marca",
+                SupplierId = SupplierId
             });
 
         response.QuotationStatus.Should().Be(QuotationStatusCodes.PorCotizar);
         response.LastModifiedBy.Should().Be(ActorId);
         response.ResourceTypeId.Should().Be(ResourceTypeId);
         response.OriginResourceId.Should().BeNull();
+        response.SupplierId.Should().Be(SupplierId);
         created.Should().NotBeNull();
     }
 
@@ -76,6 +82,7 @@ public sealed class ResourceHandlersTests
         var handler = new CreateResourceCommandHandler(
             AccessService(Actor("DIRECTOR", CompanyId), CompanyId, isMember: false),
             repository.Object,
+            ActiveSupplierRepository(),
             new CreateResourceCommandValidator());
 
         var action = () => handler.ExecuteAsync(
@@ -110,6 +117,7 @@ public sealed class ResourceHandlersTests
         var handler = new UpdateResourceCommandHandler(
             AccessService(Actor("DIRECTOR", CompanyId), CompanyId, isMember: false),
             repository.Object,
+            ActiveSupplierRepository(),
             new UpdateResourceCommandValidator());
 
         var response = await handler.ExecuteAsync(
@@ -124,6 +132,7 @@ public sealed class ResourceHandlersTests
                 Unit = "m2",
                 UnitPrice = 12m,
                 Brand = "Marca",
+                SupplierId = SupplierId,
                 RowVersion = Convert.ToBase64String(resource.RowVersion)
             });
 
@@ -145,6 +154,7 @@ public sealed class ResourceHandlersTests
         var handler = new UpdateResourceCommandHandler(
             AccessService(Actor("DIRECTOR", CompanyId), CompanyId, isMember: false),
             repository.Object,
+            ActiveSupplierRepository(),
             new UpdateResourceCommandValidator());
 
         var action = () => handler.ExecuteAsync(
@@ -200,6 +210,7 @@ public sealed class ResourceHandlersTests
         var handler = new CopyResourceCommandHandler(
             new ResourceAccessService(actorReader.Object, projectReader.Object),
             repository.Object,
+            ActiveSupplierRepository(),
             new CopyResourceCommandValidator());
 
         var response = await handler.ExecuteAsync(
@@ -280,6 +291,180 @@ public sealed class ResourceHandlersTests
         response.Items[0].Description.Should().Be("Cemento gris");
     }
 
+    [Fact]
+    public async Task Copy_rechaza_un_proveedor_de_otra_compania()
+    {
+        // SC-PROVEEDORES-48: la copia no se crea si el proveedor no es de la compañía de destino.
+        var source = CreateResource();
+        var repository = new Mock<IResourceRepository>();
+        repository
+            .Setup(repo => repo.GetByIdAsync(source.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(source);
+        repository
+            .Setup(repo => repo.GetByIdAsync(TargetProjectId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => AttachType(source));
+
+        var actorReader = new Mock<IActorAccessReader>();
+        actorReader
+            .Setup(reader => reader.GetSnapshotAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Actor("DIRECTOR", CompanyId));
+
+        var projectReader = new Mock<IResourceProjectAccessReader>();
+        projectReader
+            .Setup(reader => reader.GetAccessAsync(TargetProjectId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ResourceProjectAccess(TargetProjectId, CompanyId, false));
+        projectReader
+            .Setup(reader => reader.GetAccessAsync(ProjectId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ResourceProjectAccess(ProjectId, CompanyId, false));
+
+        var supplierRepository = new Mock<ISupplierRepository>();
+        supplierRepository
+            .Setup(repo => repo.BelongsToCompanyAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var handler = new CopyResourceCommandHandler(
+            new ResourceAccessService(actorReader.Object, projectReader.Object),
+            repository.Object,
+            supplierRepository.Object,
+            new CopyResourceCommandValidator());
+
+        var action = () => handler.ExecuteAsync(
+            ActorId,
+            TargetProjectId,
+            new CopyResourceCommand { SourceResourceId = source.Id });
+
+        var exception = await action.Should().ThrowAsync<ValidationAppException>();
+        exception.Which.Code.Should().Be("SUPPLIER_COMPANY_MISMATCH");
+        repository.Verify(
+            repo => repo.AddAsync(It.IsAny<Resource>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_rechaza_un_proveedor_inactivo()
+    {
+        // SC-PROVEEDORES-42: no se permite una nueva asociación con un proveedor inactivo.
+        var repository = new Mock<IResourceRepository>();
+        SetupReferences(repository);
+
+        var supplierRepository = new Mock<ISupplierRepository>();
+        supplierRepository
+            .Setup(repo => repo.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Supplier
+            {
+                Id = SupplierId,
+                CompanyId = CompanyId,
+                BusinessName = "Cementos del Norte",
+                IsActive = false
+            });
+
+        var handler = new CreateResourceCommandHandler(
+            AccessService(Actor("DIRECTOR", CompanyId), CompanyId, isMember: false),
+            repository.Object,
+            supplierRepository.Object,
+            new CreateResourceCommandValidator());
+
+        var action = () => handler.ExecuteAsync(
+            ActorId,
+            ProjectId,
+            new CreateResourceCommand
+            {
+                ResourceTypeId = ResourceTypeId,
+                MunicipalityId = MunicipalityId,
+                Description = "Cemento gris",
+                SupplierId = SupplierId
+            });
+
+        var exception = await action.Should().ThrowAsync<ValidationAppException>();
+        exception.Which.Code.Should().Be("SUPPLIER_INACTIVE");
+    }
+
+    [Fact]
+    public async Task Create_rechaza_un_proveedor_de_otra_compania()
+    {
+        var repository = new Mock<IResourceRepository>();
+        SetupReferences(repository);
+
+        var supplierRepository = new Mock<ISupplierRepository>();
+        supplierRepository
+            .Setup(repo => repo.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Supplier
+            {
+                Id = SupplierId,
+                CompanyId = Guid.NewGuid(),
+                BusinessName = "Cementos del Norte",
+                IsActive = true
+            });
+
+        var handler = new CreateResourceCommandHandler(
+            AccessService(Actor("DIRECTOR", CompanyId), CompanyId, isMember: false),
+            repository.Object,
+            supplierRepository.Object,
+            new CreateResourceCommandValidator());
+
+        var action = () => handler.ExecuteAsync(
+            ActorId,
+            ProjectId,
+            new CreateResourceCommand
+            {
+                ResourceTypeId = ResourceTypeId,
+                MunicipalityId = MunicipalityId,
+                Description = "Cemento gris",
+                SupplierId = SupplierId
+            });
+
+        var exception = await action.Should().ThrowAsync<ValidationAppException>();
+        exception.Which.Code.Should().Be("SUPPLIER_COMPANY_MISMATCH");
+    }
+
+    [Fact]
+    public async Task Update_conserva_el_proveedor_inactivo_ya_asociado()
+    {
+        // D5: una edición de otros campos no falla porque el proveedor ya asociado esté inactivo.
+        var resource = CreateResource();
+        resource.RowVersion = [1, 2, 3];
+        var repository = new Mock<IResourceRepository>();
+        SetupReferences(repository);
+        repository
+            .Setup(repo => repo.GetByIdAsync(ProjectId, resource.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(resource);
+        repository
+            .Setup(repo => repo.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var supplierRepository = new Mock<ISupplierRepository>();
+
+        var handler = new UpdateResourceCommandHandler(
+            AccessService(Actor("DIRECTOR", CompanyId), CompanyId, isMember: false),
+            repository.Object,
+            supplierRepository.Object,
+            new UpdateResourceCommandValidator());
+
+        var response = await handler.ExecuteAsync(
+            ActorId,
+            ProjectId,
+            resource.Id,
+            new UpdateResourceCommand
+            {
+                ResourceTypeId = ResourceTypeId,
+                MunicipalityId = MunicipalityId,
+                Description = "Cemento gris",
+                Unit = "m2",
+                UnitPrice = 10m,
+                Brand = "Marca",
+                SupplierId = SupplierId,
+                RowVersion = Convert.ToBase64String(resource.RowVersion)
+            });
+
+        response.SupplierId.Should().Be(SupplierId);
+        supplierRepository.Verify(
+            repo => repo.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     private static void SetupReferences(Mock<IResourceRepository> repository)
     {
         repository
@@ -336,10 +521,34 @@ public sealed class ResourceHandlersTests
             null,
             null,
             null,
+            SupplierId,
             Guid.NewGuid(),
             DateTime.UtcNow);
 
         return AttachType(resource);
+    }
+
+    /// <summary>Proveedor activo de la misma compañía del proyecto (`REQ-PROVEEDORES-04`).</summary>
+    private static ISupplierRepository ActiveSupplierRepository()
+    {
+        var supplierRepository = new Mock<ISupplierRepository>();
+        supplierRepository
+            .Setup(repo => repo.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Supplier
+            {
+                Id = SupplierId,
+                CompanyId = CompanyId,
+                BusinessName = "Cementos del Norte",
+                IsActive = true
+            });
+        supplierRepository
+            .Setup(repo => repo.BelongsToCompanyAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        return supplierRepository.Object;
     }
 
     private static Resource AttachType(Resource? resource)

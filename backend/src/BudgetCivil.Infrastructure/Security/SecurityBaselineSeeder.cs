@@ -9,7 +9,7 @@ public sealed class SecurityBaselineSeeder(
     BudgetCivilDbContext dbContext,
     ILogger<SecurityBaselineSeeder> logger) : ISecurityBaselineSeeder
 {
-    private const string SeedVersion = "v4";
+    private const string SeedVersion = "v6";
 
     private static readonly string[] PermissionKeys =
     {
@@ -39,6 +39,8 @@ public sealed class SecurityBaselineSeeder(
         "PROJECT_MEMBERS_DEACTIVATE",
         "RESOURCES_READ",
         "RESOURCES_WRITE",
+        "SUPPLIERS_READ",
+        "SUPPLIERS_WRITE",
         "PROFILE_READ_SELF",
         "PROFILE_UPDATE_SELF",
         "PROFILE_CHANGE_PASSWORD_SELF",
@@ -75,6 +77,7 @@ public sealed class SecurityBaselineSeeder(
             "COMPANY_MEMBERS_DEACTIVATE",
             "PROJECTS_READ",
             "RESOURCES_READ",
+            "SUPPLIERS_READ",
             "USERS_PASSWORD_RECOVERY_ENABLE",
             "AUDIT_BOOTSTRAP_READ",
             "PROFILE_READ_SELF",
@@ -102,6 +105,8 @@ public sealed class SecurityBaselineSeeder(
             "PROJECT_MEMBERS_DEACTIVATE",
             "RESOURCES_READ",
             "RESOURCES_WRITE",
+            "SUPPLIERS_READ",
+            "SUPPLIERS_WRITE",
             "PROFILE_READ_SELF",
             "PROFILE_UPDATE_SELF",
             "PROFILE_CHANGE_PASSWORD_SELF"
@@ -121,6 +126,8 @@ public sealed class SecurityBaselineSeeder(
             "PROJECT_MEMBERS_DEACTIVATE",
             "RESOURCES_READ",
             "RESOURCES_WRITE",
+            "SUPPLIERS_READ",
+            "SUPPLIERS_WRITE",
             "PROFILE_READ_SELF",
             "PROFILE_UPDATE_SELF",
             "PROFILE_CHANGE_PASSWORD_SELF"
@@ -134,6 +141,7 @@ public sealed class SecurityBaselineSeeder(
             "COMPANY_LEAVE_SELF",
             "PROJECTS_READ",
             "RESOURCES_READ",
+            "SUPPLIERS_READ",
             "PROFILE_READ_SELF",
             "PROFILE_UPDATE_SELF",
             "PROFILE_CHANGE_PASSWORD_SELF"
@@ -246,7 +254,47 @@ public sealed class SecurityBaselineSeeder(
             }
         }
 
+        var matrixAssignments = RolePermissions
+            .SelectMany(definition => definition.Value.Select(permissionKey =>
+                (RoleId: rolesByCode[definition.Key].Id, PermissionId: permissionsByKey[permissionKey].Id)))
+            .ToHashSet();
+
+        // Reconciliación por diferencia: la matriz es la fuente de verdad (`D-82`), así que lo que la base
+        // conserve de versiones anteriores se revoca aquí en lugar de quedar concedido de forma indefinida.
+        var activeAssignments = await dbContext.RolePermissions
+            .Where(rolePermission => rolePermission.IsActive)
+            .ToListAsync(cancellationToken);
+
+        var revokedAssignments = 0;
+        foreach (var staleAssignment in activeAssignments.Where(rolePermission =>
+                     !matrixAssignments.Contains((rolePermission.RoleId, rolePermission.PermissionId))))
+        {
+            staleAssignment.IsActive = false;
+            staleAssignment.RevokedAtUtc = utcNow;
+            staleAssignment.SeedVersion = SeedVersion;
+            revokedAssignments++;
+        }
+
+        var activePermissions = await dbContext.Permissions
+            .Where(permission => permission.IsActive)
+            .ToListAsync(cancellationToken);
+
+        var revokedPermissions = 0;
+        foreach (var stalePermission in activePermissions.Where(permission =>
+                     !PermissionKeys.Contains(permission.PermissionKey)))
+        {
+            stalePermission.IsActive = false;
+            stalePermission.SeedVersion = SeedVersion;
+            stalePermission.UpdatedAtUtc = utcNow;
+            revokedPermissions++;
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Security baseline seed completed with version {SeedVersion}", SeedVersion);
+
+        logger.LogInformation(
+            "Security baseline seed completed with version {SeedVersion}; revoked {RevokedAssignments} assignments and {RevokedPermissions} permissions outside the matrix",
+            SeedVersion,
+            revokedAssignments,
+            revokedPermissions);
     }
 }

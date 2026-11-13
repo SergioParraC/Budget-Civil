@@ -9,6 +9,7 @@ using BudgetCivil.Application.Memberships.Repositories;
 using BudgetCivil.Application.Projects.Repositories;
 using BudgetCivil.Application.Repositories;
 using BudgetCivil.Application.Resources.Repositories;
+using BudgetCivil.Application.Suppliers.Repositories;
 using BudgetCivil.Application.Users.Administration.Repositories;
 using BudgetCivil.Application.Users.Auth.Repositories;
 using BudgetCivil.Application.Users.Bootstrap.Repositories;
@@ -52,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectTransitionRepository, ProjectTransitionRepository>();
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IResourceProjectAccessReader, ResourceProjectAccessReader>();
+        services.AddScoped<ISupplierRepository, SupplierRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IPasswordRecoveryRepository, PasswordRecoveryRepository>();
         services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();

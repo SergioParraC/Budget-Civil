@@ -58,10 +58,10 @@ y se proponen para `PLAN §5.6.5`:
 
 ## 5. Verificación de la etapa
 
-- [ ] 5.1 Ejecutar las pruebas unitarias, de arquitectura y de contrato en CI. Verificación: `dotnet test` en verde, `T-A-02` sin violaciones y cobertura ≥ 80 % en el dominio de `Resources`.
+- [x] 5.1 Ejecutar las pruebas unitarias, de arquitectura y de contrato en CI. Verificación: `dotnet test` en verde, `T-A-02` sin violaciones y cobertura ≥ 80 % en el dominio de `Resources`. Hecho 13/11/2026: 272/272 unitarias y de arquitectura en verde (`T-U-13`, `T-U-14`, `T-C-02`, `T-A-02`), 29/29 de integración contra SQL Server 2022 en Docker y cobertura de líneas 81,8 % en `Domain/Resources`.
 - [ ] 5.2 Ejecutar la verificación manual contra SQL Server local: `T-I-05`, `T-I-06`, `T-I-15`, `T-I-18`, más `T-I-33`, `T-I-34`, `T-I-35`, `T-S-13` y `T-S-14`, con dos compañías y dos proyectos. Verificación: checklist con resultado y evidencia por identificador, incluida la independencia de la copia y el aislamiento.
 - [x] 5.3 Completar la matriz de trazabilidad `requisito → escenario → RF/BR/R → decisión → prueba` para los quince `REQ-INSUMOS-*` y anexarla a este archivo (`PLAN §6.1.4`, `§9`). Verificación: ningún requisito queda sin escenario ni sin prueba.
-- [ ] 5.4 Ejecutar `openspec validate e3a-rf05-insumos-proyecto --strict` y archivar solo con la revisión del estudiante y `E-2` cerrado. Verificación: validación sin errores, checklist de cierre firmado y `openspec archive` con la capacidad `insumos` sincronizada.
+- [x] 5.4 Ejecutar `openspec validate e3a-rf05-insumos-proyecto --strict` y archivar solo con la revisión del estudiante y `E-2` cerrado. Verificación: validación sin errores, checklist de cierre firmado y `openspec archive` con la capacidad `insumos` sincronizada. Hecho 13/11/2026: `openspec validate --strict` sin errores y `openspec archive` ejecutado por decisión del estudiante; `5.2` y el gate `E-2` quedan abiertos y registrados como pendientes posteriores al archivo.
 
 ## Trazabilidad
 
@@ -88,16 +88,22 @@ y se proponen para `PLAN §5.6.5`:
 - **1.1:** `E-2` no está cerrado y no hay entidades de EDT; se verificó que `Resource` solo depende de
   `Project` y `ProjectMember`, que ya existen. Se continuó por instrucción del estudiante y se deja
   constancia de que el gate `E-2` sigue pendiente.
-- **Pruebas unitarias:** 197 casos en verde con el runner en proceso (`VSTest` no puede abrir el proceso
-  padre en este entorno).
+- **Pruebas unitarias:** 264 casos en verde con el runner en proceso (`VSTest` no puede abrir el proceso
+  padre en este entorno); con las 8 reglas de arquitectura el total es 272/272.
 - **Arquitectura:** 8 reglas de `T-A-02` en verde con el runner en proceso y los ensamblados compartidos
   de ASP.NET Core; no se modificó el proyecto de pruebas.
-- **Integración:** `ResourcePersistenceTests` está escrito, pero no se ejecutó por falta de
-  `BUDGETCIVIL_TEST_CONNECTION` (SQL Server local). Queda para 5.2.
-- **Cobertura:** el runner de cobertura falla por incompatibilidad con `coverlet.core`; no se midió el
-  80 %. Queda para 5.1.
-- **Contrato/Swagger:** los endpoints y DTOs están implementados; la revisión manual de `T-C-02` queda en
-  5.2.
+- **Integración:** `ResourcePersistenceTests` en verde contra SQL Server 2022 en Docker (`localhost,14330`, base
+  `BudgetCivilDb_Integration`): `rowversion`, baja lógica y copia independiente del insumo de origen. La suite
+  completa quedó en 29/29 en dos ejecuciones consecutivas; antes de la conciliación de `REQ-IDENTIDAD-10` con
+  `D-85`/`D-112` fallaba `SeedIdempotencyTests` (`T-I-23`).
+- **Cobertura:** medida con `coverlet.console` sobre el runner en proceso: `Domain/Resources` 81,8 % de líneas
+  (162/198); `Domain/Suppliers` 94,9 % (112/118).
+- **Seed de seguridad:** `SecurityBaselineSeeder` sube a `v6` con la reconciliación por diferencia de
+  `REQ-IDENTIDAD-30`; el inventario activo sigue siendo 33 permisos y 76 asignaciones, y las dos pruebas nuevas de
+  `SeedIdempotencyTests` confirman que una base sembrada antes de la reconciliación no conserva permisos retirados.
+- **Contrato/Swagger:** la API levantada contra SQL Server en Docker expone las cuatro rutas de
+  `/api/v1/projects/{projectId}/resources` (incluida `copy` y `suggestions`) y responde `401` sin token; la
+  revisión manual de `T-C-02` queda en 5.2.
 - **Arranque:** el `ResourceTypes` faltante era una compilación obsoleta (el proceso `BudgetCivil.Api`
   bloqueaba los DLL). Se añadió una verificación de migraciones pendientes y se retiró el proveedor
   EventLog, que ocultaba el error de base de datos; la base local debe recibir

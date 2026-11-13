@@ -23,6 +23,7 @@
 | `WbsItem` | Ítem de obra vinculado 1:1 a un APU |
 | `Apu` | Análisis de precio unitario |
 | `Resource` | Insumo del proyecto, incluida la Matriz |
+| `Supplier` | Proveedor de la compañía, reutilizable en los insumos de todos sus proyectos (`REQ-PROVEEDORES-01`) |
 | `ApuResource` | Composición del APU |
 | `MatrixComponent` | Composición de una Matriz |
 | `ApuApproval` | Registro único de aprobación por APU |
@@ -57,6 +58,9 @@
 | `Department` → `Municipality` | 1 : N | Catálogo de ubicación |
 | `Municipality` → `Project` / `User` | 1 : N | Ubicación seleccionada |
 | `ResourceType` → `Resource` | 1 : N | Tipo de insumo |
+| `Company` → `Supplier` | 1 : N | Directorio de proveedores de la compañía, reutilizable entre proyectos (`REQ-PROVEEDORES-01`) |
+| `Supplier` → `Resource` | 1 : N | Un proveedor suministra muchos insumos; un insumo referencia 0..1 proveedor (`REQ-PROVEEDORES-04`) |
+| `Municipality` → `Supplier` | 1 : N | Ubicación opcional del proveedor (`D-96`) |
 
 ## 3. Diccionario de datos
 
@@ -197,6 +201,7 @@ Sin `code` (`D-31`) y sin `is_public` (`D-22`).
 | `user_key` | VARCHAR(50) | Sí | Editable; el sistema sugiere unicidad, no la impone (`Q-09`) |
 | `details` | TEXT | Sí | Opcional |
 | `contact_number` | VARCHAR(50) | Sí | Obsoleto; la fuente es el proveedor |
+| `supplier_id` | UUID | Sí | FK `Supplier` `RESTRICT`; opcional y no único (`REQ-PROVEEDORES-04`); sin él el insumo queda en `FALTA_INFORMACION` (`REQ-PROVEEDORES-05`) |
 | `quotation_status` | VARCHAR(30) | No | `POR_COTIZAR`, `FALTA_INFORMACION`, `COTIZADO` |
 | `origin_resource_id` | UUID | Sí | FK `Resource`; procedencia de la copia, sin vínculo de actualización |
 | `last_modified_by` | UUID | No | FK `User` |
@@ -206,6 +211,30 @@ Sin `code` (`D-31`) y sin `is_public` (`D-22`).
 | `deleted_at` | TIMESTAMP | Sí | Baja lógica (`D-49`) |
 
 Sin `is_public`; la visibilidad es del proyecto.
+
+### `Supplier`
+| Campo | Tipo | Nulo | Regla |
+|---|---|---|---|
+| `id` | UUID | No | PK |
+| `company_id` | UUID | No | FK `Company` `RESTRICT`; el directorio es de la compañía y no lleva `project_id` (`REQ-PROVEEDORES-01`) |
+| `business_name` | VARCHAR(200) | No | Único dato obligatorio; **sin** restricción única (`REQ-PROVEEDORES-06`) |
+| `contact_name` | VARCHAR(150) | Sí | Opcional |
+| `contact_phone` | VARCHAR(30) | Sí | Opcional |
+| `email` | VARCHAR(254) | Sí | Opcional; se valida el formato cuando se informa (`REQ-PROVEEDORES-02`); sin índice único |
+| `address` | VARCHAR(300) | Sí | Opcional |
+| `observations` | VARCHAR(1000) | Sí | Opcional; se devuelve solo en el detalle completo |
+| `country_id` | UUID | Sí | FK `Country` `RESTRICT`; ubicación opcional (`REQ-PROVEEDORES-03`) |
+| `department_id` | UUID | Sí | FK `Department` `RESTRICT`; coherente con el país |
+| `municipality_id` | UUID | Sí | FK `Municipality` `RESTRICT`; coherente con el departamento |
+| `is_active` | BIT | No | Baja lógica; un proveedor inactivo conserva sus insumos (`REQ-PROVEEDORES-11`) |
+| `row_version` | ROWVERSION | No | Concurrencia optimista (`REQ-PROVEEDORES-12`) |
+| `created_by` | UUID | No | FK `User`; autoría del alta |
+| `created_at` | TIMESTAMP | No | UTC |
+| `last_modified_by` | UUID | No | FK `User`; el cliente no puede fijarlo (`SC-PROVEEDORES-46`) |
+| `last_modified_at` | TIMESTAMP | No | UTC |
+
+Sin `project_id` ni unicidad sobre `business_name`/`email`: dos proveedores pueden llamarse igual y el
+mismo registro se reutiliza en todos los proyectos de la compañía.
 
 ### `ApuResource`
 | Campo | Tipo | Nulo | Regla |
@@ -307,6 +336,10 @@ La Matriz se expande un solo nivel; no se permite Matriz dentro de Matriz (`BR-0
 | `Resource(project_id, resource_type_id)` | Filtros |
 | `Resource(project_id, quotation_status)` | Cotización |
 | `Resource(project_id, description)` | Búsqueda |
+| `Resource(supplier_id)` | Asociación con el proveedor (`REQ-PROVEEDORES-04`) |
+| `Supplier(company_id, business_name)` | Listado y filtro por razón social |
+| `Supplier(company_id, country_id)`, `(company_id, department_id)`, `(company_id, municipality_id)` | Filtro por ubicación (`REQ-PROVEEDORES-08`) |
+| `Supplier(company_id, is_active)` | Selector de proveedores activos (`REQ-PROVEEDORES-09`) |
 | `ApuResource(apu_id)` y `ApuResource(resource_id)` | Cálculo y conteo |
 | `MatrixComponent(matrix_resource_id)` y `(component_resource_id)` | Expansión |
 | `ApuApproval(apu_id)` único | Cierre |
@@ -321,8 +354,8 @@ La Matriz se expande un solo nivel; no se permite Matriz dentro de Matriz (`BR-0
 ## 8. Migraciones y datos iniciales
 - Migraciones manuales con runbook (`docs/runbook-migraciones.md`): respaldo, revisión del script, aplicación y verificación; el arranque de la API **no** aplica migraciones (`D-40`).
 - Baseline única `202610300438_e1b_reconciliacion_baseline` sobre base vacía, con la convención `YYYYMMDDHHMM_<scope>_<change>` (`D-107`, `DEC-19`).
-- Seed versionado e idempotente de cuatro roles base, permisos y `RolePermission` (`D-82`).
-- Seed de siete tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos y Matriz.
+- Seed versionado e idempotente de cuatro roles base, permisos y `RolePermission` (`D-82`). La versión `v5` añade `SUPPLIERS_READ` (Administrador, Director, Presupuestador y Auditor) y `SUPPLIERS_WRITE` (Director y Presupuestador) (`REQ-PROVEEDORES-07`). La versión `v6` reconcilia por diferencia: las asignaciones rol-permiso y los permisos que ya no figuran en la matriz quedan inactivos con `revoked_at_utc` y `seed_version` vigente (`REQ-IDENTIDAD-30`).
+- Migración `20261113040910_e3a_suppliers`: tabla `suppliers`, columna `resources.supplier_id`, sus FKs `RESTRICT` e índices, sin migración de datos (`D-40`, `D-107`).- Seed de siete tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos y Matriz.
 - Catálogo base de países, departamentos, municipios, tipos de documento y monedas (`D-96`).
 - Administrador inicial por semilla en local o por bootstrap idempotente y auditado en demo, excluyentes (`D-110`).
 

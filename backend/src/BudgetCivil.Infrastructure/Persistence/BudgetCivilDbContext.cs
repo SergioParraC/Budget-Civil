@@ -3,6 +3,7 @@ using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Catalogs;
 using BudgetCivil.Domain.Resources;
+using BudgetCivil.Domain.Suppliers;
 using BudgetCivil.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,6 +56,8 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
 
     public DbSet<ResourceType> ResourceTypes => Set<ResourceType>();
 
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(BudgetCivilDbContext).Assembly);
@@ -86,6 +89,8 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
         modelBuilder.Entity<EmailVerificationToken>().ToTable("email_verification_tokens");
         modelBuilder.Entity<Project>().ToTable("projects");
         modelBuilder.Entity<ProjectConfiguration>().ToTable("project_configurations");
+
+        modelBuilder.Entity<Supplier>().ToTable("suppliers");
 
         modelBuilder.Entity<SecurityAuditEvent>().ToTable("security_audit_events");
         modelBuilder.Entity<ProjectStatusTransition>().ToTable("project_status_transitions");

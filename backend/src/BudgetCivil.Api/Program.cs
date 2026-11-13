@@ -264,6 +264,18 @@ builder.Services.AddAuthorization(options =>
             .RequirePermission("RESOURCES_WRITE"));
 
     options.AddPolicy(
+        AuthorizationPolicies.SuppliersRead,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("SUPPLIERS_READ"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.SuppliersWrite,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("SUPPLIERS_WRITE"));
+
+    options.AddPolicy(
         AuthorizationPolicies.ProjectMembersAssign,
         policy => policy
             .RequireAuthenticatedUser()

@@ -25,7 +25,10 @@ idempotente y versionado (`D-82`).
    - sin `user_company_memberships`, `project_user_memberships` ni `user_profiles` (`D-98`, `D-78`);
    - `project_configurations` con clave `project_id` y `projects` sin `base_currency_id` ni AIU (`D-93`);
    - `resources` con `project_id`, `resource_type_id`, `municipality_id`, `row_version`, autoría y baja
-     lógica; `resource_types` con exactamente siete tipos (`D-49`, `D-50`, `D-96`).
+     lógica; `resource_types` con exactamente siete tipos (`D-49`, `D-50`, `D-96`);
+   - `suppliers` con `company_id`, `business_name` obligatorio, contacto y ubicación opcionales,
+     `is_active`, `row_version` y autoría; `resources.supplier_id` opcional con FK `RESTRICT` e índice;
+     sin índice único sobre `business_name` ni `email` (`REQ-PROVEEDORES-01`…`06`, `D-27`, `D-96`).
 5. **Aplicar** en la ventana de mantenimiento:
    `sqlcmd -S .\SQLEXPRESS -d BudgetCivilDb -i artifacts/migracion.sql`
    o, contra la cadena configurada,
@@ -58,6 +61,7 @@ o desde la terminal con el comando `dotnet ef database update` mostrado en el me
 | `202610300527_e1b_email_verification` | Tabla `email_verification_tokens` para la verificación de correo del autorregistro (`D-80`, `REQ-IDENTIDAD-07`) | 30/10/2026 |
 | `20261031201251_e3b_users_company` | Historial de pertenencia `users_company` para la asignación a compañías (`D-98`) | 31/10/2026 |
 | `202611040532_resources_add_e3a` | Tablas `resources` y `resource_types`, con índices, FKs, `CHECK` y `rowversion` (`REQ-INSUMOS-01`…`04`, `D-49`, `D-50`, `D-96`, `D-107`) | 04/11/2026 |
+| `20261113040910_e3a_suppliers` | Tabla `suppliers` (compañía, razón social obligatoria, contacto y ubicación opcionales, baja lógica) y `resources.supplier_id` con FK `RESTRICT` e índice; sin migración de datos (`REQ-PROVEEDORES-01`…`06`, `D-27`, `D-40`, `D-96`, `D-107`) | 13/11/2026 |
 
 La baseline se aplica sobre una base **vacía**. No existen migraciones intermedias: la cadena anterior se
 eliminó porque la base fue vaciada por el autor (`DEC-19`).
@@ -68,6 +72,14 @@ eliminó porque la base fue vaciada por el autor (`DEC-19`).
 - Si la baseline ya está aplicada en local o demo y se necesita volver a una versión anterior del código,
   se restaura el respaldo del paso 1 y se aplica el script de esa versión.
 - El método `Down` de la baseline no se usa para conservar datos: borra el esquema.
+
+### 4.1 Reversión de `e3a_suppliers`
+
+`Down` de `20261113040910_e3a_suppliers` elimina, en este orden: la FK
+`FK_dbo_resources_suppliers_supplier_id`, la tabla `suppliers`, el índice `IX_dbo_resources_supplier_id` y
+la columna `resources.supplier_id`. No se puede revertir con datos asociados: exige respaldo previo
+(paso 1) porque se pierden las asociaciones insumo → proveedor. Los permisos `SUPPLIERS_READ` y
+`SUPPLIERS_WRITE` del `seed` se dejan inactivos, no se borran (`D-82`).
 
 ## 5. Crear la base vacía (desarrollo)
 

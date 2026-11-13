@@ -170,7 +170,7 @@ El sistema DEBE (MUST) permitir la creación administrativa de usuarios únicame
 
 ### Requirement: REQ-IDENTIDAD-10 Búsqueda de usuarios según la matriz
 
-El sistema DEBE (MUST) permitir la búsqueda de usuarios al Administrador sobre toda la plataforma, al Director sobre su compañía y al Auditor en solo lectura sobre la suya. Citas: RF-01; D-34, D-84; matriz `1.3.2`.
+El sistema DEBE (MUST) permitir la búsqueda de usuarios al Administrador sobre toda la plataforma, al Director sobre su compañía, al Presupuestador sobre su compañía —limitada a los roles que puede asignar a sus proyectos— y al Auditor en solo lectura sobre la suya. Citas: RF-01; D-34, D-84, D-85, D-112; matriz `1.3.2`.
 
 #### Scenario: SC-IDENTIDAD-22 Búsqueda del Director en su compañía
 
@@ -184,11 +184,17 @@ El sistema DEBE (MUST) permitir la búsqueda de usuarios al Administrador sobre 
 - **Cuando** solicita usuarios de la compañía B
 - **Entonces** el sistema rechaza la solicitud sin revelar si la compañía B existe
 
-#### Scenario: SC-IDENTIDAD-24 El Presupuestador intenta buscar usuarios
+#### Scenario: SC-IDENTIDAD-24 El Presupuestador busca usuarios de su compañía
 
-- **Dado** un Presupuestador autenticado
-- **Cuando** intenta buscar usuarios
-- **Entonces** el sistema rechaza la operación con `403`
+- **Dado** un Presupuestador autenticado con compañía asignada
+- **Cuando** busca usuarios por correo, nombre de usuario o documento
+- **Entonces** obtiene solo usuarios de su compañía y, si filtra por rol, solo Presupuestadores y Auditores (`D-85`, `D-112`)
+
+#### Scenario: SC-IDENTIDAD-24b El Presupuestador busca fuera de su compañía
+
+- **Dado** un Presupuestador de la compañía A
+- **Cuando** solicita usuarios de la compañía B o busca sin compañía asignada
+- **Entonces** el sistema rechaza la solicitud sin revelar si la compañía B existe
 
 ### Requirement: REQ-IDENTIDAD-11 Cambio de rol según la matriz
 
@@ -214,7 +220,7 @@ El sistema DEBE (MUST) permitir el cambio de rol al Administrador sobre cualquie
 
 ### Requirement: REQ-IDENTIDAD-12 Asignación de usuario a compañía
 
-El sistema DEBE (MUST) mantener a cada usuario en una sola compañía vigente y permitir la asignación solo al Administrador y al Director, y solo a usuarios que no pertenezcan ya a otra. La pertenencia vive en la tabla `users_company` (`user_id`, `company_id`, `account_enable`, `created_at`, `updated_at`): las bajas cierran la fila (`account_enable = 0`) sin borrarla, de modo que se conserva el historial de compañías del usuario; al re-vincularlo a la misma compañía se reactiva la fila existente y, si cambia de compañía, se inserta una fila nueva. Citas: RF-01; BR-001; R-09, R-10; D-01, D-02, D-98.
+El sistema DEBE (MUST) mantener a cada usuario en una sola compañía vigente y permitir la asignación solo al Administrador y al Director, y solo a usuarios que no pertenezcan ya a otra. Citas: RF-01; BR-001; R-09, R-10; D-01, D-02, D-98.
 
 #### Scenario: SC-IDENTIDAD-28 Asignación de un usuario sin compañía
 
@@ -239,6 +245,12 @@ El sistema DEBE (MUST) mantener a cada usuario en una sola compañía vigente y 
 - **Dado** dos solicitudes simultáneas que asignan al mismo usuario a compañías distintas
 - **Cuando** el sistema las procesa
 - **Entonces** solo una asignación queda efectiva y la otra es rechazada
+
+#### Scenario: SC-IDENTIDAD-31b Historial de compañías del usuario
+
+- **Dado** un usuario con una fila en `users_company` (`user_id`, `company_id`, `account_enable`, `created_at`, `updated_at`)
+- **Cuando** se da de baja la pertenencia y después se lo vincula de nuevo
+- **Entonces** la baja cierra la fila con `account_enable = 0` sin borrarla, la re-vinculación a la misma compañía reactiva esa fila y el cambio a otra compañía inserta una fila nueva
 
 ### Requirement: REQ-IDENTIDAD-13 Creación de compañía
 
@@ -577,3 +589,25 @@ El sistema DEBE (MUST) permitir únicamente al Administrador editar los datos de
 - **Dado** una cuenta desactivada por el Administrador
 - **Cuando** el Administrador la consulta
 - **Entonces** el sistema la devuelve con sus datos y en estado desactivado
+
+### Requirement: REQ-IDENTIDAD-30 Reconciliación de la matriz de permisos
+
+El sistema DEBE (MUST) reconciliar en cada `seed` la matriz declarada con lo persistido: las asignaciones rol-permiso y los permisos que ya no figuran en la matriz quedan inactivos con su fecha de revocación, y la operación es idempotente. Citas: RF-01; D-82; matriz `1.3.2`.
+
+#### Scenario: SC-IDENTIDAD-77 Asignación que ya no figura en la matriz
+
+- **Dado** una base con una asignación rol-permiso activa que la matriz ya no declara
+- **Cuando** se ejecuta el `seed` de seguridad
+- **Entonces** esa asignación queda inactiva con `revoked_at_utc` y `seed_version` de la versión vigente, y el rol pierde el permiso en la siguiente autorización
+
+#### Scenario: SC-IDENTIDAD-78 Permiso retirado del catálogo
+
+- **Dado** una base con un permiso activo que ya no figura en el catálogo de la matriz
+- **Cuando** se ejecuta el `seed` de seguridad
+- **Entonces** el permiso queda inactivo junto con sus asignaciones y ninguna política lo acepta
+
+#### Scenario: SC-IDENTIDAD-79 Reconciliación idempotente
+
+- **Dado** un `seed` ya ejecutado sobre la base reconciliada
+- **Cuando** se ejecuta de nuevo
+- **Entonces** no se revoca nada adicional y el inventario activo coincide con la matriz

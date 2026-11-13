@@ -10,7 +10,7 @@
 | RF-02 | Compañías: creación y datos de registro | Alta | Sí | Se crea la compañía con razón social y NIT únicos y datos de registro, representante legal y coherencia territorial; el Administrador inhabilita o reactiva cualquiera y el Director la propia |
 | RF-03 | Configuración del proyecto | Alta | Sí | Una sola configuración por proyecto con divisa base, AIU, tope, modo de firma (tres), firmante y requisito de auditor; la visibilidad vive en el proyecto |
 | RF-04 | EDT recursiva con códigos | Alta | Sí | Capítulos e ítems sin límite de profundidad; códigos únicos por proyecto; búsqueda parcial por código o nombre |
-| RF-05 | Insumos del proyecto | Alta | Sí | Siete tipos, estados de cotización y sugerencia de unicidad; los cuatro campos obligatorios definen `FALTA_INFORMACION` |
+| RF-05 | Insumos del proyecto | Alta | Sí | Siete tipos, estados de cotización y sugerencia de unicidad; los cuatro campos obligatorios y el proveedor definen `FALTA_INFORMACION`; el directorio de proveedores es por compañía |
 | RF-06 | Copia de insumos entre proyectos | Media | Sí | Se copia un insumo con su precio a otro proyecto de la compañía; queda independiente |
 | RF-07 | APUs por proyecto | Alta | Sí | APU 1:1 con el ítem; creación y copia desde proyectos de la compañía o del catálogo público |
 | RF-08 | Reconciliación de insumos al copiar | Alta | Sí | El sistema sugiere insumos similares; el usuario decide usar el existente o agregar el de origen |
@@ -52,7 +52,7 @@
 | BR-006 | El catálogo público expone composición, precios y contactos; no expone autoría ni empresa (`D-28`) |
 | BR-007 | No se finaliza un presupuesto con insumos en `FALTA_INFORMACION` o sin cotizar |
 | BR-008 | La Matriz es un insumo compuesto, reutilizable en varios APUs, no pertenece a la EDT y no se anida |
-| BR-009 | Un insumo está completo con descripción, precio, unidad y marca; si falta uno, pasa a `FALTA_INFORMACION` |
+| BR-009 | Un insumo está completo con descripción, precio, unidad, marca y proveedor; si falta uno, pasa a `FALTA_INFORMACION` |
 | BR-010 | Distribuidor, contacto, ciudad, clave de usuario y detalles son opcionales |
 | BR-011 | El paso a `FINALIZADO` exige la aprobación definida por el modo de firma del proyecto; el Director ejecuta el cierre sin firmar APUs (`D-14`, `D-90`) |
 | BR-012 | **OBSOLETO** por `D-91`: la imagen de firma se persiste en `UserSignature` y nunca se expone en DTO públicos, catálogo ni logs |
@@ -67,7 +67,7 @@
 | BR-021 | La copia de una Matriz es independiente y exige reconciliar sus insumos en el proyecto destino |
 
 ## 4. Reglas de autorización
-El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1.3.2` es referencia funcional. Los cuatro roles base son inmutables.
+El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1.3.2` es referencia funcional. Los cuatro roles base son inmutables. El `seed` reconcilia la matriz con la base (`REQ-IDENTIDAD-30`): la asignación o el permiso que ya no figura en la matriz queda inactivo, de modo que una base existente no conserva permisos retirados.
 
 | Módulo | Acción | `permission_key` | Administrador | Director | Presupuestador | Auditor |
 |---|---|---|---|---|---|---|
@@ -90,6 +90,8 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | EDT | Crear y editar | — | No (lectura) | Sí | Sí | No (lectura) |
 | Insumos | Crear, editar y copiar | `RESOURCES_WRITE` | No (lectura) | Sí | Sí | No (lectura) |
 | Insumos | Consultar y filtrar | `RESOURCES_READ` | Sí | Sí | Sí (asignados) | Sí (asignados) |
+| Proveedores | Crear, editar, dar de baja y reactivar | `SUPPLIERS_WRITE` | No (lectura) | Sí (su compañía) | Sí (su compañía) | No (lectura) |
+| Proveedores | Consultar el directorio y el selector | `SUPPLIERS_READ` | Sí (cualquier compañía) | Sí (su compañía) | Sí (su compañía) | Sí (su compañía) |
 | APUs y matrices | Crear, editar y copiar | — | No (lectura) | Sí | Sí | No (lectura) |
 | Cotización | Cambio masivo a `COTIZADO` | — | No | Sí | Sí | No |
 | Aprobación | Firmar APU | — | No | No | Sí | No |
@@ -129,8 +131,8 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | RF-02 | UC-01 | T-I-02, T-S-05, T-I-26 |
 | RF-03 | UC-02 | T-I-03, T-I-30, T-I-32, T-U-12 |
 | RF-04 | UC-03 | T-U-01, T-I-04 |
-| RF-05 | UC-04 | T-U-02, T-I-05 |
-| RF-06 | UC-04 | T-I-06 |
+| RF-05 | UC-04 | T-U-02, T-I-05, T-U-15, T-U-16, T-U-17, T-I-36, T-I-37, T-I-38, T-S-15, T-C-03 |
+| RF-06 | UC-04 | T-I-06, T-S-15 |
 | RF-07 | UC-05 | T-I-07, T-E-01 |
 | RF-08 | UC-05 | T-U-03, T-I-08 |
 | RF-09 | UC-05 | T-U-04, T-I-09 |

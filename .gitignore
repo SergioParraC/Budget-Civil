@@ -26,9 +26,17 @@ coverage/
 *.trx
 *.coverage
 *.coveragexml
+*.cobertura.xml
+coverage.json
+
+# Evidencia local de verificación (logs de la API, scripts de migración, cobertura,
+# runner en proceso para VSTest en este equipo, bases de datos de prueba)
+artifacts/
+.tmp/
 
 # Logs and local environment
 *.log
+*.err
 .env
 .env.*
 appsettings.*.local.json
@@ -41,6 +49,6 @@ Thumbs.db
 *.tmp
 *.swp
 
-# Cadena de conexió BD
+# Cadena de conexión BD
 appsettings.json
 appsettings.Development.json

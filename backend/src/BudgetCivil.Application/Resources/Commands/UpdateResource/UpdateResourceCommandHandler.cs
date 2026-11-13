@@ -2,6 +2,7 @@ using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Resources.Dtos;
 using BudgetCivil.Application.Resources.Repositories;
 using BudgetCivil.Application.Resources.Services;
+using BudgetCivil.Application.Suppliers.Repositories;
 using BudgetCivil.Domain.Resources;
 using FluentValidation;
 
@@ -28,6 +29,8 @@ public sealed class UpdateResourceCommand
     public string? Details { get; init; }
 
     public string? ContactNumber { get; init; }
+
+    public Guid? SupplierId { get; init; }
 
     public string RowVersion { get; init; } = string.Empty;
 }
@@ -73,12 +76,17 @@ public sealed class UpdateResourceCommandValidator : AbstractValidator<UpdateRes
 
         RuleFor(command => command.RowVersion)
             .NotEmpty();
+
+        RuleFor(command => command.SupplierId)
+            .NotEqual(Guid.Empty)
+            .When(command => command.SupplierId.HasValue);
     }
 }
 
 public sealed class UpdateResourceCommandHandler(
     ResourceAccessService resourceAccessService,
     IResourceRepository resourceRepository,
+    ISupplierRepository supplierRepository,
     IValidator<UpdateResourceCommand> validator)
 {
     public async Task<ResourceDto> ExecuteAsync(
@@ -89,7 +97,7 @@ public sealed class UpdateResourceCommandHandler(
         CancellationToken cancellationToken = default)
     {
         await ValidateAsync(command, cancellationToken);
-        await resourceAccessService.EnsureWriteAsync(actorUserId, projectId, cancellationToken);
+        var (_, access) = await resourceAccessService.EnsureWriteAsync(actorUserId, projectId, cancellationToken);
 
         var resource = await resourceRepository.GetByIdAsync(projectId, resourceId, cancellationToken)
             ?? throw new NotFoundAppException("Resource was not found.", "RESOURCE_NOT_FOUND");
@@ -97,6 +105,13 @@ public sealed class UpdateResourceCommandHandler(
         EnsureVersionMatches(command.RowVersion, resource);
 
         await EnsureReferencesAsync(command, cancellationToken);
+
+        await ResourceSupplierRules.EnsureAssignableAsync(
+            supplierRepository,
+            command.SupplierId,
+            access.CompanyId,
+            resource.SupplierId,
+            cancellationToken);
 
         try
         {
@@ -111,6 +126,7 @@ public sealed class UpdateResourceCommandHandler(
                 command.UserKey,
                 command.Details,
                 command.ContactNumber,
+                command.SupplierId,
                 actorUserId,
                 DateTime.UtcNow);
         }

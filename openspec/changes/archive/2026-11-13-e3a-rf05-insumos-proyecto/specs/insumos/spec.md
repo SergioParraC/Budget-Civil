@@ -91,9 +91,11 @@ catálogo. Citas: RF-05; BR-009, BR-010; D-96.
 
 ### Requirement: REQ-INSUMOS-04 Estado de cotización por completitud
 
-El sistema DEBE (MUST) asignar `FALTA_INFORMACION` cuando falte descripción, unidad, precio o marca, y
-`POR_COTIZAR` cuando los cuatro estén presentes; DEBE (MUST) recalcularlo en cada alta y edición. La
-transición a `COTIZADO` pertenece a `RF-11` y no se especifica aquí. Citas: RF-05; BR-009; D-89.
+El sistema DEBE (MUST) asignar `FALTA_INFORMACION` cuando falte descripción, unidad, precio, marca o
+proveedor, y `POR_COTIZAR` cuando los cinco estén presentes; DEBE (MUST) recalcularlo en cada alta y
+edición. El proveedor es opcional para crear el insumo, pero sin él el insumo permanece en
+`FALTA_INFORMACION` (`REQ-PROVEEDORES-05`). La transición a `COTIZADO` pertenece a `RF-11` y no se
+especifica aquí. Citas: RF-05; BR-009; D-89.
 
 #### Scenario: SC-INSUMOS-11 Alta incompleta
 
@@ -103,14 +105,14 @@ transición a `COTIZADO` pertenece a `RF-11` y no se especifica aquí. Citas: RF
 
 #### Scenario: SC-INSUMOS-12 Alta completa
 
-- **Dado** un actor autorizado que registra un insumo con descripción, unidad, precio y marca
+- **Dado** un actor autorizado que registra un insumo con descripción, unidad, precio, marca y proveedor
 - **Cuando** confirma el alta
 - **Entonces** el insumo queda en estado `POR_COTIZAR`
 
 #### Scenario: SC-INSUMOS-13 Edición que completa el insumo
 
-- **Dado** un insumo en estado `FALTA_INFORMACION` al que le faltaba la marca
-- **Cuando** un actor autorizado registra la marca y completa los cuatro campos
+- **Dado** un insumo en estado `FALTA_INFORMACION` al que le faltaba la marca y el proveedor
+- **Cuando** un actor autorizado registra la marca y asocia un proveedor activo
 - **Entonces** el insumo pasa a `POR_COTIZAR`
 
 #### Scenario: SC-INSUMOS-14 Edición que retira un campo obligatorio
@@ -118,6 +120,18 @@ transición a `COTIZADO` pertenece a `RF-11` y no se especifica aquí. Citas: RF
 - **Dado** un insumo en estado `POR_COTIZAR`
 - **Cuando** un actor autorizado deja la unidad vacía
 - **Entonces** el insumo pasa a `FALTA_INFORMACION`
+
+#### Scenario: SC-INSUMOS-52 Alta completa sin proveedor
+
+- **Dado** un actor autorizado que registra un insumo con descripción, unidad, precio y marca, sin proveedor
+- **Cuando** confirma el alta
+- **Entonces** el insumo se guarda y queda en estado `FALTA_INFORMACION`
+
+#### Scenario: SC-INSUMOS-53 Retiro del proveedor
+
+- **Dado** un insumo en estado `POR_COTIZAR` con proveedor
+- **Cuando** un actor autorizado retira el proveedor
+- **Entonces** el insumo vuelve a `FALTA_INFORMACION`
 
 ### Requirement: REQ-INSUMOS-05 Sugerencia de unicidad
 

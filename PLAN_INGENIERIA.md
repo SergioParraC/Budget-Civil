@@ -1781,8 +1781,8 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | RF-02 | T-I-02, T-S-05, T-I-26 | Integración y seguridad |
 | RF-03 | T-I-03, T-I-30, T-I-32, T-U-12 | Integración y unitaria |
 | RF-04 | T-U-01, T-I-04 | Unitaria e integración |
-| RF-05 | T-U-02, T-I-05, T-U-13, T-I-33 | Unitaria e integración |
-| RF-06 | T-I-06, T-I-34 | Integración |
+| RF-05 | T-U-02, T-I-05, T-U-13, T-I-33, T-U-15, T-U-16, T-I-36, T-I-37 | Unitaria e integración |
+| RF-06 | T-I-06, T-I-34, T-U-16, T-S-15 | Integración, unitaria y seguridad |
 | RF-07 | T-I-07, T-E-01 | Integración y E2E |
 | RF-08 | T-U-03, T-I-08 | Unitaria e integración |
 | RF-09 | T-U-04, T-I-09 | Unitaria e integración |
@@ -1864,6 +1864,14 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | T-S-13 | Aislamiento entre compañías y solo lectura de Administrador y Auditor (`REQ-INSUMOS-14`, `REQ-INSUMOS-15`) | Seguridad manual |
 | T-S-14 | Fail-closed y matriz de permisos de insumos (`REQ-INSUMOS-13`, `REQ-INSUMOS-14`) | Seguridad manual |
 | T-C-02 | Contrato v1 de insumos: `camelCase`, `ProblemDetails` y paginación (`REQ-INSUMOS-03`, `REQ-INSUMOS-08`) | Contrato en CI |
+| T-U-15 | Proveedores: campos opcionales, email, jerarquía de ubicación y duplicados (`REQ-PROVEEDORES-02`, `REQ-PROVEEDORES-03`, `REQ-PROVEEDORES-06`) | Unitaria |
+| T-U-16 | Proveedores: asociación 1:N, proveedor opcional, estado del insumo y copia (`REQ-PROVEEDORES-04`, `REQ-PROVEEDORES-05`, `REQ-PROVEEDORES-13`) | Unitaria |
+| T-U-17 | Proveedores: selector ligero y comparación de ubicación (`REQ-PROVEEDORES-09`, `REQ-PROVEEDORES-10`) | Unitaria |
+| T-I-36 | Persistencia de `suppliers`: FKs de ubicación, índices y `rowversion` (`REQ-PROVEEDORES-01`, `REQ-PROVEEDORES-03`, `REQ-PROVEEDORES-12`) | Integración manual |
+| T-I-37 | Reutilización entre proyectos, baja lógica y duplicados (`REQ-PROVEEDORES-01`, `REQ-PROVEEDORES-06`, `REQ-PROVEEDORES-11`) | Integración manual |
+| T-I-38 | Selector, alerta de ubicación y asignación no bloqueante (`REQ-PROVEEDORES-09`, `REQ-PROVEEDORES-10`) | Integración manual |
+| T-S-15 | Proveedores: aislamiento entre compañías y solo lectura de Administrador y Auditor (`REQ-PROVEEDORES-07`) | Seguridad manual |
+| T-C-03 | Contrato v1 de proveedores: `camelCase`, `ProblemDetails`, selector de dos campos y alerta (`REQ-PROVEEDORES-08`, `REQ-PROVEEDORES-09`, `REQ-PROVEEDORES-10`) | Contrato en CI |
 
 ## 5.7 Herramientas de prueba
 | Herramienta | Uso | Estado |

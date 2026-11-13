@@ -2,6 +2,7 @@ using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Resources.Dtos;
 using BudgetCivil.Application.Resources.Repositories;
 using BudgetCivil.Application.Resources.Services;
+using BudgetCivil.Application.Suppliers.Repositories;
 using BudgetCivil.Domain.Resources;
 using FluentValidation;
 
@@ -24,6 +25,7 @@ public sealed class CopyResourceCommandValidator : AbstractValidator<CopyResourc
 public sealed class CopyResourceCommandHandler(
     ResourceAccessService resourceAccessService,
     IResourceRepository resourceRepository,
+    ISupplierRepository supplierRepository,
     IValidator<CopyResourceCommand> validator)
 {
     public async Task<ResourceDto> ExecuteAsync(
@@ -60,6 +62,14 @@ public sealed class CopyResourceCommandHandler(
         }
 
         ResourceAccessService.EnsureCanRead(actor, sourceAccess);
+
+        // La copia conserva el proveedor solo dentro de la misma compañía (`SC-PROVEEDORES-47`,
+        // `SC-PROVEEDORES-48`).
+        await ResourceSupplierRules.EnsureCopyableAsync(
+            supplierRepository,
+            source.SupplierId,
+            targetAccess.CompanyId,
+            cancellationToken);
 
         Resource copy;
         try
