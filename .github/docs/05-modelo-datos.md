@@ -45,9 +45,10 @@
 | `Project` → `WbsCode` | 1 : N | Códigos únicos por proyecto |
 | `Project` → `WbsChapter` | 1 : N | Capítulos raíz |
 | `WbsChapter` → `WbsChapter` | 1 : N | Subcapítulos sin límite de profundidad |
-| `WbsChapter` → `WbsItem` | 1 : N | Ítems del capítulo |
-| `WbsCode` → `WbsChapter` / `WbsItem` | 1 : 1 | El código pertenece a un nodo |
-| `WbsItem` → `Apu` | 1 : 1 | Un APU por ítem |
+| `WbsChapter` → `WbsItem` | 1 : N | Ítems del capítulo; el ítem raíz no tiene capítulo (`D-118`) |
+| `WbsCode` → `WbsChapter` / `WbsItem` | 1 : 1 | El código pertenece a un nodo y no se reasigna (`D-117`) |
+| `Project` → `WbsProjectActivity` | 1 : N | Una fila por proyecto y usuario con la última modificación del EDT (`D-120`) |
+| `WbsItem` → `Apu` | 1 : 1 | Un APU por ítem; opcional hasta `I-3b` y único cuando existe (`D-113`) |
 | `Project` → `Apu` | 1 : N | El APU pertenece al proyecto |
 | `Project` → `Resource` | 1 : N | El insumo pertenece al proyecto |
 | `Apu` → `ApuResource` | 1 : N | Composición del APU |
@@ -149,7 +150,7 @@
 |---|---|---|---|
 | `id` | UUID | No | PK |
 | `project_id` | UUID | No | FK `Project` |
-| `code` | VARCHAR(10) | No | Único por proyecto, sin distinguir mayúsculas |
+| `code` | VARCHAR(10) | No | Código completo manual de 1–10 caracteres; único por proyecto, sin distinguir mayúsculas (`D-115`, `D-117`); admite mayúsculas y minúsculas |
 | `node_type` | VARCHAR(10) | No | `CHAPTER` o `ITEM` |
 
 ### `WbsChapter`
@@ -158,19 +159,33 @@
 | `id` | UUID | No | PK |
 | `project_id` | UUID | No | FK `Project` |
 | `parent_chapter_id` | UUID | Sí | FK autorreferenciada |
-| `code_id` | UUID | No | FK `WbsCode` |
+| `code_id` | UUID | No | FK `WbsCode`, único |
 | `name` | VARCHAR(255) | No | Nombre |
 | `order_index` | INT | No | Orden |
+| `last_modified_by` | UUID | No | FK `User`; actor autenticado (`D-116`) |
+| `last_modified_at` | DATETIME2 | No | UTC (`D-116`) |
+| `row_version` | ROWVERSION | No | Concurrencia optimista (`D-50`, `D-97`) |
 
 ### `WbsItem`
 | Campo | Tipo | Nulo | Regla |
 |---|---|---|---|
 | `id` | UUID | No | PK |
-| `wbs_chapter_id` | UUID | No | FK `WbsChapter` |
-| `apu_id` | UUID | No | FK `Apu`, único |
-| `code_id` | UUID | No | FK `WbsCode` |
+| `project_id` | UUID | No | FK `Project`; principio `PLAN §3.3.1.2` |
+| `wbs_chapter_id` | UUID | Sí | FK `WbsChapter`; nulo = ítem raíz (`D-118`) |
+| `apu_id` | UUID | Sí | FK `Apu` (se añade en `I-3b`); único filtrado cuando no es nulo (`D-113`, `BR-016`) |
+| `code_id` | UUID | No | FK `WbsCode`, único; no se recalcula después del alta (`D-117`) |
 | `quantity_work` | DECIMAL(18,4) | No | > 0 |
 | `order_index` | INT | No | Orden |
+| `last_modified_by` | UUID | No | FK `User`; actor autenticado (`D-116`) |
+| `last_modified_at` | DATETIME2 | No | UTC (`D-116`) |
+| `row_version` | ROWVERSION | No | Concurrencia optimista (`D-50`, `D-97`) |
+
+### `WbsProjectActivity`
+| Campo | Tipo | Nulo | Regla |
+|---|---|---|---|
+| `project_id` | UUID | No | PK compuesta y FK `Project`; una fila por proyecto y usuario (`D-120`) |
+| `user_id` | UUID | No | PK compuesta y FK `User`; participante que modificó el EDT |
+| `last_modified_at` | DATETIME2 | No | UTC; se sobrescribe en cada escritura del usuario, sin historial (`D-08`, `D-120`) |
 
 ### `Apu`
 | Campo | Tipo | Nulo | Regla |
@@ -277,7 +292,9 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | Regla | Implementación |
 |---|---|
 | Código único del EDT | Índice único (`project_id`, `code`) en `WbsCode` |
-| Un APU por ítem | Índice único en `WbsItem.apu_id` |
+| Código inmutable | Ningún proceso renumera `WbsCode` después del alta (`D-117`) |
+| Un APU por ítem | Índice único filtrado en `WbsItem.apu_id` (`WHERE apu_id IS NOT NULL`) (`D-113`) |
+| Actividad del EDT | Una fila por `(project_id, user_id)` en `WbsProjectActivity` (`D-120`) |
 | Una configuración por proyecto | PK/FK única en `ProjectConfiguration.project_id` |
 | Un usuario por proyecto | Único (`project_id`, `user_id`) en `ProjectMember` |
 | Una aprobación por APU | Único en `ApuApproval.apu_id` |
@@ -293,10 +310,10 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | Rendimiento y cantidades | `yield > 0`, `quantity_work > 0` |
 | Consumo y desperdicio | `consumption > 0`, `waste_percentage` 0–100 |
 | Precio | `unit_price >= 0` |
-| Coherencia del nodo | `WbsItem` exige APU y cantidad; `WbsChapter` exige nombre; `WbsCode.node_type` coincide con la tabla |
+| Coherencia del nodo | `WbsItem` exige cantidad; su capítulo es nulo solo si es ítem raíz (`D-118`); `apu_id` es opcional hasta `I-3b` y único cuando existe (`D-113`); `WbsChapter` exige nombre; `WbsCode.node_type` coincide con la tabla |
 | Alcance | `company_id` obligatorio salvo el Administrador y el autorregistrado pendiente de asignación; `project_id` obligatorio en entidades de proyecto |
-| Borrado | Baja lógica en `Project`, `Apu` y `Resource`; `RESTRICT` en lo referenciado |
-| Concurrencia | `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource` |
+| Borrado | Baja lógica en `Project`, `Apu` y `Resource`; `RESTRICT` en lo referenciado. La EDT se elimina en cascada por la aplicación previa confirmación (`D-119`); el ítem con APU se elimina y el APU no |
+| Concurrencia | `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource`; el movimiento exige la `rowversion` del nodo movido |
 
 ## 5. Reglas de cálculo
 > `X-15` sigue abierto: la fórmula exacta se cierra antes de E-4a. La base decidida es `D-32`.
@@ -330,8 +347,11 @@ La Matriz se expande un solo nivel; no se permite Matriz dentro de Matriz (`BR-0
 | `Project(company_id, is_public)` | Aislamiento y catálogo |
 | `WbsChapter(project_id, parent_chapter_id, order_index)` | Árbol |
 | `WbsCode(project_id, code)` único | Códigos |
-| `WbsItem(apu_id)` único | 1:1 |
+| `WbsChapter(code_id)` y `WbsItem(code_id)` únicos | Un código por nodo |
+| `WbsItem(apu_id)` único filtrado (`WHERE apu_id IS NOT NULL`) | 1:1 (`D-113`) |
 | `WbsItem(wbs_chapter_id, order_index)` | Listado |
+| `WbsItem(project_id, wbs_chapter_id, order_index)` | Capítulo e ítems raíz (`D-118`) |
+| `WbsProjectActivity(project_id, user_id)` único y `(project_id, last_modified_at)` | Una fila por proyecto y usuario (`D-120`) |
 | `Apu(project_id, status)` | Búsqueda |
 | `Resource(project_id, resource_type_id)` | Filtros |
 | `Resource(project_id, quotation_status)` | Cotización |
@@ -354,8 +374,10 @@ La Matriz se expande un solo nivel; no se permite Matriz dentro de Matriz (`BR-0
 ## 8. Migraciones y datos iniciales
 - Migraciones manuales con runbook (`docs/runbook-migraciones.md`): respaldo, revisión del script, aplicación y verificación; el arranque de la API **no** aplica migraciones (`D-40`).
 - Baseline única `202610300438_e1b_reconciliacion_baseline` sobre base vacía, con la convención `YYYYMMDDHHMM_<scope>_<change>` (`D-107`, `DEC-19`).
-- Seed versionado e idempotente de cuatro roles base, permisos y `RolePermission` (`D-82`). La versión `v5` añade `SUPPLIERS_READ` (Administrador, Director, Presupuestador y Auditor) y `SUPPLIERS_WRITE` (Director y Presupuestador) (`REQ-PROVEEDORES-07`). La versión `v6` reconcilia por diferencia: las asignaciones rol-permiso y los permisos que ya no figuran en la matriz quedan inactivos con `revoked_at_utc` y `seed_version` vigente (`REQ-IDENTIDAD-30`).
-- Migración `20261113040910_e3a_suppliers`: tabla `suppliers`, columna `resources.supplier_id`, sus FKs `RESTRICT` e índices, sin migración de datos (`D-40`, `D-107`).- Seed de siete tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos y Matriz.
+- Seed versionado e idempotente de cuatro roles base, permisos y `RolePermission` (`D-82`). La versión `v5` añade `SUPPLIERS_READ` (Administrador, Director, Presupuestador y Auditor) y `SUPPLIERS_WRITE` (Director y Presupuestador) (`REQ-PROVEEDORES-07`). La versión `v6` reconcilia por diferencia: las asignaciones rol-permiso y los permisos que ya no figuran en la matriz quedan inactivos con `revoked_at_utc` y `seed_version` vigente (`REQ-IDENTIDAD-30`). La versión `v7` añade `WBS_READ` (Administrador, Director, Presupuestador y Auditor) y `WBS_WRITE` (Director y Presupuestador) (`REQ-EDT-13`, `REQ-EDT-14`).
+- Migración `20261113040910_e3a_suppliers`: tabla `suppliers`, columna `resources.supplier_id`, sus FKs `RESTRICT` e índices, sin migración de datos (`D-40`, `D-107`).
+- Migración `wbs_add_i2b` (**planificada**, aún no generada): tablas `wbs_codes`, `wbs_chapters`, `wbs_items` y `wbs_project_activity` con sus índices, `CHECK` y FKs `RESTRICT`, `wbs_items.wbs_chapter_id` nullable y sin migración de datos (`D-40`, `D-107`, `D-113`…`D-120`).
+- Seed de siete tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos y Matriz.
 - Catálogo base de países, departamentos, municipios, tipos de documento y monedas (`D-96`).
 - Administrador inicial por semilla en local o por bootstrap idempotente y auditado en demo, excluyentes (`D-110`).
 

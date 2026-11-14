@@ -62,9 +62,15 @@ o desde la terminal con el comando `dotnet ef database update` mostrado en el me
 | `20261031201251_e3b_users_company` | Historial de pertenencia `users_company` para la asignación a compañías (`D-98`) | 31/10/2026 |
 | `202611040532_resources_add_e3a` | Tablas `resources` y `resource_types`, con índices, FKs, `CHECK` y `rowversion` (`REQ-INSUMOS-01`…`04`, `D-49`, `D-50`, `D-96`, `D-107`) | 04/11/2026 |
 | `20261113040910_e3a_suppliers` | Tabla `suppliers` (compañía, razón social obligatoria, contacto y ubicación opcionales, baja lógica) y `resources.supplier_id` con FK `RESTRICT` e índice; sin migración de datos (`REQ-PROVEEDORES-01`…`06`, `D-27`, `D-40`, `D-96`, `D-107`) | 13/11/2026 |
+| `wbs_add_i2b` (**planificada**) | Tablas `wbs_codes`, `wbs_chapters`, `wbs_items` y `wbs_project_activity` con `CHECK`, FKs `RESTRICT`, índices, `rowversion` y `wbs_items.wbs_chapter_id` nullable; sin migración de datos (`REQ-EDT-*`, `D-113`…`D-120`) | Pendiente |
 
 La baseline se aplica sobre una base **vacía**. No existen migraciones intermedias: la cadena anterior se
 eliminó porque la base fue vaciada por el autor (`DEC-19`).
+
+La migración `20261113080043_wbs_add_i2b` no forma parte de esta cadena: pertenecía a una implementación
+anterior de la EDT y se retiró de la base local el 14/11/2026. El cambio `i-2b-rf04-edt` generará una
+migración nueva (`wbs_add_i2b`) sobre la cadena vigente. El respaldo previo al reinicio quedó en
+`H:\Program Files\MSSQL17.SQLEXPRESS\MSSQL\Backup\BudgetCivilDb_pre_reset_20261114.bak`.
 
 ## 4. Reversión
 
