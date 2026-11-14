@@ -62,9 +62,16 @@ o desde la terminal con el comando `dotnet ef database update` mostrado en el me
 | `20261031201251_e3b_users_company` | Historial de pertenencia `users_company` para la asignación a compañías (`D-98`) | 31/10/2026 |
 | `202611040532_resources_add_e3a` | Tablas `resources` y `resource_types`, con índices, FKs, `CHECK` y `rowversion` (`REQ-INSUMOS-01`…`04`, `D-49`, `D-50`, `D-96`, `D-107`) | 04/11/2026 |
 | `20261113040910_e3a_suppliers` | Tabla `suppliers` (compañía, razón social obligatoria, contacto y ubicación opcionales, baja lógica) y `resources.supplier_id` con FK `RESTRICT` e índice; sin migración de datos (`REQ-PROVEEDORES-01`…`06`, `D-27`, `D-40`, `D-96`, `D-107`) | 13/11/2026 |
+| `20261114065800_wbs_add_i2b` | Tablas `wbs_codes`, `wbs_chapters`, `wbs_items` y `wbs_project_activity` con `CHECK`, FKs `RESTRICT`, índices, `rowversion`, `wbs_items.wbs_chapter_id` nullable e índice único filtrado de `apu_id`; sin migración de datos (`REQ-EDT-*`, `D-113`…`D-120`) | 14/11/2026 |
 
 La baseline se aplica sobre una base **vacía**. No existen migraciones intermedias: la cadena anterior se
 eliminó porque la base fue vaciada por el autor (`DEC-19`).
+
+La migración `20261113080043_wbs_add_i2b` no forma parte de esta cadena: pertenecía a una implementación
+anterior de la EDT y se retiró de la base local el 14/11/2026. La migración vigente es
+`20261114065800_wbs_add_i2b`, generada sobre la cadena actual y aplicada localmente el 14/11/2026. El
+respaldo previo al reinicio quedó en
+`H:\Program Files\MSSQL17.SQLEXPRESS\MSSQL\Backup\BudgetCivilDb_pre_reset_20261114.bak`.
 
 ## 4. Reversión
 
@@ -80,6 +87,14 @@ eliminó porque la base fue vaciada por el autor (`DEC-19`).
 la columna `resources.supplier_id`. No se puede revertir con datos asociados: exige respaldo previo
 (paso 1) porque se pierden las asociaciones insumo → proveedor. Los permisos `SUPPLIERS_READ` y
 `SUPPLIERS_WRITE` del `seed` se dejan inactivos, no se borran (`D-82`).
+
+### 4.2 Reversión de `wbs_add_i2b`
+
+`Down` de `20261114065800_wbs_add_i2b` elimina en orden inverso las tablas `wbs_project_activity`,
+`wbs_items`, `wbs_chapters` y `wbs_codes`, junto con sus índices, `CHECK` y FKs `RESTRICT`. No se puede
+revertir con datos asociados: exige respaldo previo (paso 1) porque se pierden los códigos y el árbol
+completos. Los permisos `WBS_READ` y `WBS_WRITE` del `seed` se dejan inactivos, no se borran (`D-82`,
+`D-119`).
 
 ## 5. Crear la base vacía (desarrollo)
 

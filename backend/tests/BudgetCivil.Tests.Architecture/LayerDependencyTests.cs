@@ -104,6 +104,48 @@ public sealed class LayerDependencyTests
             $"los controladores no deben acceder a persistencia: {string.Join(", ", result.FailingTypeNames ?? [])}");
     }
 
+    [Fact]
+    public void El_modulo_Wbs_de_aplicacion_no_depende_de_otros_modulos()
+    {
+        // T-A-03: `M-03` no depende de la infraestructura ni de los módulos de `M-02`, `M-04` o `M-05`.
+        var result = Types.InAssembly(ApplicationAssembly)
+            .That()
+            .ResideInNamespaceStartingWith("BudgetCivil.Application.Wbs")
+            .ShouldNot()
+            .HaveDependencyOnAny(
+                "BudgetCivil.Application.Projects",
+                "BudgetCivil.Application.Resources",
+                "BudgetCivil.Application.Suppliers",
+                "BudgetCivil.Application.Memberships",
+                "BudgetCivil.Application.Companies")
+            .GetResult();
+
+        Assert.True(
+            result.IsSuccessful,
+            $"el módulo Wbs no debe depender de otros módulos: {string.Join(", ", result.FailingTypeNames ?? [])}");
+    }
+
+    [Fact]
+    public void El_dominio_Wbs_no_depende_de_otros_modulos()
+    {
+        // T-A-03: las entidades de la EDT solo usan identificadores, no navegaciones de otros módulos.
+        var result = Types.InAssembly(DomainAssembly)
+            .That()
+            .ResideInNamespaceStartingWith("BudgetCivil.Domain.Wbs")
+            .ShouldNot()
+            .HaveDependencyOnAny(
+                "BudgetCivil.Domain.Projects",
+                "BudgetCivil.Domain.Resources",
+                "BudgetCivil.Domain.Suppliers",
+                "BudgetCivil.Domain.Memberships",
+                "BudgetCivil.Domain.Users")
+            .GetResult();
+
+        Assert.True(
+            result.IsSuccessful,
+            $"el dominio Wbs no debe depender de otros módulos: {string.Join(", ", result.FailingTypeNames ?? [])}");
+    }
+
     private static void AssertNoDependency(Assembly assembly, params string[] dependencies)
     {
         var result = Types.InAssembly(assembly)

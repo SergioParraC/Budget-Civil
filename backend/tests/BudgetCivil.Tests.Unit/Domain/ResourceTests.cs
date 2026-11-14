@@ -36,15 +36,16 @@ public sealed class ResourceTests
     [InlineData(null, 10)]
     [InlineData("m2", null)]
     [InlineData("m2", 10)]
-    public void Create_incompleto_queda_falta_informacion(string? unit, decimal? unitPrice)
+    public void Create_incompleto_queda_falta_informacion(string? unit, int? unitPrice)
     {
+        decimal? normalizedUnitPrice = unitPrice;
         var resource = Resource.Create(
             ProjectId,
             ResourceTypeId,
             MunicipalityId,
             "Cemento gris",
             unit,
-            unitPrice,
+            normalizedUnitPrice,
             brand: null,
             distributor: null,
             userKey: null,

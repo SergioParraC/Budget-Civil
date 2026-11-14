@@ -19,14 +19,14 @@ Producir, de forma incremental y verificable, el documento único de ingeniería
 | Elemento | Estado |
 |---|---|
 | Capítulo 1 — Análisis del problema | Cerrado (v0.29); registros en 0.5 y 0.6 |
-| Capítulo 2 — Propuesta de solución | Cerrado (v0.28): 23 funcionalidades, 9 módulos y 8 incrementos |
+| Capítulo 2 — Propuesta de solución | Cerrado (v0.31): 23 funcionalidades, 9 módulos y 9 incrementos |
 | Capítulo 3 — Arquitectura y tecnología | Cerrado (v0.19): 3.1–3.5 completos |
 | Capítulo 4 — Estrategia de desarrollo | Cerrado (v0.29); incluye la etapa `E-1b` en `4.8` |
 | Capítulo 5 — Estrategia de calidad | Cerrado (v0.24) |
 | Capítulo 6 — SDD e inteligencia artificial | Cerrado (v0.26) |
 | Actualización de `.github/docs/00`–`09` | Completada el 27/10/2026: `00`–`06` y `09`; `07` y `08` no existen |
 | Autorregistro público de usuarios | Incorporado al alcance el 29/10/2026 (`D-72`, `D-73`): registro anónimo, sin sesión y con nombre de usuario obligatorio |
-| Especificaciones y cambios en OpenSpec | Reconciliación cerrada el 29/10/2026 (`D-74`…`D-111`); el próximo paso es `E-1b` y después el cambio OpenSpec de `E-2` |
+| Especificaciones y cambios en OpenSpec | Reconciliación cerrada el 29/10/2026 (`D-74`…`D-111`); `E-1b`, `E-2` y `E-3a` cerrados; el próximo paso es el cambio OpenSpec de `I-2b` (EDT) y después `I-3b` |
 | `specs/001` y `specs/002` (Spec Kit) | Declaradas **evidencia histórica no normativa** el 29/10/2026 (`D-108`): no se editan, no se citan como requisito y solo se usan para el registro de brechas |
 | Etapa `E-1b` (reconciliación) | Definida en `4.8`; cierra brechas de `E-1` y produce la línea base de OpenSpec antes de abrir `E-2` |
 
@@ -80,7 +80,7 @@ Prefijos de identificadores: `P` problema, `H` hipótesis, `N` necesidad, `ACT` 
 | D-27 | Los insumos y APUs de otros proyectos de la misma compañía pueden copiarse a un proyecto nuevo o existente. No existe un registro propio de insumos de compañía. | Modelo de insumos | CONFIRMADO (Q-24) |
 | D-28 | El catálogo abierto publica todos los campos del insumo, incluidos precio unitario, distribuidor y contacto. Se mantiene la anonimización de autoría y de empresa; queda sin efecto la restricción de "sin precios". | Visibilidad, privacidad, DTO público | CONFIRMADO (Q-22 = A) |
 | D-29 | La reutilización de un insumo de la compañía en otro proyecto es una copia con su precio, independiente del original: los cambios posteriores no se propagan. | Modelo de insumos, costos | CONFIRMADO (Q-23 = A) |
-| D-30 | EDT recursiva sin límite de profundidad ni de hijos. Numeración automática y jerárquica (`1`, `1.1`, `1.1.1`), editable por el usuario, única en el proyecto y compartida entre capítulos e ítems; al reordenar o eliminar se renumera solo lo no personalizado. Los hijos de un capítulo con código personalizado heredan ese código como prefijo (`CIM.1`, `CIM.1.1`). El límite de longitud se aplica al segmento ingresado, no al código efectivo. | EDT, modelo de datos | CONFIRMADO (definición EDT; Q-26 = A) |
+| D-30 | EDT recursiva sin límite de profundidad ni de hijos. Los códigos son manuales, únicos por proyecto y compartidos entre capítulos e ítems; la jerarquía se determina por la relación padre-hijo, no por el texto del código. El usuario ingresa el código completo al crear o editar; el sistema no numera, no renumera y no hereda prefijos. **Revisada por `D-117`.** | EDT, modelo de datos | CONFIRMADO (definición EDT); MODIFICADO por `D-117` |
 | D-31 | El código del ítem vive en la EDT (`WbsItem`). El APU no almacena código propio, aunque la vista de edición del APU muestra el código del ítem. | Modelo de datos | CONFIRMADO (definición EDT) |
 | D-32 | Base de cálculo por tipo: materiales por unidad de obra (`consumo × cantidad del ítem`); mano de obra por jornada o cuadrilla con unidad de esfuerzo configurable. La fórmula exacta se cierra en el capítulo 3. | Motor de cálculo | CONFIRMADO (base de cálculo; `X-15`) |
 | D-33 | El listado de insumos muestra el conteo de uso para todos los tipos de insumo: suma por ítem de `consumo del insumo × cantidad de obra`. La consulta pertenece a `M-06` y se implementa en `I-3b`, cuando ya existen APUs y cantidades. | EDT, APUs, plan | CONFIRMADO (reparto de incrementos) |
@@ -163,6 +163,14 @@ Prefijos de identificadores: `P` problema, `H` hipótesis, `N` necesidad, `ACT` 
 | D-110 | El primer Administrador se crea por **semilla** en local y por **bootstrap idempotente y auditado** en demo, con bandera de entorno; ambos caminos se excluyen entre sí y el bootstrap se cierra al existir un Administrador. | Operación, seguridad | CONFIRMADO (Q-64.37 = C) |
 | D-111 | Se mantiene `SecurityAuditEvent` para un **conjunto cerrado** de eventos de seguridad (inicio de sesión fallido, bloqueo, denegación de autorización, bootstrap y cambio de rol), como excepción explícita a `D-08`; no registra valores de negocio. | Auditoría, seguridad | CONFIRMADO (Q-64.38 = A) |
 | D-112 | **Auditoría desacoplada del modo de firma.** Se mantienen los tres modos de firma de `D-03`/`D-90`; el proyecto admite auditores cuando `requires_auditor = true`, con independencia del modo (incluido `SIN_FIRMA`). La aprobación del auditor por APU (`D-52`, `D-91`) se exige solo si `requires_auditor` está activo. El Director es el único que configura los parámetros del proyecto; el Presupuestador busca usuarios de su compañía, asigna y retira Presupuestadores y Auditores, y edita solo los datos generales (nombre, descripción y objetivo); el Administrador y el Auditor quedan en lectura (el Auditor conserva la aprobación por APU). Desactivar `requires_auditor` conserva a los auditores asignados en `project_members`. | Autorización, auditoría, cierre, modelo | CONFIRMADO (autor, 31/10/2026) |
+| D-113 | **`wbs_items.apu_id` es nullable.** La EDT se construye en `I-2b` y el APU en `I-3b`; la relación 1:1 de `RF-07`/`BR-016` se garantiza con un índice único filtrado sobre `apu_id` (`WHERE apu_id IS NOT NULL`), de modo que un APU no puede vincularse a dos ítems y un ítem admite un solo APU cuando se le asigna. La columna se crea sin clave foránea hasta que exista `apus` (`I-3b`). | EDT, APUs, persistencia | CONFIRMADO (autor, 13/11/2026) |
+| D-114 | **La baja de la EDT es física con `RESTRICT`.** `WbsChapter` y `WbsItem` no llevan baja lógica: un capítulo con subcapítulos o ítems y un ítem con APU no se eliminan; `D-49` sigue limitado a `Project`, `Apu` y `Resource`. **Revisada por `D-119`:** la baja de un capítulo con descendientes se confirma y se ejecuta en cascada desde la aplicación; la base conserva `RESTRICT`. | EDT, integridad | CONFIRMADO (autor, 13/11/2026); MODIFICADO por `D-119` |
+| D-115 | **El código del EDT no supera 10 caracteres.** `wbs_codes.code` es `VARCHAR(10)` y almacena el código completo ingresado por el usuario; se aceptan 1–10 caracteres tanto en capítulos como en ítems y el conjunto de `R-19`. Cualquier violación de formato o longitud se rechaza con `WBS_CODE_INVALID`. **Revisada por `D-117`:** al ser un código manual no hay composición de prefijos ni respaldo. | EDT, persistencia | CONFIRMADO (autor, 13/11/2026); MODIFICADO por `D-117` |
+| D-116 | **Autoría en la EDT.** `WbsChapter` y `WbsItem` guardan `last_modified_by` y `last_modified_at` con el actor autenticado y la fecha en UTC; el cliente no puede fijarlos, igual que en `Apu` y `Resource` (`D-08`). | EDT, autoría | CONFIRMADO (autor, 13/11/2026) |
+| D-117 | **Código del EDT manual, único e inmutable.** El usuario ingresa el código completo al crear el nodo; es obligatorio, mide 1–10 caracteres, usa el conjunto de `R-19` y es único por proyecto entre capítulos e ítems sin distinguir mayúsculas. Se aceptan mayúsculas y minúsculas y se conserva el valor escrito (sin espacios externos). No hay numeración automática, herencia de prefijo ni código de respaldo: la aplicación no renumera al eliminar, reordenar o mover. Solo la edición explícita del propio nodo cambia el código, sin afectar a sus descendientes. La disponibilidad se consulta con `GET /wbs/codes/validate`. | EDT, códigos, persistencia | CONFIRMADO (autor, 14/11/2026) |
+| D-118 | **Reorganización libre del EDT.** Un capítulo hoja, un capítulo con todo su subárbol o un ítem se mueve a cualquier capítulo del mismo proyecto o a la raíz, en la posición indicada, sin alterar códigos. `wbs_items.wbs_chapter_id` es nullable para admitir ítems raíz. El destino debe ser un capítulo, no un descendiente del nodo movido. La posición se interpreta retirando primero el nodo si ya está en el padre destino e insertándolo después en la lista restante (`targetIndex` 0–n; nulo o n = al final); las posiciones se compactan al mover o eliminar. | EDT, modelo de datos, UX | CONFIRMADO (autor, 14/11/2026) |
+| D-119 | **Baja en cascada confirmada.** La baja de un capítulo con descendientes exige confirmación explícita; confirmada, elimina el subárbol completo con sus códigos. La base mantiene `RESTRICT` y la cascada la ejecuta la aplicación en una transacción. Un ítem con APU se elimina y el APU no se borra: queda desvinculado y disponible para volver a seleccionarse en el proyecto; la búsqueda y el estado del APU se definen en `I-3b`. Revisa `D-114`. | EDT, integridad, borrado | CONFIRMADO (autor, 14/11/2026) |
+| D-120 | **Actividad y participantes del EDT.** Una fila por proyecto y usuario en `wbs_project_activity` (`project_id`, `user_id`, `last_modified_at` UTC), sobrescrita en cada escritura del EDT y conservada aunque se eliminen todos los nodos. La última actividad del proyecto es la fila con `MAX(last_modified_at)`; la lista de participantes son las filas del proyecto. Se consulta con `GET /wbs/activity` (`WBS_READ`; Administrador, Director y Presupuestador; el Auditor no accede) y no guarda historial de operaciones (`D-08`). | EDT, autoría, modelo | CONFIRMADO (autor, 14/11/2026) |
 
 
 ### 0.6 Contradicciones y vacíos vigentes
@@ -381,7 +389,7 @@ Las celdas se cerraron con la revisión de capítulos 1 y 2 (`D-34`) y se ajusta
 | Leer compañía | sí | sí (la propia) | sí (solo lectura) | sí (la de sus proyectos) |
 | Crear / editar proyecto | no (lectura, `D-86`) | sí | sí (crea y edita donde está asignado, `D-85`) | no |
 | Configurar proyecto (divisa, AIU, topes, firma, requisito de auditor) | no | sí (todos los parámetros) | no (`D-112`; solo edita nombre, descripción y objetivo) | no |
-| Crear / editar EDT | no | sí | sí (todas las características) | no (lectura) |
+| Crear, editar, mover y eliminar EDT | no | sí | sí (proyectos asignados) | no (lectura) |
 | Crear / editar APU | no (lectura) | sí | sí | no (lectura) |
 | Crear / editar insumos | no (lectura) | sí | sí | no (lectura) |
 | Añadir insumos a un APU | no | sí | sí | no |
@@ -435,7 +443,7 @@ No quedan vacíos abiertos de actores. Permanecen `X-21` (contenido publicado de
 | S-01 | Identidad y acceso: autorregistro público, usuarios, roles y asignación a compañías y proyectos. | `D-01`, `D-02`, `D-72` | CONFIRMADO |
 | S-02 | Compañías: creación y configuración; el Administrador solo edita datos de registro. | `D-01`, `D-02`, `D-15` | CONFIRMADO |
 | S-03 | Proyectos y su configuración: divisa, AIU, tope presupuestal, modo de firma y requisito de visto bueno del auditor. | `D-02`, `D-03`, `D-07`, `D-14` | CONFIRMADO |
-| S-04 | EDT recursiva: capítulos y subcapítulos sin límite de profundidad, ítems por nodo, numeración automática editable con herencia de prefijo, código único por proyecto y búsqueda parcial por código de ítem o nombre de capítulo. | `D-30`, `D-31` | CONFIRMADO |
+| S-04 | EDT recursiva: capítulos y subcapítulos sin límite de profundidad, ítems por nodo o en la raíz, código manual único por proyecto, reorganización libre, baja en cascada y búsqueda parcial por código de ítem o nombre de capítulo. | `D-30`, `D-31`, `D-117`…`D-120` | CONFIRMADO |
 | S-05 | Insumos por proyecto: siete tipos, incluida la Matriz, con estados de cotización, sugerencia de unicidad, reutilización desde otros proyectos de la compañía mediante copia independiente y listado con filtros. | `D-05`, `FR-004`, `Q-09`, `D-27`, `D-29` | CONFIRMADO |
 | S-06 | APUs por proyecto: creación, edición, relación 1:1 con el ítem, copia desde APUs públicos o de la misma compañía sin restricción de estado y reconciliación de insumos al copiar. | `D-05`, `D-13`, `D-16`, `D-24`, `D-25` | CONFIRMADO |
 | S-07 | Matrices: reutilizables dentro del proyecto y copiables a otro proyecto. | `D-05`, `D-16` | CONFIRMADO |
@@ -487,7 +495,7 @@ No quedan vacíos abiertos de actores. Permanecen `X-21` (contenido publicado de
 | R-16 | La copia de APUs no está restringida por el estado del proyecto. | `D-24` | CONFIRMADO |
 | R-17 | La copia de un insumo de la compañía es independiente: los cambios de precio no se propagan a otros proyectos. | `D-29` | CONFIRMADO |
 | R-18 | La EDT no tiene límite de profundidad ni de cantidad de hijos por nodo. | `D-30` | CONFIRMADO |
-| R-19 | Los códigos del EDT son únicos por proyecto entre capítulos e ítems, sin distinguir mayúsculas. Conjunto cerrado permitido: `A-Z`, `0-9`, `.`, `-`, `_`, `/`, `*`, `=`, `(`, `)`, `%`, `&`, `#`, `¡`, `'`, `?`, `¿`; 1–10 caracteres en capítulos y 1–5 en ítems, medidos sobre el segmento ingresado. Se permite `.` porque la jerarquía se determina por la relación padre-hijo, no por el texto. | `D-30`, `D-34` | CONFIRMADO |
+| R-19 | Los códigos del EDT son manuales y únicos por proyecto entre capítulos e ítems, sin distinguir mayúsculas. Conjunto cerrado permitido: `A-Z`, `a-z`, `0-9`, `.`, `-`, `_`, `/`, `*`, `=`, `(`, `)`, `%`, `&`, `#`, `¡`, `'`, `?`, `¿`; 1–10 caracteres tanto en capítulos como en ítems, medidos sobre el código completo ingresado. Se permite `.` porque la jerarquía se determina por la relación padre-hijo, no por el texto. | `D-30`, `D-34`, `D-117` | CONFIRMADO |
 | R-20 | El APU no almacena código; el código pertenece al ítem de la EDT y se muestra en la vista del APU. | `D-31` | CONFIRMADO |
 | R-21 | El conteo de uso de un insumo es la suma de `consumo × cantidad de obra` de todos los ítems que lo usan. | `D-33` | CONFIRMADO |
 | R-22 | El despliegue público exige HTTPS; el MVP se opera en entorno local o demo controlada. | `D-39` | CONFIRMADO |
@@ -624,6 +632,9 @@ El capítulo se considera cerrado cuando:
 | 0.28 | 29/10/2026 | Autorregistro incorporado al alcance: se agregan `D-72` y `D-73`, se resuelve `X-27`, se registra `Q-63`, `E-11` queda `OBSOLETO` y `A-03` se confirma en su forma nueva. Se añaden `S-01` ampliada, `R-24`, `R-25`, `ACT-07`, `RF-23` y su trazabilidad en capítulos 2 a 6. |
 | 0.29 | 29/10/2026 | Reconciliación con las especificaciones implementadas: encuesta de 38 puntos (`Q-64`) respondida y registrada como `D-74`…`D-111`; se resuelven `X-28`…`X-43`; se declaran `specs/001` y `specs/002` evidencia histórica no normativa (`D-108`); se reformulan `D-04`, `R-06` y `X-03` (`D-89`); se modifican `D-52` y `BR-012` (`D-91`) y se acota `D-08` (`D-92`); se actualiza la matriz `1.3.2`, el modelo de `3.3.2`, los contratos de `3.4.5` y se define la etapa `E-1b` en `4.8`. |
 | 0.30 | 30/10/2026 | Cierre de la implementación de `E-1b`: `D-76` **modificada** (autorregistro con identidad completa y residencia en el perfil); `D-95`, `D-98` y `D-105` cerradas **sin migración de datos** y con **purga y reconstrucción** de la suite (`DEC-19`, `DEC-20`); baseline única con la convención `D-107` y arranque sin migraciones automáticas; `§4.8.4` deja de hablar de migrar datos y `§5.6.1`/`§5.6.5` incorporan los doce identificadores nuevos de prueba. |
+| 0.31 | 13/11/2026 | Brecha de planificación de la EDT cerrada: `I-2`/`E-2` quedan reducidos a proyecto (`M-02`, `RF-03`, dependencia de `I-1b`) y se añaden `I-2b`/`E-2b` para `M-03` y `RF-04`; `I-3a`/`E-3a` pasan a depender de `I-2b`/`E-2b`. Se registran `D-113` (`apu_id` nullable con unicidad filtrada), `D-114` (baja física de la EDT con `RESTRICT`), `D-115` (código efectivo de 10 caracteres) y `D-116` (autoría en la EDT); se ajustan `§3.3.2`, `§3.3.3`, `§3.3.5`, `§3.3.6`, `§4.2`, `§4.3`, `§4.5.3`, `§5.6.1`, `§6.2.3` y se añade `§5.6.7` con las verificaciones `T-U-18`, `T-U-19`, `T-I-39`, `T-I-40`, `T-S-16`, `T-S-17`, `T-C-04` y `T-A-03`. |
+| 0.32 | 14/11/2026 | Reglas de uso de la EDT: `D-117` fija el código en la creación (sin renumeración), el siguiente entero al máximo y el código de respaldo cuando se superan 10 caracteres; `D-118` habilita la reorganización libre con ítems raíz (`wbs_items.wbs_chapter_id` nullable); `D-119` convierte la baja en cascada confirmada y revisa `D-114`; `D-120` registra la última actividad del EDT por proyecto. Se ajustan `D-30`, `§2.4.2`, `§3.3.2`, `§3.3.3`, `§3.3.5`, `§3.3.6`, `§4.2` y `§5.6.7`, y se adapta la especificación `edt` del cambio `i-2b-rf04-edt`. |
+| 0.33 | 14/11/2026 | Cierre de aclaraciones del autor: `D-117` pasa a código manual obligatorio (1–10, mayúsculas/minúsculas, único por proyecto) con endpoint de validación y sin numeración automática ni respaldo; `D-115` y `R-19` se ajustan; se elimina `WBS_CODE_GENERATION_FAILED`; `D-120` pasa a `wbs_project_activity` (una fila por proyecto y usuario, participantes y última actividad, Auditor sin acceso); `D-118` fija la semántica de `targetIndex`; `D-119` deja el APU desvinculado y seleccionable; la concurrencia optimista cubre edición, movimiento y baja. |
 
 > **Notas de interpretación de la v0.29 (requieren confirmación si no reflejan la intención):**
 > 1. `D-85` (pregunta 12 = B) se interpreta en el sentido de `specs/002`: el Presupuestador **crea** proyectos y **asigna** Presupuestadores/Auditores en proyecto. Si solo se quería habilitar la asignación, se ajusta la fila "Crear / editar proyecto" de `1.3.2`.
@@ -713,7 +724,7 @@ La frontera del MVP está fijada por `D-18` (alertas sí; importación/exportaci
 | RF-01 | Usuarios, roles y asignación a compañías y proyectos | M-01 | Alta | Sí | `S-01`, `D-15`, `D-21` |
 | RF-02 | Compañías: creación y datos de registro | M-01 | Alta | Sí | `S-02` |
 | RF-03 | Configuración del proyecto: divisa, AIU, tope, modo de firma, requisito de auditor y visibilidad | M-02 | Alta | Sí | `S-03`, `D-03`, `D-07`, `D-18`, `D-93`, `D-94` |
-| RF-04 | EDT recursiva con numeración automática editable, códigos únicos y búsqueda parcial por código de ítem o nombre de capítulo | M-03 | Alta | Sí | `S-04`, `D-30`, `D-31` |
+| RF-04 | EDT recursiva con códigos manuales únicos, reorganización libre, baja en cascada, actividad por participantes y búsqueda parcial por código de ítem o nombre de capítulo | M-03 | Alta | Sí | `S-04`, `D-30`, `D-31`, `D-117`…`D-120` |
 | RF-05 | Insumos del proyecto: siete tipos, estados de cotización y sugerencia de unicidad | M-04 | Alta | Sí | `S-05`, `D-05`, `Q-09` |
 | RF-06 | Reutilización de insumos de la compañía mediante copia independiente | M-04 | Media | Sí | `S-05`, `D-27`, `D-29` |
 | RF-07 | APUs por proyecto con relación 1:1 con el ítem; creación y copia desde proyectos de la compañía (I-3b) y desde el catálogo público (I-5) | M-05 | Alta | Sí | `S-06`, `D-13`, `D-16`, `D-24` |
@@ -801,13 +812,18 @@ Los módulos se definen por **responsabilidad funcional y dato principal**, no p
 |---|---|---|---|---|---|
 | I-1 | Base de acceso y organización | M-01 + catálogos maestros | RF-01, RF-02, RF-18, RF-23 | Autorregistro público, alta de compañía, usuarios y roles; correos de creación de cuenta y recuperación | — |
 | I-1b | Reconciliación de la línea base y cierre de brechas de identidad | M-01 + transversal | RF-18 (cierre), RF-23 (conformidad) | Contrato v1 congelado, especificaciones OpenSpec de `identidad` y `proyectos`, `RF-18` operativo y brechas `GAP` cerradas o aceptadas | I-1 |
-| I-2 | Proyecto y estructura | M-02, M-03 | RF-03, RF-04 | Proyecto configurado (divisa, AIU, tope, firma, visibilidad) con su EDT | I-1 |
-| I-3a | Insumos del proyecto | M-04 | RF-05, RF-06, RF-16, RF-20 | Vista de insumos con listado, filtros, estados y copia desde otros proyectos de la compañía | I-2 |
+| I-2 | Proyecto | M-02 | RF-03 | Proyecto configurado (divisa, AIU, tope, firma, requisitos de auditoría y visibilidad) | I-1b |
+| I-2b | Estructura del trabajo (EDT) | M-03 | RF-04 | EDT recursiva con códigos únicos e inmutables, numeración automática con respaldo por límite de longitud, reorganización libre, baja en cascada, última actividad, búsqueda y cantidades de obra | I-2 |
+| I-3a | Insumos del proyecto | M-04 | RF-05, RF-06, RF-16, RF-20 | Vista de insumos con listado, filtros, estados y copia desde otros proyectos de la compañía | I-2b |
 | I-3b | APUs y matrices | M-05, M-06 (solo RF-22) | RF-07, RF-08, RF-09, RF-22 | APU 1:1 con matrices, copia desde proyectos de la compañía, reconciliación de insumos y conteo de uso | I-3a |
 | I-4a | Cálculo y cotización | M-06, M-09 | RF-10, RF-11, RF-14, RF-17 | Presupuesto calculado, insumos cotizados en masa, autoría y alerta de tope | I-3b |
 | I-4b | Aprobaciones y cierre | M-07 | RF-12, RF-13, RF-21 | Firmas por APU en los tres modos, registro de aprobaciones y cierre del presupuesto | I-4a |
 | I-5 | Catálogo abierto | M-08 | RF-15 | Consulta y copia de APUs e insumos públicos; completa la copia pública de `RF-07` y `RF-08` | I-4b |
 | I-6 | Endurecimiento y entrega | Transversal | — | Seguridad, rendimiento, observabilidad, despliegue y documentación final | I-5 |
+
+> **Dependencia de `I-3b` respecto de `I-2b`:** `RF-07` y `BR-016` exigen que el APU se vincule a un único
+> ítem de la EDT y `RF-22` y `R-21` exigen `quantity_work` para el conteo de uso. Por eso `I-3b` no puede
+> abrirse sin `I-2b`, aunque `I-3a` medie entre ambos.
 
 ### 2.4.3 Justificación del orden
 - **M-04 antes de M-05:** el APU no existe sin insumos (`R-02`).
@@ -817,6 +833,10 @@ Los módulos se definen por **responsabilidad funcional y dato principal**, no p
 - **M-09 dentro de I-4a:** las alertas necesitan el costo calculado y el tope configurado (`RF-17`).
 - **RF-18 en I-1:** el alta de usuarios requiere el envío de credenciales (`D-17`).
 - **RF-23 en I-1:** el autorregistro es la vía de entrada de usuarios sin compañía y no depende de módulos posteriores (`D-72`).
+- **I-2 antes de I-2b:** la EDT es contenido del proyecto, no parte de su configuración; `RF-03` fija la
+  divisa, el AIU y el tope sobre los que la EDT y los APUs se valoran (`D-07`, `D-93`, `D-94`).
+- **I-2b antes de I-3a:** el ítem de la EDT es el destino del APU y el origen de la cantidad de obra; sin
+  él, el APU no tiene contenedor ni medida (`D-31`, `R-20`, `R-21`).
 - **I-1b entre I-1 e I-2:** no se abre `E-2` mientras el contrato v1 no esté congelado, `RF-18` no esté operativo y la matriz de autorización, el modelo de usuario y los contratos no coincidan con el PLAN (`D-74`…`D-111`). `E-2` construye sobre `E-1`, y cualquier divergencia de identidad se propaga a todos los módulos.
 
 ### 2.4.4 Riesgos de la estrategia
@@ -1091,9 +1111,10 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 | `Project` | `id`, `company_id`, `name`, `code`, `description`, `objective`, `country_id`, `department_id`, `municipality_id`, `status`, `is_public`, `director_owner_user_id`, `created_by_user_id`, `created_at`, `last_modified_by_user_id`, `last_modified_at`, `row_version` | Cinco estados (`D-88`); la visibilidad vive solo en el proyecto (`D-22`); `rowversion` (`D-50`, `D-97`); la divisa y el AIU viven en `ProjectConfiguration` (`D-93`) |
 | `ProjectConfiguration` | `project_id` (único), `base_currency_id`, `budget_limit`, `aiu_admin`, `aiu_contingency`, `aiu_profit`, `signature_mode`, `signer_user_id`, `requires_auditor`, `row_version` | Entidad **separada** (`D-93`); divisa y AIU por proyecto (`D-07`, `R-04`, `R-05`); tres modos de firma (`D-03`, `D-90`); `requires_auditor` en `E-2`; tope configurado en `E-2` y verificado en `E-4a` (`D-94`) |
 | `ProjectMember` | `id`, `project_id`, `user_id`, `role_in_project` | **Nueva:** asignación de usuarios a proyectos (`D-02`, `D-34`); única por (`project_id`, `user_id`) |
-| `WbsCode` | `id`, `project_id`, `code`, `node_type` | **Nueva (`D-51`)**: registro único de códigos; índice único (`project_id`, `code`) |
-| `WbsChapter` | `id`, `project_id`, `parent_chapter_id`, `code_id`, `name`, `order_index` | Capítulo o subcapítulo; `code_id` referencia `WbsCode` |
-| `WbsItem` | `id`, `wbs_chapter_id`, `apu_id`, `code_id`, `quantity_work`, `order_index` | Ítem de obra; `apu_id` único (1:1); `code_id` referencia `WbsCode` |
+| `WbsCode` | `id`, `project_id`, `code`, `node_type` | **Nueva (`D-51`)**: registro único de códigos; `code` guarda el código completo ingresado por el usuario y mide 1–10 caracteres (`D-115`, `D-117`); índice único (`project_id`, `code`) sin distinguir mayúsculas (`D-30`) |
+| `WbsChapter` | `id`, `project_id`, `parent_chapter_id`, `code_id`, `name`, `order_index`, `last_modified_by`, `last_modified_at`, `row_version` | Capítulo o subcapítulo sin límite de profundidad ni de hijos (`R-18`); `code_id` referencia un código manual que no se recalcula (`D-117`); autoría (`D-116`) y `row_version` (`D-50`, `D-97`) |
+| `WbsItem` | `id`, `project_id`, `wbs_chapter_id`, `apu_id`, `code_id`, `quantity_work`, `order_index`, `last_modified_by`, `last_modified_at`, `row_version` | Ítem de obra; `project_id` por el principio `3.3.1.2`; `wbs_chapter_id` **nullable** para el ítem raíz (`D-118`); `apu_id` **nullable** con unicidad 1:1 filtrada cuando existe (`D-113`, `BR-016`); `code_id` manual (`D-117`); autoría (`D-116`) y `row_version` (`D-50`, `D-97`) |
+| `WbsProjectActivity` | `project_id`, `user_id`, `last_modified_at` | **Nueva (`D-120`)**: una fila por proyecto y usuario con la última modificación del EDT; la lista de filas son los participantes y `MAX(last_modified_at)` es la última actividad; sin historial (`D-08`) |
 
 | `Apu` | `id`, `project_id`, `description`, `unit`, `yield`, `status`, `last_modified_by`, `last_modified_at` | Se eliminan `code` (`D-31`) e `is_public` (`D-22`). Sin tabla de versiones |
 | `Resource` | `id`, `project_id`, `resource_type_id`, `municipality_id`, `description`, `unit`, `unit_price`, `brand`, `distributor`, `user_key`, `details`, `contact_number`, `quotation_status`, `origin_resource_id`, `last_modified_by`, `last_modified_at` | Se elimina `is_public`; `origin_resource_id` solo registra procedencia del catálogo (`Q-16`); la unicidad es sugerida (`Q-09`); `municipality_id` sustituye a `city_id` (`D-96`) |
@@ -1110,7 +1131,13 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 | Regla | Implementación |
 |---|---|
 | Código único del EDT por proyecto | Índice único (`project_id`, `code`) en `WbsCode` (`D-30`, `D-51`) |
-| Un APU por ítem | Índice único sobre `WbsItem.apu_id` (`D-16`) |
+| Un APU por ítem | Índice único **filtrado** sobre `WbsItem.apu_id` con `WHERE apu_id IS NOT NULL` (`D-16`, `D-113`): el ítem existe desde `I-2b` y el APU llega en `I-3b` |
+| Código único del EDT sin distinguir mayúsculas | Índice único (`project_id`, `code`) sobre intercalación `Latin1_General_100_CI_AS` (`D-30`, `D-51`, `BR-015`) |
+| Longitud del código del EDT | 1–10 caracteres en capítulos y 1–5 en ítems, medidos sobre el segmento ingresado; el código efectivo no supera 10 caracteres (`R-19`, `D-115`) |
+| Inmutabilidad del código del EDT | El código se asigna al crear y no se renumera; sobrevive a bajas, reordenamientos, movimientos y renombrados de otros nodos (`D-117`) |
+| Desbordamiento del código | Si la composición natural supera 10 caracteres, el código de respaldo `[A-Z][A-Z0-9]{2}` es único y sirve de prefijo hasta que vuelva a desbordar (`D-117`) |
+| Ítem raíz | `wbs_items.wbs_chapter_id` nullable; varios ítems raíz se ordenan por `order_index` junto a los capítulos raíz (`D-118`) |
+| Actividad del EDT | Una fila por `project_id` y `user_id` en `wbs_project_activity`, sobrescrita en cada escritura; los participantes son las filas y la última actividad es `MAX(last_modified_at)` (`D-120`) |
 | Una configuración por proyecto | Índice único sobre `project_id` |
 | Un usuario una vez por proyecto | Índice único (`project_id`, `user_id`) |
 | Una aprobación por APU | Índice único sobre `apu_id` en `ApuApproval` (`D-52`) |
@@ -1124,7 +1151,7 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 | Consumo y desperdicio | `consumption > 0`; `waste_percentage` entre 0 y 100 |
 | Precio unitario | `unit_price >= 0` |
 | Tipo de nodo | `node_type IN ('CHAPTER','ITEM')` |
-| Coherencia | `WbsItem` exige `apu_id` y `quantity_work`; `WbsChapter` exige `name`; `WbsCode.node_type` coincide con la tabla que lo referencia |
+| Coherencia | `WbsItem` exige `quantity_work` y su capítulo es nulo solo si es ítem raíz (`D-118`); `apu_id` es opcional hasta `I-3b`; `WbsChapter` exige `name`; `WbsCode.node_type` coincide con la tabla que lo referencia |
 | Documento de identidad | No único; solo `email` y `username` son únicos (`D-73`, `D-77`) |
 | Estado del proyecto | `status IN ('POR_COTIZAR','FALTA_INFORMACION','COTIZADO','FINALIZADO','INHABILITADO')` con `CHECK` (`D-88`) |
 | Transición a `COTIZADO` | Regla de dominio: exige el 100 % de insumos cotizados (`D-89`); no se implementa como `CHECK` |
@@ -1153,8 +1180,9 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 | Aislamiento por compañía | `Project(company_id, is_public)` | Listados privados y catálogo público |
 | Jerarquía del EDT | `WbsChapter(project_id, parent_chapter_id, order_index)` | Recorrido del árbol y orden |
 | Código único | `WbsCode(project_id, code)` único | Regla `D-30`, `D-51` |
-| APU único por ítem | `WbsItem(apu_id)` único | Regla 1:1 (`D-16`) |
-| Ítems por capítulo | `WbsItem(wbs_chapter_id, order_index)` | Listado del capítulo |
+| APU único por ítem | `WbsItem(apu_id)` único filtrado (`WHERE apu_id IS NOT NULL`) | Regla 1:1 (`D-16`, `D-113`) |
+| Ítems por capítulo | `WbsItem(project_id, wbs_chapter_id, order_index)` | Listado del capítulo y de la raíz (`D-118`) |
+| Actividad del EDT | `WbsProjectActivity(project_id, user_id)` único y `WbsProjectActivity(project_id, last_modified_at)` | Una fila por proyecto y usuario; última actividad por proyecto (`D-120`) |
 | Búsqueda de APU | `Apu(project_id, status)` | Listados y conteos |
 | Insumos por tipo y estado | `Resource(project_id, resource_type_id)`, `Resource(project_id, quotation_status)` | Filtros y cotización masiva |
 | Búsqueda de insumos | `Resource(project_id, description)` | Búsqueda parcial (`D-25`) |
@@ -1172,8 +1200,8 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 | Historial de visibilidad | `ProjectVisibilityTransition(project_id, changed_at)` | Trazabilidad de visibilidad (`D-92`) |
 
 ### 3.3.6 Concurrencia y borrado
-- **Concurrencia (`D-50`):** `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource`; la API responde `409 Conflict` y el cliente recarga.
-- **Borrado (`D-49`):** baja lógica (`is_active` o `deleted_at`) para `Project`, `Apu` y `Resource`, y `RESTRICT` para registros referenciados. No se permite borrar un APU con aprobaciones.
+- **Concurrencia (`D-50`):** `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource`; la API responde `409 Conflict` y el cliente recarga. El movimiento de un nodo exige la `rowversion` del nodo movido.
+- **Borrado (`D-49`):** baja lógica (`is_active` o `deleted_at`) para `Project`, `Apu` y `Resource`, y `RESTRICT` para registros referenciados. No se permite borrar un APU con aprobaciones. **La EDT se elimina físicamente con `RESTRICT`** (`D-114`): un capítulo con subcapítulos o ítems exige confirmación de la cascada y la aplicación borra el subárbol completo, de hijos a padres, dentro de una transacción (`D-119`); un ítem con APU se elimina y el APU no se borra.
 - Los hijos de composición (`ApuResource`, `MatrixComponent`, `ApuApproval`) se eliminan en cascada solo cuando se elimina físicamente su padre, situación que la baja lógica evita.
 
 ### 3.3.7 Migraciones y datos iniciales
@@ -1473,15 +1501,16 @@ Cada cambio recorre este flujo:
 | E-0 | Preparación técnica | Transversal | — | Repositorio, solución, `docker-compose` con SQL Server, CI en verde, OpenSpec inicializado y seeds | — |
 | E-1 | Base de acceso y organización | M-01 | RF-01, RF-02, RF-18, RF-23 | Autorregistro público, login, alta de compañía, usuarios y roles, correos de cuenta y recuperación | E-0 |
 | E-1b | Reconciliación de la línea base | M-01 + transversal | RF-18 (cierre), RF-23 (conformidad) | Contrato v1 congelado, especificaciones OpenSpec de `identidad` y `proyectos`, `RF-18` operativo, brechas `GAP` cerradas o aceptadas y roles/permisos alineados al PLAN | E-1 |
-| E-2 | Proyecto y estructura | M-02, M-03 | RF-03, RF-04 | Proyecto configurado (divisa, AIU, tope, firma, visibilidad) con su EDT y códigos | E-1b |
-| E-3a | Insumos del proyecto | M-04 | RF-05, RF-06, RF-16, RF-20 | Vista de insumos con listado, filtros, estados y copia desde otros proyectos | E-2 |
+| E-2 | Proyecto | M-02 | RF-03 | Proyecto configurado (divisa, AIU, tope, firma, requisitos de auditoría y visibilidad) | E-1b |
+| E-2b | Estructura del trabajo (EDT) | M-03 | RF-04 | EDT recursiva con códigos manuales únicos e inmutables, reorganización libre, baja en cascada, actividad y participantes, búsqueda y cantidades de obra | E-2 |
+| E-3a | Insumos del proyecto | M-04 | RF-05, RF-06, RF-16, RF-20 | Vista de insumos con listado, filtros, estados y copia desde otros proyectos | E-2b |
 | E-3b | APUs y matrices | M-05, M-06 (RF-22) | RF-07, RF-08, RF-09, RF-22 | APU 1:1 con matrices, copia desde proyectos de la compañía, reconciliación de insumos y conteo de uso | E-3a |
 | E-4a | Cálculo y cotización | M-06, M-09 | RF-10, RF-11, RF-14, RF-17 | Presupuesto calculado, insumos cotizados en masa, autoría y alerta de tope | E-3b |
 | E-4b | Aprobaciones y cierre | M-07 | RF-12, RF-13, RF-21 | Aprobación por APU según el modo configurado y cierre a `FINALIZADO` | E-4a |
 | E-5 | Catálogo abierto | M-08 | RF-15 | Consulta y copia de APUs e insumos públicos; completa la copia pública de RF-07 y RF-08 | E-4b |
 | E-6 | Endurecimiento y entrega | Transversal | — | Seguridad, rendimiento, observabilidad, respaldo documentado, despliegue local y documentación final | E-5 |
 
-Las etapas `E-3a`/`E-3b` y `E-4a`/`E-4b` corresponden a la división de `I-3` e `I-4` aprobada en `Q-25`. La etapa `E-1b` se añade en v0.29 (`D-74`…`D-111`) y es obligatoria: ninguna de sus funcionalidades es nueva salvo el cierre de `RF-18`; su propósito es que el código ya implementado y la especificación OpenSpec coincidan antes de abrir `E-2` (`4.8`).
+Las etapas `E-2`/`E-2b`, `E-3a`/`E-3b` y `E-4a`/`E-4b` corresponden a la división de `I-2`, `I-3` e `I-4` aprobada en `Q-25`. La etapa `E-1b` se añade en v0.29 (`D-74`…`D-111`) y es obligatoria: ninguna de sus funcionalidades es nueva salvo el cierre de `RF-18`; su propósito es que el código ya implementado y la especificación OpenSpec coincidan antes de abrir `E-2` (`4.8`). La etapa `E-2b` se separa de `E-2` en v0.31 porque `E-1b` absorbió `M-02` y la EDT nunca se especificó ni se implementó; sin `E-2b`, `E-3b` queda bloqueado (`RF-07`, `BR-016`, `RF-22`, `R-21`).
 
 ## 4.3 Orden de desarrollo de funcionalidades
 | Orden | Etapa | Funcionalidades | Motivo del orden |
@@ -1489,13 +1518,14 @@ Las etapas `E-3a`/`E-3b` y `E-4a`/`E-4b` corresponden a la división de `I-3` e 
 | 1 | E-0 | — | Sin pipeline ni base local no se puede verificar nada |
 | 2 | E-1 | RF-01, RF-02, RF-18, RF-23 | Todo lo demás requiere usuario, compañía y roles; el autorregistro es la vía de entrada sin intervención administrativa |
 | 3 | E-1b | RF-18, RF-23 (conformidad) | Cierra las brechas de identidad y congela el contrato antes de que otro módulo dependa de él |
-| 4 | E-2 | RF-03, RF-04 | El proyecto y la EDT son el contenedor de insumos y APUs |
-| 5 | E-3a | RF-05, RF-06, RF-16, RF-20 | El APU no existe sin insumos (`R-02`) |
-| 6 | E-3b | RF-07, RF-08, RF-09, RF-22 | La composición y el conteo requieren insumos y cantidades de obra |
-| 7 | E-4a | RF-10, RF-11, RF-14, RF-17 | No se cotiza ni alerta sin costo calculado |
-| 8 | E-4b | RF-12, RF-13, RF-21 | No se aprueba ni cierra sin cálculo y cotización |
-| 9 | E-5 | RF-15 | El catálogo depende de proyectos públicos con APUs completos |
-| 10 | E-6 | — | Cierra calidad, seguridad y entrega |
+| 4 | E-2 | RF-03 | La configuración del proyecto es el contenedor de todo el contenido técnico |
+| 5 | E-2b | RF-04 | El ítem de la EDT es el destino del APU y la fuente de la cantidad de obra (`D-31`, `R-20`, `R-21`) |
+| 6 | E-3a | RF-05, RF-06, RF-16, RF-20 | El APU no existe sin insumos (`R-02`) |
+| 7 | E-3b | RF-07, RF-08, RF-09, RF-22 | La composición y el conteo requieren insumos y cantidades de obra |
+| 8 | E-4a | RF-10, RF-11, RF-14, RF-17 | No se cotiza ni alerta sin costo calculado |
+| 9 | E-4b | RF-12, RF-13, RF-21 | No se aprueba ni cierra sin cálculo y cotización |
+| 10 | E-5 | RF-15 | El catálogo depende de proyectos públicos con APUs completos |
+| 11 | E-6 | — | Cierra calidad, seguridad y entrega |
 | — | — | RF-19 | Excluida del MVP (`D-18`) |
 
 **Notas de alcance:**
@@ -1566,7 +1596,8 @@ Las verificaciones de integración de esta tabla son manuales (`D-66`); las unit
 | E-0 | Compose levanta API y base; `/health` responde | Pipeline en verde y contenedores arriba |
 | E-1 | Un visitante se autorregistra sin sesión y un Administrador crea compañía y usuario; llegan los dos correos | Prueba de autorización, de registro y de correo |
 | E-1b | Reconciliación demostrada: `RF-18` operativo, contrato v1 congelado, `openspec/specs/identidad` y `proyectos` validadas y brechas `GAP` cerradas o aceptadas | Checklist `4.8.7` firmado, Swagger versionado y registro `GAP` actualizado |
-| E-2 | Proyecto configurado con EDT, numeración y búsqueda por código | Pruebas de jerarquía y unicidad |
+| E-2 | Proyecto configurado con divisa, AIU, tope, firma, requisito de auditor y visibilidad | Pruebas de configuración, transiciones y membresías |
+| E-2b | EDT recursiva con numeración automática, códigos únicos e inmutables, reorganización libre con ítems raíz, baja en cascada y última actividad | Pruebas de jerarquía, unicidad, inmutabilidad, movimiento, cascada y cantidades |
 | E-3a | Insumos listados, filtrados, cotizados y copiados entre proyectos | Pruebas de filtros y copia |
 | E-3b | APU con matriz, insumos reconciliados y conteo de uso | Pruebas de composición, matriz y conteo |
 | E-4a | Presupuesto calculado, cotización masiva y alerta de tope | Pruebas del motor y de la alerta |
@@ -1780,7 +1811,7 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | RF-01 | T-I-01, T-S-01, T-S-04, T-I-27, T-I-28, T-I-29, T-I-31, T-S-09, T-S-10, T-S-11 | Integración y seguridad |
 | RF-02 | T-I-02, T-S-05, T-I-26 | Integración y seguridad |
 | RF-03 | T-I-03, T-I-30, T-I-32, T-U-12 | Integración y unitaria |
-| RF-04 | T-U-01, T-I-04 | Unitaria e integración |
+| RF-04 | T-U-01, T-I-04, T-U-18, T-U-19, T-I-39, T-I-40, T-S-16, T-S-17, T-C-04, T-A-03 | Unitaria, integración, seguridad, contrato y arquitectura |
 | RF-05 | T-U-02, T-I-05, T-U-13, T-I-33, T-U-15, T-U-16, T-I-36, T-I-37 | Unitaria e integración |
 | RF-06 | T-I-06, T-I-34, T-U-16, T-S-15 | Integración, unitaria y seguridad |
 | RF-07 | T-I-07, T-E-01 | Integración y E2E |
@@ -1872,6 +1903,18 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | T-I-38 | Selector, alerta de ubicación y asignación no bloqueante (`REQ-PROVEEDORES-09`, `REQ-PROVEEDORES-10`) | Integración manual |
 | T-S-15 | Proveedores: aislamiento entre compañías y solo lectura de Administrador y Auditor (`REQ-PROVEEDORES-07`) | Seguridad manual |
 | T-C-03 | Contrato v1 de proveedores: `camelCase`, `ProblemDetails`, selector de dos campos y alerta (`REQ-PROVEEDORES-08`, `REQ-PROVEEDORES-09`, `REQ-PROVEEDORES-10`) | Contrato en CI |
+
+### 5.6.7 Verificación de la etapa `E-2b`
+| Verificación | Qué comprueba | Nivel |
+|---|---|---|
+| T-U-18 | Código manual obligatorio, validación de formato 1–10, unicidad case-insensitive, endpoint de validación, inmutabilidad del código y compactación de posiciones (`RF-04`; `D-30`, `D-117`, `R-19`) | Unitaria |
+| T-U-19 | Conjunto cerrado de caracteres con mayúsculas y minúsculas, longitud 1–10 del código completo, unicidad sin distinguir mayúsculas, `quantityWork > 0`, validación de ciclo, movimiento con `targetIndex` y orden de borrado en cascada (`RF-04`; `BR-015`; `R-19`; `D-118`, `D-119`) | Unitaria |
+| T-I-39 | Persistencia de `wbs_codes`, `wbs_chapters`, `wbs_items` y `wbs_project_activity`: `CHECK`, FKs `RESTRICT`, índice único sin distinguir mayúsculas, índice único filtrado de `apu_id`, `wbs_chapter_id` nullable y `rowversion` (`D-51`, `D-107`, `D-113`, `D-118`, `D-120`) | Integración manual |
+| T-I-40 | Jerarquía, búsqueda por código o nombre, orden de nodos e ítems raíz, movimiento, cascada, actividad y participantes, y aislamiento entre dos proyectos de la misma compañía (`RF-04`; `D-30`, `D-118`, `D-119`, `D-120`) | Integración manual |
+| T-S-16 | Aislamiento entre compañías: un actor de la compañía A no lee ni escribe la EDT de la compañía B (`R-10`, `R-14`; `D-02`, `D-36`) | Seguridad manual |
+| T-S-17 | Fail-closed y matriz de `WBS_READ`/`WBS_WRITE`: `403` verificable para Administrador en escritura y Auditor en escritura, con evento de seguridad (`D-82`, `D-83`, `D-84`) | Seguridad manual |
+| T-C-04 | Contrato v1 de la EDT: `camelCase`, `ProblemDetails` con `extensions.code` y paginación `page`/`pageSize` (`D-99`, `D-100`, `D-101`) | Contrato en CI |
+| T-A-03 | Reglas de capas y de módulo: `M-03` no referencia `M-02` ni `DbContext` (`D-54`, `D-63`, `D-105`) | Arquitectura en CI |
 
 ## 5.7 Herramientas de prueba
 | Herramienta | Uso | Estado |
@@ -2013,7 +2056,7 @@ Una **capacidad** por módulo; un **cambio** por funcionalidad o grupo pequeño;
 |---|---|---|---|
 | Identidad | `identidad` | RF-01, RF-02, RF-18, RF-23 | E-1 |
 | Proyectos | `proyectos` | RF-03 | E-2 |
-| EDT | `edt` | RF-04 | E-2 |
+| EDT | `edt` | RF-04 | E-2b |
 | Insumos | `insumos` | RF-05, RF-06, RF-16, RF-20 | E-3a |
 | APUs | `apus` | RF-07, RF-08, RF-09, RF-22 | E-3b |
 | Cálculo | `calculo` | RF-10 | E-4a |

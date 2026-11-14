@@ -9,7 +9,7 @@
 | RF-01 | Usuarios, roles y asignación a compañías y proyectos | Alta | Sí | La autorización se decide por `permission_key` activo (fail-closed); el Administrador crea y cambia roles globalmente y edita o desactiva cuentas; el Director asigna usuarios de su compañía a proyectos |
 | RF-02 | Compañías: creación y datos de registro | Alta | Sí | Se crea la compañía con razón social y NIT únicos y datos de registro, representante legal y coherencia territorial; el Administrador inhabilita o reactiva cualquiera y el Director la propia |
 | RF-03 | Configuración del proyecto | Alta | Sí | Una sola configuración por proyecto con divisa base, AIU, tope, modo de firma (tres), firmante y requisito de auditor; la visibilidad vive en el proyecto |
-| RF-04 | EDT recursiva con códigos | Alta | Sí | Capítulos e ítems sin límite de profundidad; códigos únicos por proyecto; búsqueda parcial por código o nombre |
+| RF-04 | EDT recursiva con códigos | Alta | Sí | Capítulos e ítems sin límite de profundidad, con ítems también en la raíz; códigos manuales únicos por proyecto e inmutables después de crearse, con validación de disponibilidad; reorganización libre, baja en cascada confirmada, actividad y participantes; búsqueda parcial por código o nombre (`D-117`…`D-120`) |
 | RF-05 | Insumos del proyecto | Alta | Sí | Siete tipos, estados de cotización y sugerencia de unicidad; los cuatro campos obligatorios y el proveedor definen `FALTA_INFORMACION`; el directorio de proveedores es por compañía |
 | RF-06 | Copia de insumos entre proyectos | Media | Sí | Se copia un insumo con su precio a otro proyecto de la compañía; queda independiente |
 | RF-07 | APUs por proyecto | Alta | Sí | APU 1:1 con el ítem; creación y copia desde proyectos de la compañía o del catálogo público |
@@ -87,7 +87,9 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | Proyectos | Inhabilitar o reactivar | `PROJECTS_STATUS_CHANGE` | No | Sí | No | No |
 | Proyectos | Cambiar visibilidad | `PROJECTS_VISIBILITY_CHANGE` | No | Sí | No | No |
 | Pertenencia | Asignar miembros al proyecto | `PROJECT_MEMBERS_ASSIGN` | No | Sí (su compañía) | Sí (Presupuestadores y Auditores) | No |
-| EDT | Crear y editar | — | No (lectura) | Sí | Sí | No (lectura) |
+| EDT | Crear, editar, mover y eliminar | `WBS_WRITE` | No (lectura) | Sí (proyectos de su compañía) | Sí (proyectos asignados) | No (lectura) |
+| EDT | Consultar el árbol y buscar | `WBS_READ` | Sí | Sí (proyectos de su compañía) | Sí (proyectos asignados) | Sí (proyectos asignados) |
+| EDT | Consultar actividad y participantes | `WBS_READ` | Sí | Sí (proyectos de su compañía) | Sí (proyectos asignados) | No |
 | Insumos | Crear, editar y copiar | `RESOURCES_WRITE` | No (lectura) | Sí | Sí | No (lectura) |
 | Insumos | Consultar y filtrar | `RESOURCES_READ` | Sí | Sí | Sí (asignados) | Sí (asignados) |
 | Proveedores | Crear, editar, dar de baja y reactivar | `SUPPLIERS_WRITE` | No (lectura) | Sí (su compañía) | Sí (su compañía) | No (lectura) |
@@ -114,7 +116,18 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | `PATCH /projects/{id}/status` | Transición válida del dominio; actor por transición (`DEC-22`); `409` si el estado no lo permite |
 | `PUT /projects/{id}` | `name` no vacío; `signingMode` válido; AIU 0–100 con máximo dos decimales; `budgetLimit` > 0 con máximo dos decimales. El Director de proyectos es el único que puede cambiar ubicación, divisa, tope, AIU, modo de firma, firmante y `requiresAuditor` (`D-112`); el Presupuestador que intente cambiarlos recibe `403 PROJECT_CONFIGURATION_FORBIDDEN` o `403 PROJECT_SIGNATURE_CONFIGURATION_FORBIDDEN` |
 | `POST /projects/{id}/memberships` | Rol objetivo en `DIRECTOR`, `PRESUPUESTADOR` o `AUDITOR`; el usuario debe pertenecer a la compañía del proyecto; el Administrador y el Auditor no gestionan membresías; se permite asignar auditores con `requiresAuditor = false` (`D-112`) |
-| `POST /projects/{id}/wbs` | `code` único por proyecto; 1–10 caracteres en capítulos y 1–5 en ítems; `parentId` del mismo proyecto; `quantityWork` > 0 en ítems |
+| `GET /projects/{id}/wbs` | Árbol completo del proyecto ordenado por `orderIndex`, con los ítems raíz junto a los capítulos raíz (`D-118`); requiere `WBS_READ` |
+| `GET /projects/{id}/wbs/search` | Búsqueda parcial por `code` de ítem o `name` de capítulo; paginación `page`/`pageSize` (`D-101`); requiere `WBS_READ` |
+| `GET /projects/{id}/wbs/activity` | Participantes y última actividad del EDT: una fila por proyecto y usuario, `MAX(last_modified_at)` como última actividad (`D-120`); `200` con `lastActivity=null` y `participants=[]` si no hay actividad; Auditor excluido; requiere `WBS_READ` |
+| `GET /projects/{id}/wbs/codes/validate` | Valida `code` (1–10, `R-19`) y su disponibilidad en el proyecto, con `excludeNodeId` opcional para edición; responde `200` con `isValid`, `isAvailable` y `reason`; requiere `WBS_WRITE` |
+| `POST /projects/{id}/wbs/chapters` | `name` no vacío y ≤ 255; `code` obligatorio de 1–10 caracteres del conjunto de `R-19`, con mayúsculas y minúsculas; `parentChapterId` del mismo proyecto; código único por proyecto sin distinguir mayúsculas (`BR-015`); sin numeración automática ni respaldo (`D-117`); requiere `WBS_WRITE` |
+| `PUT /projects/{id}/wbs/chapters/{chapterId}` | `rowVersion` obligatorio; cambia solo el nombre y el código del capítulo y no reescribe a los descendientes (`D-117`); requiere `WBS_WRITE` |
+| `DELETE /projects/{id}/wbs/chapters/{chapterId}?cascade=true&rowVersion=...` | `rowVersion` obligatorio; sin `cascade` y con descendientes responde `409 WBS_NODE_HAS_CHILDREN`; con `cascade=true` elimina el subárbol completo con sus códigos (`D-119`); requiere `WBS_WRITE` |
+| `POST /projects/{id}/wbs/items` | `code` obligatorio de 1–10 caracteres del conjunto de `R-19`; `wbsChapterId` opcional: nulo crea un ítem raíz (`D-118`); `quantityWork` > 0; `apuId` no se acepta en este incremento (`D-113`); requiere `WBS_WRITE` |
+| `PUT /projects/{id}/wbs/items/{itemId}` | `rowVersion` obligatorio; `code` y `quantityWork` > 0; el traslado se hace con `move`; requiere `WBS_WRITE` |
+| `DELETE /projects/{id}/wbs/items/{itemId}?rowVersion=...` | `rowVersion` obligatorio; elimina el ítem y su código; si tiene APU, el APU no se borra y queda desvinculado (`D-119`); requiere `WBS_WRITE` |
+| `POST /projects/{id}/wbs/reorder` | Reordena los hijos de un padre, incluida la raíz; la lista debe contener todos los hijos vigentes; compacta posiciones y no renumera códigos (`D-117`); requiere `WBS_WRITE` |
+| `POST /projects/{id}/wbs/move` | Mueve un capítulo con su subárbol o un ítem a otro capítulo del mismo proyecto o a la raíz (`targetParentChapterId` nulo), con `targetIndex` y `rowVersion`, sin cambiar códigos; rechaza ciclos con `400 WBS_MOVE_CYCLE` y destinos ajenos con `404 WBS_TARGET_NOT_FOUND` (`D-118`); requiere `WBS_WRITE` |
 | `POST /projects/{id}/resources` | `description` obligatoria; `unitPrice` ≥ 0; `unit` y `brand` requeridos para salir de `FALTA_INFORMACION`; `resourceTypeId` válido y `municipalityId` existente y obligatorio (`D-96`); `rowVersion` obligatorio en la edición; opcionales sin bloquear |
 | `GET /projects/{id}/resources` | Búsqueda parcial por `description`; filtros por `resourceTypeId`, `quotationStatus`, `brand`, `municipalityId` y rango de precio; orden por `description`, `unitPrice`, `quotationStatus` o `lastModifiedAt`; paginación `page`/`pageSize` (`D-101`) |
 | `POST /apus` | `description` no vacía; `unit` no vacía; `yield` > 0; `projectId` con pertenencia validada |

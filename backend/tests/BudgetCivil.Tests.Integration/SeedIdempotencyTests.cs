@@ -81,6 +81,16 @@ public sealed class SeedIdempotencyTests(DatabaseFixture fixture) : IClassFixtur
         Assert.DoesNotContain("SUPPLIERS_WRITE", administratorPermissions);
         Assert.Contains("SUPPLIERS_READ", auditorPermissions);
         Assert.DoesNotContain("SUPPLIERS_WRITE", auditorPermissions);
+
+        // REQ-EDT-13 y REQ-EDT-14 (seed v7): Administrador y Auditor leen; Director y Presupuestador escriben.
+        Assert.Contains("WBS_READ", administratorPermissions);
+        Assert.DoesNotContain("WBS_WRITE", administratorPermissions);
+        Assert.Contains("WBS_READ", directorPermissions);
+        Assert.Contains("WBS_WRITE", directorPermissions);
+        Assert.Contains("WBS_READ", estimatorPermissions);
+        Assert.Contains("WBS_WRITE", estimatorPermissions);
+        Assert.Contains("WBS_READ", auditorPermissions);
+        Assert.DoesNotContain("WBS_WRITE", auditorPermissions);
     }
 
     /// <summary>
