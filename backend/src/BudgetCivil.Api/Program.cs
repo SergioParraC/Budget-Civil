@@ -276,6 +276,18 @@ builder.Services.AddAuthorization(options =>
             .RequirePermission("SUPPLIERS_WRITE"));
 
     options.AddPolicy(
+        AuthorizationPolicies.WbsRead,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("WBS_READ"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.WbsWrite,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("WBS_WRITE"));
+
+    options.AddPolicy(
         AuthorizationPolicies.ProjectMembersAssign,
         policy => policy
             .RequireAuthenticatedUser()

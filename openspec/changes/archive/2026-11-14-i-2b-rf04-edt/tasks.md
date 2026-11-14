@@ -28,104 +28,107 @@ registran en `PLAN §5.6.7` y amplían su alcance en este cambio:
 
 ## 1. Preparación y dominio
 
-- [ ] 1.1 Verificar la cadena de migraciones y la ausencia real de tablas `wbs_*`; verificación:
+- [x] 1.1 Verificar la cadena de migraciones y la ausencia real de tablas `wbs_*`; verificación:
   `dotnet ef migrations list` lista la cadena vigente, `BudgetCivilDbContextModelSnapshot.cs` no contiene
   `wbs` y `backend/src` no tiene clases `Wbs*`.
-- [ ] 1.2 Crear `WbsNodeType`, `WbsNodeTypeCodes`, `WbsCode`, `WbsChapter`, `WbsItem` y `WbsProjectActivity`
+- [x] 1.2 Crear `WbsNodeType`, `WbsNodeTypeCodes`, `WbsCode`, `WbsChapter`, `WbsItem` y `WbsProjectActivity`
   en `Domain/Wbs` con fábricas, autoría (`D-116`), cantidad validada, `WbsChapterId` nullable (`D-118`) y
   `ApuId` nullable; verificación: pruebas unitarias de alta válida, ítem raíz, nombre vacío, cantidad no
   positiva y APU ignorado (`SC-EDT-06`, `SC-EDT-25`…`29`, `SC-EDT-40`).
-- [ ] 1.3 Implementar `WbsCodePolicy` con `IsValidCode` y `NormalizeCode` (1–10, `R-19`, mayúsculas y
+- [x] 1.3 Implementar `WbsCodePolicy` con `IsValidCode` y `NormalizeCode` (1–10, `R-19`, mayúsculas y
   minúsculas, sin composición ni respaldo); eliminar `RecomputeDescendantCodes`, `ComposeEffectiveCode`,
   `NextNaturalSegment`, `NextFallbackCode`, `ExceedsLimit` y la noción de código personalizado; verificación:
   pruebas de formato, longitud y normalización (`SC-EDT-20`…`24`, `SC-EDT-58`…`61`).
-- [ ] 1.4 Implementar la creación con código manual obligatorio, la edición explícita del código y la
+- [x] 1.4 Implementar la creación con código manual obligatorio, la edición explícita del código y la
   inmutabilidad ante baja, reordenamiento, movimiento y renombrado; verificación: `T-U-18` en verde con
   `SC-EDT-08`…`19`.
-- [ ] 1.5 Implementar en dominio la validación de movimiento (destino capítulo, mismo proyecto, ciclo,
+- [x] 1.5 Implementar en dominio la validación de movimiento (destino capítulo, mismo proyecto, ciclo,
   `targetIndex` después de retirar el nodo) y el orden de borrado de un subárbol de hijos a padres;
   verificación: `T-U-19` en verde con `SC-EDT-62`…`70`, `SC-EDT-75` y `SC-EDT-51`…`55`.
 
 ## 2. Persistencia
 
-- [ ] 2.1 Crear `WbsCodeConfiguration`, `WbsChapterConfiguration`, `WbsItemConfiguration` y
+- [x] 2.1 Crear `WbsCodeConfiguration`, `WbsChapterConfiguration`, `WbsItemConfiguration` y
   `WbsProjectActivityConfiguration` con longitudes, intercalación `Latin1_General_100_CI_AS`, `CHECK`, FKs
   `RESTRICT`, `row_version`, índices, `wbs_chapter_id` nullable y el índice único filtrado de `apu_id`;
   verificación: `dotnet ef migrations script` muestra las cuatro tablas, la nulabilidad y
   `UQ_wbs_items_apu_id` con `WHERE apu_id IS NOT NULL`.
-- [ ] 2.2 Registrar `WbsCodes`, `WbsChapters`, `WbsItems` y `WbsProjectActivities` en `BudgetCivilDbContext`
+- [x] 2.2 Registrar `WbsCodes`, `WbsChapters`, `WbsItems` y `WbsProjectActivities` en `BudgetCivilDbContext`
   y aplicar las configuraciones; verificación: `dotnet build` sin errores y el snapshot contiene las cuatro
   tablas.
-- [ ] 2.3 Implementar `WbsRepository` (árbol, búsqueda, validación de código, posiciones, movimiento, cascada
+- [x] 2.3 Implementar `WbsRepository` (árbol, búsqueda, validación de código, posiciones, movimiento, cascada
   y actividad/participantes) y `WbsProjectAccessReader`; verificación: compila y `T-I-39` cubre lectura del
   árbol, unicidad y *upsert* de `wbs_project_activity`.
-- [ ] 2.4 Generar y revisar la migración `wbs_add_i2b`, y documentar respaldo, aplicación y reversión en
+- [x] 2.4 Generar y revisar la migración `wbs_add_i2b`, y documentar respaldo, aplicación y reversión en
   `docs/runbook-migraciones.md`; verificación: `dotnet ef migrations script` revisado, `Down` elimina tablas,
   índices y FKs en orden inverso, y `dotnet ef migrations list` incluye la migración.
-- [ ] 2.5 Escribir `WbsPersistenceTests` contra SQL Server local; verificación: `rowversion`, `CHECK` de
+- [x] 2.5 Escribir `WbsPersistenceTests` contra SQL Server local; verificación: `rowversion`, `CHECK` de
   cantidad, unicidad `cim`/`CIM`, ítem raíz, `UQ_wbs_items_apu_id` y una fila por proyecto/usuario en
   `wbs_project_activity` en verde (`T-I-39`).
 
 ## 3. Aplicación
 
-- [ ] 3.1 Definir `IWbsRepository` e `IWbsProjectAccessReader` en `Application/Wbs/Repositories` e
+- [x] 3.1 Definir `IWbsRepository` e `IWbsProjectAccessReader` en `Application/Wbs/Repositories` e
   implementar `WbsAccessService` con las reglas de `REQ-EDT-13` y `REQ-EDT-14`, incluida la exclusión del
   Auditor en actividad; verificación: pruebas unitarias de Administrador, Director, Presupuestador asignado
   y no asignado y Auditor (`SC-EDT-42`…`50`, `76`).
-- [ ] 3.2 Implementar los comandos de capítulo (alta con código manual, edición de nombre y código, y baja
+- [x] 3.2 Implementar los comandos de capítulo (alta con código manual, edición de nombre y código, y baja
   con cascada confirmada) con sus validadores y `rowVersion`; verificación: pruebas unitarias de `SC-EDT-01`,
   `05`, `08`…`19`, `52`…`54` y `WBS_CODE_INVALID`/`WBS_CONCURRENCY_CONFLICT`.
-- [ ] 3.3 Implementar los comandos de ítem (alta dentro de capítulo o en la raíz con código manual, edición
+- [x] 3.3 Implementar los comandos de ítem (alta dentro de capítulo o en la raíz con código manual, edición
   de código y cantidad, y baja con `rowVersion`) con cantidad y cascada; verificación: pruebas unitarias de
   `SC-EDT-06`, `25`…`29`, `51`, `55` y `WBS_CONCURRENCY_CONFLICT`.
-- [ ] 3.4 Implementar el comando de movimiento con ciclo, destino, `targetIndex` después de retirar el nodo
+- [x] 3.4 Implementar el comando de movimiento con ciclo, destino, `targetIndex` después de retirar el nodo
   y compactación, y el reordenamiento por padre; verificación: pruebas unitarias de `SC-EDT-33`…`36`,
   `62`…`70`, `75` y `WBS_CONCURRENCY_CONFLICT`.
-- [ ] 3.5 Implementar las consultas de árbol (con ítems raíz), búsqueda, validación de código y actividad con
+- [x] 3.5 Implementar las consultas de árbol (con ítems raíz), búsqueda, validación de código y actividad con
   `ListingQueryPipeline` y `PaginationValidator`; verificación: pruebas unitarias de `SC-EDT-30`…`32`, `36`,
   `58`…`61`, `71`…`74`, `76` y respuesta `PAGE_SIZE_INVALID`.
-- [ ] 3.6 Escribir las pruebas de los manejadores con dobles de `IWbsRepository`; verificación:
+- [x] 3.6 Escribir las pruebas de los manejadores con dobles de `IWbsRepository`; verificación:
   `dotnet test backend/tests/BudgetCivil.Tests.Unit` en verde.
 
 ## 4. API, contrato y permisos
 
-- [ ] 4.1 Añadir `AuthorizationPolicies.WbsRead` y `WbsWrite` y sus políticas en `Program.cs` con
+- [x] 4.1 Añadir `AuthorizationPolicies.WbsRead` y `WbsWrite` y sus políticas en `Program.cs` con
   `RequirePermission("WBS_READ")` y `RequirePermission("WBS_WRITE")`; verificación: la aplicación arranca y
   ambas políticas resuelven.
-- [ ] 4.2 Crear `WbsController` en `api/v1/projects/{projectId:guid}/wbs` con las doce operaciones de
+- [x] 4.2 Crear `WbsController` en `api/v1/projects/{projectId:guid}/wbs` con las doce operaciones de
   `design.md §D8` y DTOs `camelCase`; verificación: Swagger muestra las rutas y `401` sin token.
-- [ ] 4.3 Añadir `WBS_READ` y `WBS_WRITE` a `SecurityBaselineSeeder` con la asignación de la matriz y subir
+- [x] 4.3 Añadir `WBS_READ` y `WBS_WRITE` a `SecurityBaselineSeeder` con la asignación de la matriz y subir
   el `SeedVersion` a `v7`; verificación: `SeedIdempotencyTests` en verde y el inventario activo refleja las
   dos claves nuevas.
-- [ ] 4.4 Verificar que `.github/docs/05 §8` cita la versión del `seed` y las migraciones reales;
+- [x] 4.4 Verificar que `.github/docs/05 §8` cita la versión del `seed` y las migraciones reales;
   verificación: la sección no menciona migraciones inexistentes y el valor del `seed` coincide con el
   `SecurityBaselineSeeder`.
-- [ ] 4.5 Escribir la prueba de contrato de la EDT; verificación: `T-C-04` en verde con `camelCase`,
+- [x] 4.5 Escribir la prueba de contrato de la EDT; verificación: `T-C-04` en verde con `camelCase`,
   `extensions.code`, paginación, `move`, `activity`, `codes/validate`, `cascade` y `rowVersion` en baja.
-- [ ] 4.6 Añadir la regla de arquitectura del módulo `M-03`; verificación: `T-A-03` en verde y
+- [x] 4.6 Añadir la regla de arquitectura del módulo `M-03`; verificación: `T-A-03` en verde y
   `dotnet test backend/tests/BudgetCivil.Tests.Architecture` sin fallos.
 
 ## 5. Verificación de integración y seguridad
 
-- [ ] 5.1 Ejecutar jerarquía, orden, búsqueda, movimiento, cascada, actividad y participantes con dos
+- [x] 5.1 Ejecutar jerarquía, orden, búsqueda, movimiento, cascada, actividad y participantes con dos
   proyectos de la misma compañía contra SQL Server local; verificación: `T-I-40` firmado con evidencia por
   escenario (`SC-EDT-04`, `05`, `30`…`36`, `51`…`76`).
-- [ ] 5.2 Ejecutar las pruebas de aislamiento entre dos compañías; verificación: `T-S-16` firmado y `403` en
+- [x] 5.2 Ejecutar las pruebas de aislamiento entre dos compañías; verificación: `T-S-16` firmado y `403` en
   lectura, escritura y movimiento cruzados (`SC-EDT-56`, `57`).
-- [ ] 5.3 Ejecutar las pruebas de fail-closed y de la matriz de permisos; verificación: `T-S-17` firmado con
+- [x] 5.3 Ejecutar las pruebas de fail-closed y de la matriz de permisos; verificación: `T-S-17` firmado con
   `403` del Administrador y del Auditor en escritura y evento de seguridad registrado.
-- [ ] 5.4 Revisar Swagger con la API levantada; verificación: las doce operaciones aparecen bajo
+- [x] 5.4 Revisar Swagger con la API levantada; verificación: las doce operaciones aparecen bajo
   `/api/v1/projects/{projectId}/wbs` y `403` sin permiso.
 
 ## Estado verificado del repositorio
 
-- **Sin implementación:** `backend/src` no contiene clases `Wbs*`; `Domain/Wbs`, `Application/Wbs` y
-  `Persistence/Configurations/Wbs` están vacías y no existe la migración `wbs_add_i2b`. La sección «Estado
-  de implementación» de la versión anterior de este archivo describía una implementación que no está en el
-  árbol actual y se retiró para no inducir a error.
-- **Documentación adelantada:** `.github/docs/05` citaba la migración `20261113080043_wbs_add_i2b` como
-  aplicada; se corrigió en la tarea `0.2`.
-- **Punto de partida real:** este cambio se implementa desde cero; el primer paso es `1.1`.
+- **Implementado:** `backend/src` contiene el módulo `M-03` (`Domain/Wbs`, `Application/Wbs`,
+  `Persistence/Configurations/Wbs`, `WbsRepository`, `WbsProjectAccessReader` y `WbsController`); la
+  migración `20261114065800_wbs_add_i2b` está aplicada en la base local y el `seed` subió a `v7` con
+  `WBS_READ` y `WBS_WRITE`.
+- **Pruebas:** `T-U-18`/`T-U-19` (66 casos unitarios del EDT), `T-C-04` (contrato), `T-A-03`
+  (arquitectura), `T-I-39` (7 casos de persistencia) y `T-I-40`/`T-S-16`/`T-S-17` (3 casos de flujo,
+  aislamiento y permisos) ejecutados contra SQL Server local. Swagger expone 12 operaciones y responde
+  `401` sin token.
+- **Documentación:** `.github/docs/05` cita la migración real y el `seed` `v7`; `docs/runbook-migraciones.md`
+  registra la migración aplicada y su reversión.
 
 ## Trazabilidad
 
@@ -156,9 +159,9 @@ registran en `PLAN §5.6.7` y amplían su alcance en este cambio:
 - La FK `wbs_items.apu_id → apus` no puede crearse en este cambio: la tabla `apus` llega en `I-3b`
   (`D-113`). El índice único filtrado sí queda activo; el APU desvinculado de `D-119` y su búsqueda se
   resuelven en `I-3b`.
-- La base local se recreó el 14/11/2026 y tiene aplicadas las cinco migraciones vigentes, sin tablas
-  `wbs_*` ni la migración anterior `20261113080043_wbs_add_i2b`. El respaldo previo está en
-  `H:\Program Files\MSSQL17.SQLEXPRESS\MSSQL\Backup\BudgetCivilDb_pre_reset_20261114.bak`.
+- La base local tiene aplicadas las seis migraciones vigentes, incluida
+  `20261114065800_wbs_add_i2b`; no existen tablas `wbs_*` de la implementación anterior. El respaldo previo
+  está en `H:\Program Files\MSSQL17.SQLEXPRESS\MSSQL\Backup\BudgetCivilDb_pre_reset_20261114.bak`.
 
 ## Workflow follow-up
 

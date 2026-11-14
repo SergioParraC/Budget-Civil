@@ -29,6 +29,8 @@ public static class AuthorizationPolicies
     public const string ResourcesWrite = "ResourcesWrite";
     public const string SuppliersRead = "SuppliersRead";
     public const string SuppliersWrite = "SuppliersWrite";
+    public const string WbsRead = "WbsRead";
+    public const string WbsWrite = "WbsWrite";
     public const string ProjectMembersAssign = "ProjectMembersAssign";
     public const string ProjectMembersDeactivate = "ProjectMembersDeactivate";
     public const string ProfileReadSelf = "ProfileReadSelf";

@@ -4,6 +4,7 @@ using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Catalogs;
 using BudgetCivil.Domain.Resources;
 using BudgetCivil.Domain.Suppliers;
+using BudgetCivil.Domain.Wbs;
 using BudgetCivil.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
 
@@ -57,6 +58,14 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
     public DbSet<ResourceType> ResourceTypes => Set<ResourceType>();
 
     public DbSet<Supplier> Suppliers => Set<Supplier>();
+
+    public DbSet<WbsCode> WbsCodes => Set<WbsCode>();
+
+    public DbSet<WbsChapter> WbsChapters => Set<WbsChapter>();
+
+    public DbSet<WbsItem> WbsItems => Set<WbsItem>();
+
+    public DbSet<WbsProjectActivity> WbsProjectActivities => Set<WbsProjectActivity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

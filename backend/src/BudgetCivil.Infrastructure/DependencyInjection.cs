@@ -14,6 +14,7 @@ using BudgetCivil.Application.Users.Administration.Repositories;
 using BudgetCivil.Application.Users.Auth.Repositories;
 using BudgetCivil.Application.Users.Bootstrap.Repositories;
 using BudgetCivil.Application.Users.Search.Repositories;
+using BudgetCivil.Application.Wbs.Repositories;
 using BudgetCivil.Infrastructure.Catalogs;
 using BudgetCivil.Infrastructure.Persistence;
 using BudgetCivil.Infrastructure.Persistence.Repositories;
@@ -54,6 +55,8 @@ public static class DependencyInjection
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IResourceProjectAccessReader, ResourceProjectAccessReader>();
         services.AddScoped<ISupplierRepository, SupplierRepository>();
+        services.AddScoped<IWbsRepository, WbsRepository>();
+        services.AddScoped<IWbsProjectAccessReader, WbsProjectAccessReader>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IPasswordRecoveryRepository, PasswordRecoveryRepository>();
         services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();

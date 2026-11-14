@@ -376,7 +376,10 @@ La Matriz se expande un solo nivel; no se permite Matriz dentro de Matriz (`BR-0
 - Baseline única `202610300438_e1b_reconciliacion_baseline` sobre base vacía, con la convención `YYYYMMDDHHMM_<scope>_<change>` (`D-107`, `DEC-19`).
 - Seed versionado e idempotente de cuatro roles base, permisos y `RolePermission` (`D-82`). La versión `v5` añade `SUPPLIERS_READ` (Administrador, Director, Presupuestador y Auditor) y `SUPPLIERS_WRITE` (Director y Presupuestador) (`REQ-PROVEEDORES-07`). La versión `v6` reconcilia por diferencia: las asignaciones rol-permiso y los permisos que ya no figuran en la matriz quedan inactivos con `revoked_at_utc` y `seed_version` vigente (`REQ-IDENTIDAD-30`). La versión `v7` añade `WBS_READ` (Administrador, Director, Presupuestador y Auditor) y `WBS_WRITE` (Director y Presupuestador) (`REQ-EDT-13`, `REQ-EDT-14`).
 - Migración `20261113040910_e3a_suppliers`: tabla `suppliers`, columna `resources.supplier_id`, sus FKs `RESTRICT` e índices, sin migración de datos (`D-40`, `D-107`).
-- Migración `wbs_add_i2b` (**planificada**, aún no generada): tablas `wbs_codes`, `wbs_chapters`, `wbs_items` y `wbs_project_activity` con sus índices, `CHECK` y FKs `RESTRICT`, `wbs_items.wbs_chapter_id` nullable y sin migración de datos (`D-40`, `D-107`, `D-113`…`D-120`).
+- Migración `20261114065800_wbs_add_i2b` (aplicada el 14/11/2026): tablas `wbs_codes`, `wbs_chapters`,
+  `wbs_items` y `wbs_project_activity` con sus índices, `CHECK` y FKs `RESTRICT`,
+  `wbs_items.wbs_chapter_id` nullable, índice único filtrado de `apu_id` y sin migración de datos (`D-40`,
+  `D-107`, `D-113`…`D-120`).
 - Seed de siete tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos y Matriz.
 - Catálogo base de países, departamentos, municipios, tipos de documento y monedas (`D-96`).
 - Administrador inicial por semilla en local o por bootstrap idempotente y auditado en demo, excluyentes (`D-110`).
