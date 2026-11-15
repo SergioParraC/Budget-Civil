@@ -1,5 +1,6 @@
 using BudgetCivil.Domain.Catalogs;
 using BudgetCivil.Domain.Projects;
+using BudgetCivil.Domain.Suppliers;
 
 namespace BudgetCivil.Domain.Resources;
 
@@ -40,6 +41,12 @@ public sealed class Resource
 
     public string? ContactNumber { get; set; }
 
+    /// <summary>
+    /// Proveedor opcional del insumo: un proveedor suministra muchos insumos y `supplier_id` no es único
+    /// (`REQ-PROVEEDORES-04`, `D-29`).
+    /// </summary>
+    public Guid? SupplierId { get; set; }
+
     public QuotationStatus QuotationStatus { get; set; } = QuotationStatus.FaltaInformacion;
 
     public Guid? OriginResourceId { get; set; }
@@ -61,13 +68,20 @@ public sealed class Resource
 
     public Municipality Municipality { get; set; } = null!;
 
+    public Supplier? Supplier { get; set; }
+
     public Resource? OriginResource { get; set; }
 
+    /// <summary>
+    /// Un insumo solo está completo cuando tiene descripción, unidad, precio, marca y proveedor
+    /// (`REQ-PROVEEDORES-05`, `REQ-INSUMOS-04`).
+    /// </summary>
     public bool IsComplete =>
         !string.IsNullOrWhiteSpace(Description) &&
         !string.IsNullOrWhiteSpace(Unit) &&
         UnitPrice.HasValue &&
-        !string.IsNullOrWhiteSpace(Brand);
+        !string.IsNullOrWhiteSpace(Brand) &&
+        SupplierId.HasValue;
 
     public static Resource Create(
         Guid projectId,
@@ -81,6 +95,7 @@ public sealed class Resource
         string? userKey,
         string? details,
         string? contactNumber,
+        Guid? supplierId,
         Guid actorUserId,
         DateTime utcNow)
     {
@@ -113,6 +128,7 @@ public sealed class Resource
             UserKey = NormalizeOptional(userKey, UserKeyMaxLength, "user_key"),
             Details = string.IsNullOrWhiteSpace(details) ? null : details.Trim(),
             ContactNumber = NormalizeOptional(contactNumber, ContactNumberMaxLength, "contact_number"),
+            SupplierId = NormalizeSupplierId(supplierId),
             LastModifiedByUserId = actorUserId,
             LastModifiedAtUtc = utcNow,
             IsActive = true
@@ -133,6 +149,7 @@ public sealed class Resource
         string? userKey,
         string? details,
         string? contactNumber,
+        Guid? supplierId,
         Guid actorUserId,
         DateTime utcNow)
     {
@@ -156,6 +173,7 @@ public sealed class Resource
         UserKey = NormalizeOptional(userKey, UserKeyMaxLength, "user_key");
         Details = string.IsNullOrWhiteSpace(details) ? null : details.Trim();
         ContactNumber = NormalizeOptional(contactNumber, ContactNumberMaxLength, "contact_number");
+        SupplierId = NormalizeSupplierId(supplierId);
         LastModifiedByUserId = actorUserId;
         LastModifiedAtUtc = utcNow;
         QuotationStatus = CalculateQuotationStatus();
@@ -186,6 +204,7 @@ public sealed class Resource
             UserKey = UserKey,
             Details = Details,
             ContactNumber = ContactNumber,
+            SupplierId = SupplierId,
             OriginResourceId = Id,
             LastModifiedByUserId = actorUserId,
             LastModifiedAtUtc = utcNow,
@@ -197,8 +216,9 @@ public sealed class Resource
     }
 
     /// <summary>
-    /// `FALTA_INFORMACION` si falta descripción, unidad, precio o marca; en caso contrario conserva
-    /// `COTIZADO` si ya lo estaba y, si no, queda `POR_COTIZAR` (`REQ-INSUMOS-04`, `BR-009`).
+    /// `FALTA_INFORMACION` si falta descripción, unidad, precio, marca o proveedor; en caso contrario
+    /// conserva `COTIZADO` si ya lo estaba y, si no, queda `POR_COTIZAR` (`REQ-INSUMOS-04`,
+    /// `REQ-PROVEEDORES-05`, `BR-009`).
     /// </summary>
     public QuotationStatus CalculateQuotationStatus()
     {
@@ -231,6 +251,22 @@ public sealed class Resource
         }
 
         return unitPrice;
+    }
+
+    /// <summary>El proveedor es opcional; `Guid.Empty` no es una referencia válida.</summary>
+    public static Guid? NormalizeSupplierId(Guid? supplierId)
+    {
+        if (supplierId is not { } value)
+        {
+            return null;
+        }
+
+        if (value == Guid.Empty)
+        {
+            throw new InvalidOperationException("Supplier is invalid.");
+        }
+
+        return value;
     }
 
     private static string? NormalizeOptional(string? value, int maxLength, string fieldName)

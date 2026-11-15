@@ -22,6 +22,153 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.Apu", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("description");
+
+                    b.Property<DateTime>("LastModifiedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("last_modified_at");
+
+                    b.Property<Guid>("LastModifiedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("last_modified_by");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("project_id");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("row_version");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(5)")
+                        .HasColumnName("unit");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_apus");
+
+                    b.HasIndex("LastModifiedByUserId")
+                        .HasDatabaseName("IX_dbo_apus_last_modified_by");
+
+                    b.HasIndex("ProjectId", "Status")
+                        .HasDatabaseName("IX_dbo_apus_project_id_status");
+
+                    b.ToTable("apus", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_apus_status", "status IN ('COMPLETO','FALTA_INFORMACION')");
+                        });
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.ApuResource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ApuId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("apu_id");
+
+                    b.Property<decimal>("Consumption")
+                        .HasPrecision(18, 10)
+                        .HasColumnType("decimal(18,10)")
+                        .HasColumnName("consumption");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("resource_id");
+
+                    b.Property<decimal>("WastePercentage")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("waste_percentage");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_apu_resources");
+
+                    b.HasIndex("ApuId")
+                        .HasDatabaseName("IX_dbo_apu_resources_apu_id");
+
+                    b.HasIndex("ResourceId")
+                        .HasDatabaseName("IX_dbo_apu_resources_resource_id");
+
+                    b.ToTable("apu_resources", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_apu_resources_consumption", "consumption > 0");
+
+                            t.HasCheckConstraint("CK_apu_resources_waste", "waste_percentage >= 0 AND waste_percentage <= 100");
+                        });
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.MatrixComponent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ComponentResourceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("component_resource_id");
+
+                    b.Property<decimal>("Consumption")
+                        .HasPrecision(18, 10)
+                        .HasColumnType("decimal(18,10)")
+                        .HasColumnName("consumption");
+
+                    b.Property<Guid>("MatrixResourceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("matrix_resource_id");
+
+                    b.Property<decimal>("WastePercentage")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("waste_percentage");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_matrix_components");
+
+                    b.HasIndex("ComponentResourceId")
+                        .HasDatabaseName("IX_dbo_matrix_components_component_resource_id");
+
+                    b.HasIndex("MatrixResourceId")
+                        .HasDatabaseName("IX_dbo_matrix_components_matrix_resource_id");
+
+                    b.ToTable("matrix_components", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_matrix_components_consumption", "consumption > 0");
+
+                            t.HasCheckConstraint("CK_matrix_components_waste", "waste_percentage >= 0 AND waste_percentage <= 100");
+                        });
+                });
+
             modelBuilder.Entity("BudgetCivil.Domain.Catalogs.BaseCurrency", b =>
                 {
                     b.Property<Guid>("Id")
@@ -442,11 +589,23 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("budget_limit");
 
+                    b.Property<int>("QuantityDecimals")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(2)
+                        .HasColumnName("quantity_decimals");
+
                     b.Property<bool>("RequiresAuditor")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false)
                         .HasColumnName("requires_auditor");
+
+                    b.Property<int>("RoundingDecimals")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(2)
+                        .HasColumnName("rounding_decimals");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -473,7 +632,12 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.HasIndex("SignerUserId")
                         .HasDatabaseName("IX_dbo_project_configurations_signer_user_id");
 
-                    b.ToTable("project_configurations", (string)null);
+                    b.ToTable("project_configurations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_project_configurations_quantity_decimals", "quantity_decimals >= 0 AND quantity_decimals <= 10");
+
+                            t.HasCheckConstraint("CK_project_configurations_rounding_decimals", "rounding_decimals >= 0 AND rounding_decimals <= 10");
+                        });
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Projects.ProjectStatusTransition", b =>
@@ -653,6 +817,10 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("rowversion")
                         .HasColumnName("row_version");
 
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("supplier_id");
+
                     b.Property<string>("Unit")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
@@ -682,6 +850,9 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ResourceTypeId")
                         .HasDatabaseName("IX_dbo_resources_resource_type_id");
+
+                    b.HasIndex("SupplierId")
+                        .HasDatabaseName("IX_dbo_resources_supplier_id");
 
                     b.HasIndex("ProjectId", "Description")
                         .HasDatabaseName("IX_dbo_resources_project_id_description");
@@ -733,6 +904,125 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("UQ_dbo_resource_types_code");
 
                     b.ToTable("resource_types", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Suppliers.Supplier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnName("address");
+
+                    b.Property<string>("BusinessName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("business_name");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("ContactName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("contact_name");
+
+                    b.Property<string>("ContactPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("contact_phone");
+
+                    b.Property<Guid?>("CountryId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("country_id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("department_id");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)")
+                        .HasColumnName("email");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTime>("LastModifiedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("last_modified_at");
+
+                    b.Property<Guid>("LastModifiedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("last_modified_by");
+
+                    b.Property<Guid?>("MunicipalityId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("municipality_id");
+
+                    b.Property<string>("Observations")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("observations");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("row_version");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_suppliers");
+
+                    b.HasIndex("CountryId")
+                        .HasDatabaseName("IX_dbo_suppliers_country_id");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("IX_dbo_suppliers_created_by");
+
+                    b.HasIndex("DepartmentId")
+                        .HasDatabaseName("IX_dbo_suppliers_department_id");
+
+                    b.HasIndex("LastModifiedByUserId")
+                        .HasDatabaseName("IX_dbo_suppliers_last_modified_by");
+
+                    b.HasIndex("MunicipalityId")
+                        .HasDatabaseName("IX_dbo_suppliers_municipality_id");
+
+                    b.HasIndex("CompanyId", "BusinessName")
+                        .HasDatabaseName("IX_dbo_suppliers_company_id_business_name");
+
+                    b.HasIndex("CompanyId", "CountryId")
+                        .HasDatabaseName("IX_dbo_suppliers_company_id_country_id");
+
+                    b.HasIndex("CompanyId", "DepartmentId")
+                        .HasDatabaseName("IX_dbo_suppliers_company_id_department_id");
+
+                    b.HasIndex("CompanyId", "IsActive")
+                        .HasDatabaseName("IX_dbo_suppliers_company_id_is_active");
+
+                    b.HasIndex("CompanyId", "MunicipalityId")
+                        .HasDatabaseName("IX_dbo_suppliers_company_id_municipality_id");
+
+                    b.ToTable("suppliers", (string)null);
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.Company", b =>
@@ -1395,6 +1685,266 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.ToTable("user_signatures", (string)null);
                 });
 
+            modelBuilder.Entity("BudgetCivil.Domain.Wbs.WbsChapter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CodeId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("code_id");
+
+                    b.Property<DateTime>("LastModifiedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("last_modified_at");
+
+                    b.Property<Guid>("LastModifiedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("last_modified_by");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("int")
+                        .HasColumnName("order_index");
+
+                    b.Property<Guid?>("ParentChapterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("parent_chapter_id");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("project_id");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("row_version");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_wbs_chapters");
+
+                    b.HasIndex("CodeId")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_dbo_wbs_chapters_code_id");
+
+                    b.HasIndex("LastModifiedByUserId")
+                        .HasDatabaseName("IX_dbo_wbs_chapters_last_modified_by");
+
+                    b.HasIndex("ParentChapterId")
+                        .HasDatabaseName("IX_dbo_wbs_chapters_parent_chapter_id");
+
+                    b.HasIndex("ProjectId", "ParentChapterId", "OrderIndex")
+                        .HasDatabaseName("IX_dbo_wbs_chapters_project_id_parent_chapter_id_order_index");
+
+                    b.ToTable("wbs_chapters", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_wbs_chapters_order_index", "order_index >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Wbs.WbsCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("code")
+                        .UseCollation("Latin1_General_100_CI_AS");
+
+                    b.Property<string>("NodeType")
+                        .IsRequired()
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("node_type");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("project_id");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_wbs_codes");
+
+                    b.HasIndex("ProjectId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_dbo_wbs_codes_project_id_code");
+
+                    b.ToTable("wbs_codes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_wbs_codes_code_length", "LEN(code) BETWEEN 1 AND 10");
+
+                            t.HasCheckConstraint("CK_wbs_codes_node_type", "node_type IN ('CHAPTER','ITEM')");
+                        });
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Wbs.WbsItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ApuId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("apu_id");
+
+                    b.Property<Guid>("CodeId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("code_id");
+
+                    b.Property<DateTime>("LastModifiedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("last_modified_at");
+
+                    b.Property<Guid>("LastModifiedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("last_modified_by");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("int")
+                        .HasColumnName("order_index");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("project_id");
+
+                    b.Property<decimal>("QuantityWork")
+                        .HasPrecision(18, 10)
+                        .HasColumnType("decimal(18,10)")
+                        .HasColumnName("quantity_work");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("row_version");
+
+                    b.Property<Guid?>("WbsChapterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("wbs_chapter_id");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_wbs_items");
+
+                    b.HasIndex("ApuId")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_dbo_wbs_items_apu_id")
+                        .HasFilter("[apu_id] IS NOT NULL");
+
+                    b.HasIndex("CodeId")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_dbo_wbs_items_code_id");
+
+                    b.HasIndex("LastModifiedByUserId")
+                        .HasDatabaseName("IX_dbo_wbs_items_last_modified_by");
+
+                    b.HasIndex("WbsChapterId")
+                        .HasDatabaseName("IX_dbo_wbs_items_wbs_chapter_id");
+
+                    b.HasIndex("ProjectId", "WbsChapterId", "OrderIndex")
+                        .HasDatabaseName("IX_dbo_wbs_items_project_id_wbs_chapter_id_order_index");
+
+                    b.ToTable("wbs_items", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_wbs_items_order_index", "order_index >= 0");
+
+                            t.HasCheckConstraint("CK_wbs_items_quantity_work", "quantity_work > 0");
+                        });
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Wbs.WbsProjectActivity", b =>
+                {
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("project_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTime>("LastModifiedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("last_modified_at");
+
+                    b.HasKey("ProjectId", "UserId")
+                        .HasName("PK_dbo_wbs_project_activity");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_dbo_wbs_project_activity_user_id");
+
+                    b.HasIndex("ProjectId", "LastModifiedAtUtc")
+                        .HasDatabaseName("IX_dbo_wbs_project_activity_project_id_last_modified_at");
+
+                    b.ToTable("wbs_project_activity", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.Apu", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("LastModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_apus_users_last_modified_by");
+
+                    b.HasOne("BudgetCivil.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_apus_projects_project_id");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.ApuResource", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Apus.Apu", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("ApuId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_apu_resources_apus_apu_id");
+
+                    b.HasOne("BudgetCivil.Domain.Resources.Resource", "Resource")
+                        .WithMany()
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_apu_resources_resources_resource_id");
+
+                    b.Navigation("Resource");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.MatrixComponent", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Resources.Resource", "ComponentResource")
+                        .WithMany()
+                        .HasForeignKey("ComponentResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_matrix_components_resources_component_resource_id");
+
+                    b.HasOne("BudgetCivil.Domain.Resources.Resource", null)
+                        .WithMany()
+                        .HasForeignKey("MatrixResourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_matrix_components_resources_matrix_resource_id");
+
+                    b.Navigation("ComponentResource");
+                });
+
             modelBuilder.Entity("BudgetCivil.Domain.Catalogs.Department", b =>
                 {
                     b.HasOne("BudgetCivil.Domain.Catalogs.Country", null)
@@ -1600,6 +2150,12 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_dbo_resources_resource_types_resource_type_id");
 
+                    b.HasOne("BudgetCivil.Domain.Suppliers.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_resources_suppliers_supplier_id");
+
                     b.Navigation("Municipality");
 
                     b.Navigation("OriginResource");
@@ -1607,6 +2163,56 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.Navigation("Project");
 
                     b.Navigation("ResourceType");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Suppliers.Supplier", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_suppliers_companies_company_id");
+
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_suppliers_countries_country_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_suppliers_users_created_by");
+
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_suppliers_departments_department_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("LastModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_suppliers_users_last_modified_by");
+
+                    b.HasOne("BudgetCivil.Domain.Catalogs.Municipality", "Municipality")
+                        .WithMany()
+                        .HasForeignKey("MunicipalityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_suppliers_municipalities_municipality_id");
+
+                    b.Navigation("Country");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Municipality");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Users.Entities.Company", b =>
@@ -1771,6 +2377,108 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.Navigation("Municipality");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Wbs.WbsChapter", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Wbs.WbsCode", "Code")
+                        .WithOne()
+                        .HasForeignKey("BudgetCivil.Domain.Wbs.WbsChapter", "CodeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_wbs_chapters_wbs_codes_code_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("LastModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_wbs_chapters_users_last_modified_by");
+
+                    b.HasOne("BudgetCivil.Domain.Wbs.WbsChapter", null)
+                        .WithMany()
+                        .HasForeignKey("ParentChapterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_wbs_chapters_wbs_chapters_parent_chapter_id");
+
+                    b.HasOne("BudgetCivil.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_wbs_chapters_projects_project_id");
+
+                    b.Navigation("Code");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Wbs.WbsCode", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_wbs_codes_projects_project_id");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Wbs.WbsItem", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Apus.Apu", null)
+                        .WithOne()
+                        .HasForeignKey("BudgetCivil.Domain.Wbs.WbsItem", "ApuId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_wbs_items_apus_apu_id");
+
+                    b.HasOne("BudgetCivil.Domain.Wbs.WbsCode", "Code")
+                        .WithOne()
+                        .HasForeignKey("BudgetCivil.Domain.Wbs.WbsItem", "CodeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_wbs_items_wbs_codes_code_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("LastModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_wbs_items_users_last_modified_by");
+
+                    b.HasOne("BudgetCivil.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_wbs_items_projects_project_id");
+
+                    b.HasOne("BudgetCivil.Domain.Wbs.WbsChapter", null)
+                        .WithMany()
+                        .HasForeignKey("WbsChapterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_wbs_items_wbs_chapters_wbs_chapter_id");
+
+                    b.Navigation("Code");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Wbs.WbsProjectActivity", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_wbs_project_activity_projects_project_id");
+
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_wbs_project_activity_users_user_id");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.Apu", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Projects.Project", b =>

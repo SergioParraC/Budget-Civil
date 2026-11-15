@@ -2,6 +2,7 @@ using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Resources.Dtos;
 using BudgetCivil.Application.Resources.Repositories;
 using BudgetCivil.Application.Resources.Services;
+using BudgetCivil.Application.Suppliers.Repositories;
 using BudgetCivil.Domain.Resources;
 using FluentValidation;
 
@@ -24,6 +25,7 @@ public sealed class CopyResourceCommandValidator : AbstractValidator<CopyResourc
 public sealed class CopyResourceCommandHandler(
     ResourceAccessService resourceAccessService,
     IResourceRepository resourceRepository,
+    ISupplierRepository supplierRepository,
     IValidator<CopyResourceCommand> validator)
 {
     public async Task<ResourceDto> ExecuteAsync(
@@ -47,6 +49,18 @@ public sealed class CopyResourceCommandHandler(
         var source = await resourceRepository.GetByIdAsync(command.SourceResourceId, cancellationToken)
             ?? throw new NotFoundAppException("Source resource was not found.", "RESOURCE_NOT_FOUND");
 
+        if (string.Equals(
+                source.ResourceType?.Code,
+                ResourceTypeCatalog.Matrix,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            // La Matriz se copia con la operación de Matriz, que copia sus componentes y los insumos
+            // (`REQ-INSUMOS-09`, `REQ-APUS-08`, `SC-INSUMOS-56`).
+            throw new ValidationAppException(
+                "La copia de una Matriz requiere la operación de copia de Matriz.",
+                "RESOURCE_MATRIX_COPY_REQUIRES_MATRIX_OPERATION");
+        }
+
         var sourceAccess = await resourceAccessService.GetProjectAccessForActorAsync(
             actorUserId,
             source.ProjectId,
@@ -60,6 +74,14 @@ public sealed class CopyResourceCommandHandler(
         }
 
         ResourceAccessService.EnsureCanRead(actor, sourceAccess);
+
+        // La copia conserva el proveedor solo dentro de la misma compañía (`SC-PROVEEDORES-47`,
+        // `SC-PROVEEDORES-48`).
+        await ResourceSupplierRules.EnsureCopyableAsync(
+            supplierRepository,
+            source.SupplierId,
+            targetAccess.CompanyId,
+            cancellationToken);
 
         Resource copy;
         try

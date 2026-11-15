@@ -3,6 +3,8 @@ namespace BudgetCivil.Api.Auth;
 public static class AuthorizationPolicies
 {
     public const string ApuPublicRead = "ApuPublicRead";
+    public const string ApusRead = "ApusRead";
+    public const string ApusWrite = "ApusWrite";
     public const string BootstrapAuditRead = "BootstrapAuditRead";
     public const string CatalogsRead = "CatalogsRead";
     public const string UsersCreate = "UsersCreate";
@@ -27,6 +29,10 @@ public static class AuthorizationPolicies
     public const string ProjectsRead = "ProjectsRead";
     public const string ResourcesRead = "ResourcesRead";
     public const string ResourcesWrite = "ResourcesWrite";
+    public const string SuppliersRead = "SuppliersRead";
+    public const string SuppliersWrite = "SuppliersWrite";
+    public const string WbsRead = "WbsRead";
+    public const string WbsWrite = "WbsWrite";
     public const string ProjectMembersAssign = "ProjectMembersAssign";
     public const string ProjectMembersDeactivate = "ProjectMembersDeactivate";
     public const string ProfileReadSelf = "ProfileReadSelf";

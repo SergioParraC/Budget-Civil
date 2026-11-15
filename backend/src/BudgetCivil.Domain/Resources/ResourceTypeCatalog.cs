@@ -27,6 +27,11 @@ public static class ResourceTypeCatalog
         new(Guid.Parse("11111111-1111-1111-1111-111111111107"), Matrix, "Matriz")
     ];
 
+    /// <summary>Identificador fijo del tipo Matriz (`D-48`, `REQ-APUS-06`).</summary>
+    public static Guid MatrixTypeId => Definitions.Single(definition => definition.Code == Matrix).Id;
+
+    public static bool IsMatrixId(Guid resourceTypeId) => resourceTypeId == MatrixTypeId;
+
     public static bool IsKnownCode(string? code)
     {
         if (string.IsNullOrWhiteSpace(code))

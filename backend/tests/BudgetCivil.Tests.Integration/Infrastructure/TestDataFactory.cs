@@ -85,6 +85,19 @@ public static class TestDataFactory
         return new CompanyTestData(company, director, country, department, municipality, baseCurrency);
     }
 
+    public static ProjectMember CreateProjectMember(CompanyTestData data, Project project)
+    {
+        return new ProjectMember
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = project.Id,
+            UserId = data.Director.Id,
+            RoleInProject = "DIRECTOR",
+            AssignedByUserId = data.Director.Id,
+            AssignedAtUtc = DateTime.UtcNow
+        };
+    }
+
     public static Project CreateProject(CompanyTestData data, string name = "Proyecto de prueba")
     {
         var projectId = Guid.NewGuid();

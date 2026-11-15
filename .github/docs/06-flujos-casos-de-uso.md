@@ -21,6 +21,7 @@ Los roles base son inmutables y la autorización se decide por `permission_key` 
 | UC-02 | Configurar proyecto | Director |
 | UC-03 | Estructurar la EDT | Director, Presupuestador |
 | UC-04 | Gestionar insumos | Director, Presupuestador |
+| UC-04b | Gestionar el directorio de proveedores | Director, Presupuestador (Administrador y Auditor solo consultan) |
 | UC-05 | Crear o copiar APU y reconciliar insumos | Director, Presupuestador |
 | UC-06 | Calcular, cotizar y alertar | Sistema, Director, Presupuestador |
 | UC-07 | Aprobar y cerrar el presupuesto | Director, Presupuestador, Auditor |
@@ -75,18 +76,49 @@ Los roles base son inmutables y la autorización se decide por `permission_key` 
 - **Errores:** código duplicado; cantidad ≤ 0; padre de otro proyecto.
 
 ## 6. UC-04 Gestionar insumos
-- **Objetivo:** registrar, listar, filtrar y copiar insumos del proyecto.
+- **Objetivo:** registrar, listar, filtrar y copiar insumos del proyecto, asignándoles un proveedor del
+  directorio de la compañía.
 - **Actores:** Director y Presupuestador.
-- **Precondiciones:** proyecto con catálogo de tipos cargado.
+- **Precondiciones:** proyecto con catálogo de tipos cargado y, para asignar proveedor, al menos un
+  proveedor activo de la compañía.
 - **Postcondiciones:** insumo creado o copiado, con estado de cotización calculado.
 - **Flujo:**
   1. Se crea el insumo con descripción, tipo, municipio, unidad, precio, marca y datos opcionales.
-  2. El sistema evalúa los cuatro campos obligatorios y asigna `FALTA_INFORMACION` o `POR_COTIZAR`.
-  3. Se listan los insumos con búsqueda por descripción y filtros por tipo, estado, marca, municipio y precio.
-  4. Se puede copiar un insumo desde otro proyecto de la compañía; la copia es independiente y conserva la procedencia.
-  5. Al copiar un APU se sugiere un insumo similar y el usuario decide.
-- **Alternos:** cambio de estado a `COTIZADO`; edición de precio y marca.
-- **Errores:** tipo inexistente; precio negativo; insumo de otro proyecto.
+  2. El sistema evalúa los cinco campos obligatorios —descripción, unidad, precio, marca y proveedor— y
+     asigna `FALTA_INFORMACION` o `POR_COTIZAR`. Sin proveedor el insumo se guarda igualmente y queda en
+     `FALTA_INFORMACION` (`REQ-PROVEEDORES-05`).
+  3. El proveedor se elige con el **selector ligero** (`GET /api/v1/suppliers/options`), que devuelve solo
+     `supplierId` y `businessName` y admite filtros por razón social, contacto y ubicación.
+  4. El sistema muestra una **alerta de ubicación** no bloqueante cuando el proveedor está en un municipio,
+     departamento o país distinto al del proyecto; informa `LOCATION_INCOMPLETE` si no hay datos para
+     comparar y nunca impide la asignación (`REQ-PROVEEDORES-10`).
+  5. Se listan los insumos con búsqueda por descripción y filtros por tipo, estado, marca, municipio y precio.
+  6. Se puede copiar un insumo desde otro proyecto de la compañía; la copia es independiente, conserva la
+     procedencia y conserva el proveedor solo si pertenece a la compañía del destino
+     (`REQ-PROVEEDORES-13`).
+  7. Al copiar un APU se sugiere un insumo similar y el usuario decide.
+- **Alternos:** cambio de estado a `COTIZADO`; edición de precio y marca; retiro del proveedor, que
+  devuelve el insumo a `FALTA_INFORMACION`.
+- **Errores:** tipo inexistente; precio negativo; insumo de otro proyecto; proveedor inactivo o de otra
+  compañía; `409` por `rowVersion` desactualizado.
+
+## 6b. UC-04b Gestionar el directorio de proveedores
+- **Objetivo:** mantener el directorio de proveedores de la compañía, reutilizable en todos sus proyectos.
+- **Actores:** Director y Presupuestador; Administrador y Auditor solo consultan.
+- **Precondiciones:** actor autenticado con `SUPPLIERS_READ` o `SUPPLIERS_WRITE` según la operación.
+- **Postcondiciones:** proveedor creado, editado, dado de baja o reactivado, con autoría y `rowVersion`.
+- **Flujo:**
+  1. Se crea el proveedor con la **razón social** como único dato obligatorio; contacto, teléfono, email,
+     dirección, observaciones y ubicación son opcionales (`REQ-PROVEEDORES-02`).
+  2. El email, cuando se informa, se valida con formato.
+  3. La ubicación (país, departamento, municipio) se valida por jerarquía y admite informarse parcialmente
+     (`REQ-PROVEEDORES-03`).
+  4. El listado completo se filtra por razón social, contacto y ubicación, y pagina con `page`/`pageSize`.
+  5. La baja es lógica y conserva los insumos asociados; la reactivación lo vuelve a habilitar
+     (`REQ-PROVEEDORES-11`).
+- **Alternos:** dos proveedores con la misma razón social coexisten; no hay deduplicación automática.
+- **Errores:** razón social vacía; email inválido; municipio fuera del departamento; `409` por concurrencia;
+  `403` para Administrador y Auditor en escritura.
 
 ## 7. UC-05 Crear o copiar APU y reconciliar insumos
 - **Objetivo:** definir la composición técnica de un APU y vincularlo al ítem.
@@ -94,14 +126,15 @@ Los roles base son inmutables y la autorización se decide por `permission_key` 
 - **Precondiciones:** ítem de la EDT e insumos disponibles.
 - **Postcondiciones:** APU 1:1 con el ítem, sin aprobación y con el editor como último modificador.
 - **Flujo:**
-  1. Se crea el APU con descripción, unidad y rendimiento > 0.
-  2. Se agregan insumos con consumo y desperdicio.
+  1. Se crea el ítem de la EDT con su APU en `POST /wbs/items`: descripción y unidad obligatorias.
+  2. Se agregan insumos con consumo y desperdicio en el mismo alta o en `PUT /wbs/items/{itemId}`.
   3. Se puede vincular una Matriz; se expande un solo nivel.
-  4. Se puede copiar un APU desde otro proyecto de la compañía o del catálogo público.
+  4. Se puede copiar un APU desde otro proyecto de la compañía; la copia crea el ítem destino.
   5. Al copiar se comparan los insumos con el destino: los inexistentes se agregan y los similares se sugieren.
   6. El usuario decide usar el insumo existente o conservar el de origen.
 - **Alternos:** copia de una Matriz, que queda independiente y exige reconciliar sus componentes.
-- **Errores:** rendimiento ≤ 0; anidamiento de matrices; copia desde otra compañía; APU ya vinculado a otro ítem.
+- **Errores:** descripción o unidad inválidas; anidamiento de matrices; copia desde otra compañía; código de
+  ítem duplicado (`409 WBS_CODE_DUPLICATED`).
 
 ## 8. UC-06 Calcular, cotizar y alertar
 - **Objetivo:** calcular costos, cotizar insumos y alertar sobre el tope.
@@ -114,8 +147,8 @@ Los roles base son inmutables y la autorización se decide por `permission_key` 
   3. Se calcula el conteo de uso por insumo.
   4. El usuario marca insumos como `COTIZADO` de forma masiva por selección, filtro o totalidad.
   5. Si el costo supera el tope, se muestra la alerta.
-- **Alternos:** recálculo tras cambiar precio, consumo o rendimiento.
-- **Errores:** datos incompletos (`FALTA_INFORMACION`); rendimiento inválido.
+- **Alternos:** recálculo tras cambiar precio o consumo.
+- **Errores:** datos incompletos (`FALTA_INFORMACION`); insumo sin precio.
 
 ## 9. UC-07 Aprobar y cerrar el presupuesto
 - **Objetivo:** aprobar cada APU según el modo de firma y cerrar el proyecto.
@@ -152,6 +185,7 @@ Los roles base son inmutables y la autorización se decide por `permission_key` 
 | UC-02 | RF-03 | BR-011, BR-019, BR-020 |
 | UC-03 | RF-04 | BR-015 |
 | UC-04 | RF-05, RF-06, RF-16, RF-20 | BR-009, BR-010 |
+| UC-04b | RF-05 | BR-009 |
 | UC-05 | RF-07, RF-08, RF-09, RF-22 | BR-008, BR-016, BR-017, BR-018, BR-021 |
 | UC-06 | RF-10, RF-11, RF-14, RF-17 | BR-003, BR-007 |
 | UC-07 | RF-12, RF-13, RF-21 | BR-011, BR-013 |
@@ -164,7 +198,8 @@ Los roles base son inmutables y la autorización se decide por `permission_key` 
 | UC-01 | T-I-01, T-I-26, T-I-27, T-I-28, T-I-29, T-I-31, T-S-01, T-S-04, T-S-09, T-S-10 |
 | UC-02 | T-I-03, T-I-30, T-I-32, T-U-12 |
 | UC-03 | T-U-01, T-I-04 |
-| UC-04 | T-U-02, T-I-05, T-I-06, T-I-18, T-U-08 |
+| UC-04 | T-U-02, T-I-05, T-I-06, T-I-18, T-U-08, T-U-16, T-I-38 |
+| UC-04b | T-U-15, T-U-17, T-I-36, T-I-37, T-S-15, T-C-03 |
 | UC-05 | T-U-03, T-U-04, T-U-11, T-I-07, T-I-08, T-I-09, T-I-20 |
 | UC-06 | T-U-05, T-U-06, T-U-09, T-I-10, T-I-16 |
 | UC-07 | T-U-07, T-U-10, T-I-11, T-I-12, T-I-13, T-I-19, T-U-12 |

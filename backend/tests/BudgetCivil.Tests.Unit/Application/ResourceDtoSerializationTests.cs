@@ -22,6 +22,7 @@ public sealed class ResourceDtoSerializationTests
             null,
             null,
             null,
+            null,
             Guid.NewGuid(),
             DateTime.UtcNow);
 

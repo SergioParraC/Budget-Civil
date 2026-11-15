@@ -2,6 +2,7 @@ using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Resources.Dtos;
 using BudgetCivil.Application.Resources.Repositories;
 using BudgetCivil.Application.Resources.Services;
+using BudgetCivil.Application.Suppliers.Repositories;
 using BudgetCivil.Domain.Resources;
 using FluentValidation;
 
@@ -28,6 +29,8 @@ public sealed class CreateResourceCommand
     public string? Details { get; init; }
 
     public string? ContactNumber { get; init; }
+
+    public Guid? SupplierId { get; init; }
 }
 
 public sealed class CreateResourceCommandValidator : AbstractValidator<CreateResourceCommand>
@@ -68,12 +71,17 @@ public sealed class CreateResourceCommandValidator : AbstractValidator<CreateRes
         RuleFor(command => command.ContactNumber)
             .MaximumLength(Resource.ContactNumberMaxLength)
             .When(command => !string.IsNullOrWhiteSpace(command.ContactNumber));
+
+        RuleFor(command => command.SupplierId)
+            .NotEqual(Guid.Empty)
+            .When(command => command.SupplierId.HasValue);
     }
 }
 
 public sealed class CreateResourceCommandHandler(
     ResourceAccessService resourceAccessService,
     IResourceRepository resourceRepository,
+    ISupplierRepository supplierRepository,
     IValidator<CreateResourceCommand> validator)
 {
     public async Task<ResourceDto> ExecuteAsync(
@@ -83,9 +91,16 @@ public sealed class CreateResourceCommandHandler(
         CancellationToken cancellationToken = default)
     {
         await ValidateAsync(command, cancellationToken);
-        await resourceAccessService.EnsureWriteAsync(actorUserId, projectId, cancellationToken);
+        var (_, access) = await resourceAccessService.EnsureWriteAsync(actorUserId, projectId, cancellationToken);
 
         await EnsureReferencesAsync(command, cancellationToken);
+
+        await ResourceSupplierRules.EnsureAssignableAsync(
+            supplierRepository,
+            command.SupplierId,
+            access.CompanyId,
+            currentSupplierId: null,
+            cancellationToken);
 
         Resource resource;
         try
@@ -102,12 +117,20 @@ public sealed class CreateResourceCommandHandler(
                 command.UserKey,
                 command.Details,
                 command.ContactNumber,
+                command.SupplierId,
                 actorUserId,
                 DateTime.UtcNow);
         }
         catch (InvalidOperationException exception)
         {
             throw new ValidationAppException(exception.Message, "VALIDATION_ERROR");
+        }
+
+        if (ResourceTypeCatalog.IsMatrixId(resource.ResourceTypeId))
+        {
+            // Una Matriz recién creada aún no tiene componentes: queda en `FALTA_INFORMACION`
+            // (`REQ-APUS-06`, `REQ-INSUMOS-04`).
+            resource.QuotationStatus = QuotationStatus.FaltaInformacion;
         }
 
         await resourceRepository.AddAsync(resource, cancellationToken);
