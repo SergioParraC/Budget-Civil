@@ -20,12 +20,14 @@ public sealed class DeleteWbsItemCommandValidator : AbstractValidator<DeleteWbsI
 }
 
 /// <summary>
-/// Baja física del ítem y su código; el APU no se elimina y queda desvinculado (`SC-EDT-51`,
-/// `SC-EDT-55`, `D-119`). Las posiciones de los hermanos se compactan.
+/// Baja física del ítem y su código; si el ítem tiene APU, también se eliminan el APU y sus líneas y se
+/// conservan los insumos del proyecto (`REQ-EDT-21`, `SC-EDT-81`, `SC-EDT-85`, `D-119`). Las posiciones
+/// de los hermanos se compactan.
 /// </summary>
 public sealed class DeleteWbsItemCommandHandler(
     WbsAccessService wbsAccessService,
     IWbsRepository wbsRepository,
+    IWbsItemApuCleaner wbsItemApuCleaner,
     IValidator<DeleteWbsItemCommand> validator)
 {
     public async Task ExecuteAsync(
@@ -54,6 +56,13 @@ public sealed class DeleteWbsItemCommandHandler(
         {
             wbsRepository.RemoveItem(item);
             wbsRepository.RemoveCode(code);
+            await wbsRepository.SaveChangesAsync(transactionCancellationToken);
+
+            // La FK del ítem es `RESTRICT`: primero se elimina el ítem y después su APU (`D3`, `D-119`).
+            await wbsItemApuCleaner.DeleteApusForItemsAsync(
+                projectId,
+                [itemId],
+                transactionCancellationToken);
             await wbsRepository.SaveChangesAsync(transactionCancellationToken);
 
             await wbsRepository.CompactAsync(projectId, parentChapterId, transactionCancellationToken);

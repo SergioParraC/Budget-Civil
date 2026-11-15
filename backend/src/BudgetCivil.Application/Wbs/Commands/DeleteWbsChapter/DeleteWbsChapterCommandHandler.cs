@@ -7,8 +7,6 @@ namespace BudgetCivil.Application.Wbs.Commands.DeleteWbsChapter;
 
 public sealed class DeleteWbsChapterCommand
 {
-    public bool Cascade { get; init; }
-
     public string? RowVersion { get; init; }
 }
 
@@ -22,12 +20,14 @@ public sealed class DeleteWbsChapterCommandValidator : AbstractValidator<DeleteW
 }
 
 /// <summary>
-/// Baja física con cascada confirmada (`REQ-EDT-15`, `SC-EDT-52`…`54`, `D-119`). Sin confirmación, un
-/// capítulo con descendientes responde `409 WBS_NODE_HAS_CHILDREN`; la base conserva `RESTRICT`.
+/// Baja física del capítulo solo cuando está vacío (`REQ-EDT-21`, `SC-EDT-82`…`84`, `D-114`, `D-119`).
+/// Con APUs en el subárbol responde `409 WBS_CHAPTER_HAS_APU`; con subcapítulos o ítems responde
+/// `409 WBS_NODE_HAS_CHILDREN`. No existe baja en cascada.
 /// </summary>
 public sealed class DeleteWbsChapterCommandHandler(
     WbsAccessService wbsAccessService,
     IWbsRepository wbsRepository,
+    IWbsItemApuCleaner wbsItemApuCleaner,
     IValidator<DeleteWbsChapterCommand> validator)
 {
     public async Task ExecuteAsync(
@@ -55,10 +55,17 @@ public sealed class DeleteWbsChapterCommandHandler(
             subtree.Select(subtreeChapter => subtreeChapter.Id).ToList(),
             cancellationToken);
 
-        if ((subtree.Count > 1 || items.Count > 0) && !command.Cascade)
+        if (await wbsItemApuCleaner.HasApusInSubtreeAsync(projectId, chapterId, cancellationToken))
         {
             throw new ConflictAppException(
-                "El capítulo tiene descendientes; confirma la cascada para eliminarlo.",
+                "El capítulo contiene APUs; elimina primero los ítems.",
+                "WBS_CHAPTER_HAS_APU");
+        }
+
+        if (subtree.Count > 1 || items.Count > 0)
+        {
+            throw new ConflictAppException(
+                "El capítulo tiene descendientes; solo se elimina un capítulo vacío.",
                 "WBS_NODE_HAS_CHILDREN");
         }
 

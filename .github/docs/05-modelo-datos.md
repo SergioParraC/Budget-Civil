@@ -129,6 +129,8 @@
 | `base_currency_id` | UUID | No | FK `BaseCurrency` |
 | `budget_limit` | DECIMAL(18,2) | Sí | Tope mayor que cero cuando se informa |
 | `aiu_admin`, `aiu_unforeseen`, `aiu_profit` | DECIMAL(5,2) | Sí | 0–100 |
+| `rounding_decimals` | INT | No | 0–10; default 2; redondeo de la vista previa de costo (`D-121`) |
+| `quantity_decimals` | INT | No | 0–10; default 2; decimales de la cantidad efectiva (`D-121`) |
 | `signature_mode` | VARCHAR(50) | No | `SIN_FIRMA`, `UNICA_POR_PRESUPUESTADOR_ASIGNADO` o `INDEPENDIENTE_POR_PROFESIONAL_RESPONSABLE` |
 | `signer_user_id` | UUID | Sí | Firmante designado |
 | `requires_auditor` | BOOLEAN | No | Default `false`. Es independiente de `signature_mode`: con el check activo el proyecto admite auditores en cualquier modo. Desactivarlo conserva los `project_members` de rol `AUDITOR` (`D-112`) |
@@ -172,9 +174,9 @@
 | `id` | UUID | No | PK |
 | `project_id` | UUID | No | FK `Project`; principio `PLAN §3.3.1.2` |
 | `wbs_chapter_id` | UUID | Sí | FK `WbsChapter`; nulo = ítem raíz (`D-118`) |
-| `apu_id` | UUID | Sí | FK `Apu` (se añade en `I-3b`); único filtrado cuando no es nulo (`D-113`, `BR-016`) |
+| `apu_id` | UUID | Sí | FK `Apu` `RESTRICT` (`FK_wbs_items_apus_apu_id`); único filtrado cuando no es nulo (`D-113`, `BR-016`) |
 | `code_id` | UUID | No | FK `WbsCode`, único; no se recalcula después del alta (`D-117`) |
-| `quantity_work` | DECIMAL(18,4) | No | > 0 |
+| `quantity_work` | DECIMAL(18,10) | No | > 0 (`D-121`) |
 | `order_index` | INT | No | Orden |
 | `last_modified_by` | UUID | No | FK `User`; actor autenticado (`D-116`) |
 | `last_modified_at` | DATETIME2 | No | UTC (`D-116`) |
@@ -191,15 +193,17 @@
 | Campo | Tipo | Nulo | Regla |
 |---|---|---|---|
 | `id` | UUID | No | PK |
-| `project_id` | UUID | No | FK `Project` |
-| `description` | TEXT | No | Descripción de la actividad |
-| `unit` | VARCHAR(20) | No | Unidad de medida |
-| `yield` | DECIMAL(18,4) | No | > 0 |
-| `status` | VARCHAR(30) | No | `COMPLETO` o `FALTA_INFORMACION` |
-| `last_modified_by` | UUID | Sí | FK `User` |
-| `last_modified_at` | TIMESTAMP | Sí | UTC |
+| `project_id` | UUID | No | FK `Project` `RESTRICT` |
+| `description` | NVARCHAR(MAX) | No | Descripción de la actividad; no vacía |
+| `unit` | VARCHAR(5) | No | Unidad de medida; 1–5 caracteres |
+| `status` | VARCHAR(30) | No | `CK_apus_status`; `COMPLETO` o `FALTA_INFORMACION` |
+| `last_modified_by` | UUID | No | FK `User` `RESTRICT` |
+| `last_modified_at` | DATETIME2 | No | UTC |
+| `row_version` | ROWVERSION | No | Concurrencia optimista (`D-50`, `D-97`) |
 
-Sin `code` (`D-31`) y sin `is_public` (`D-22`).
+Sin `code` (`D-31`), sin `is_public` (`D-22`), sin `yield` (`D-123`) y **sin baja lógica**: se crea junto
+con su ítem del EDT en `POST /wbs/items` (`D-122`), se edita con `PUT /wbs/items/{itemId}` y se elimina
+físicamente con el ítem; sus `apu_resources` caen en cascada (`D-49` revisada, `D-119`).
 
 ### `Resource`
 | Campo | Tipo | Nulo | Regla |
@@ -257,17 +261,17 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | `id` | UUID | No | PK |
 | `apu_id` | UUID | No | FK `Apu` |
 | `resource_id` | UUID | No | FK `Resource` |
-| `consumption` | DECIMAL(18,4) | No | > 0 |
-| `waste_percentage` | DECIMAL(5,2) | No | 0–100 |
+| `consumption` | DECIMAL(18,10) | No | `CK_apu_resources_consumption`; > 0 (`D-121`) |
+| `waste_percentage` | DECIMAL(5,2) | No | `CK_apu_resources_waste`; 0–100; default 0 |
 
 ### `MatrixComponent`
 | Campo | Tipo | Nulo | Regla |
 |---|---|---|---|
 | `id` | UUID | No | PK |
-| `matrix_resource_id` | UUID | No | FK `Resource` de tipo Matriz |
-| `component_resource_id` | UUID | No | FK `Resource` componente |
-| `consumption` | DECIMAL(18,4) | No | > 0 |
-| `waste_percentage` | DECIMAL(5,2) | No | 0–100 |
+| `matrix_resource_id` | UUID | No | FK `Resource` de tipo Matriz, `CASCADE`; debe ser `MATRIX` |
+| `component_resource_id` | UUID | No | FK `Resource` `RESTRICT`; no puede ser Matriz ni la misma Matriz |
+| `consumption` | DECIMAL(18,10) | No | `CK_matrix_components_consumption`; > 0 (`D-121`) |
+| `waste_percentage` | DECIMAL(5,2) | No | `CK_matrix_components_waste`; 0–100; default 0 |
 
 ### `ApuApproval`
 | Campo | Tipo | Nulo | Regla |
@@ -307,12 +311,12 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | Estado del proyecto | Texto con `CHECK` sobre los cinco valores (`D-88`) |
 | Tope presupuestal | `budget_limit` mayor que cero |
 | AIU | 0–100 |
-| Rendimiento y cantidades | `yield > 0`, `quantity_work > 0` |
+| Rendimiento y cantidades | `quantity_work > 0`; `apus.yield` se elimina en `apus_remove_yield` (`REQ-APUS-22`) |
 | Consumo y desperdicio | `consumption > 0`, `waste_percentage` 0–100 |
 | Precio | `unit_price >= 0` |
-| Coherencia del nodo | `WbsItem` exige cantidad; su capítulo es nulo solo si es ítem raíz (`D-118`); `apu_id` es opcional hasta `I-3b` y único cuando existe (`D-113`); `WbsChapter` exige nombre; `WbsCode.node_type` coincide con la tabla |
+| Coherencia del nodo | `WbsItem` exige cantidad; su capítulo es nulo solo si es ítem raíz (`D-118`); `apu_id` es opcional y único cuando existe (`FK_wbs_items_apus_apu_id`, `D-113`); `WbsChapter` exige nombre; `WbsCode.node_type` coincide con la tabla |
 | Alcance | `company_id` obligatorio salvo el Administrador y el autorregistrado pendiente de asignación; `project_id` obligatorio en entidades de proyecto |
-| Borrado | Baja lógica en `Project`, `Apu` y `Resource`; `RESTRICT` en lo referenciado. La EDT se elimina en cascada por la aplicación previa confirmación (`D-119`); el ítem con APU se elimina y el APU no |
+| Borrado | Baja lógica en `Project` y `Resource`; el `Apu` se elimina físicamente con el ítem; `RESTRICT` en lo referenciado. La EDT se elimina físicamente y un capítulo solo se elimina vacío (`409 WBS_CHAPTER_HAS_APU` o `409 WBS_NODE_HAS_CHILDREN`); el ítem con APU elimina el ítem, su código, el APU y sus líneas y conserva los insumos (`D-49`, `D-114`, `D-119`) |
 | Concurrencia | `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource`; el movimiento exige la `rowversion` del nodo movido |
 
 ## 5. Reglas de cálculo
@@ -328,7 +332,7 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | Costo directo del proyecto | Suma de subtotales de capítulos |
 | AIU | `costo directo × (1 + %administración + %imprevistos + %utilidad)`; solo por proyecto (`D-07`) |
 | Conteo de uso | `Σ (consumo × cantidad de obra)` por ítem, para todos los tipos (`D-33`) |
-| Redondeo | Banker's Rounding a 2 decimales en valores monetarios; 4 decimales en consumos y rendimientos |
+| Redondeo | `MidpointRounding.AwayFromZero` con `rounding_decimals` (default 2) en valores monetarios y `quantity_decimals` (default 2) en cantidades; la cantidad efectiva se redondea antes de multiplicar por el precio (`D-121`) |
 | Divisa | Una por proyecto, sin conversión (`BR-020`) |
 
 La Matriz se expande un solo nivel; no se permite Matriz dentro de Matriz (`BR-008`).
@@ -374,8 +378,13 @@ La Matriz se expande un solo nivel; no se permite Matriz dentro de Matriz (`BR-0
 ## 8. Migraciones y datos iniciales
 - Migraciones manuales con runbook (`docs/runbook-migraciones.md`): respaldo, revisión del script, aplicación y verificación; el arranque de la API **no** aplica migraciones (`D-40`).
 - Baseline única `202610300438_e1b_reconciliacion_baseline` sobre base vacía, con la convención `YYYYMMDDHHMM_<scope>_<change>` (`D-107`, `DEC-19`).
-- Seed versionado e idempotente de cuatro roles base, permisos y `RolePermission` (`D-82`). La versión `v5` añade `SUPPLIERS_READ` (Administrador, Director, Presupuestador y Auditor) y `SUPPLIERS_WRITE` (Director y Presupuestador) (`REQ-PROVEEDORES-07`). La versión `v6` reconcilia por diferencia: las asignaciones rol-permiso y los permisos que ya no figuran en la matriz quedan inactivos con `revoked_at_utc` y `seed_version` vigente (`REQ-IDENTIDAD-30`). La versión `v7` añade `WBS_READ` (Administrador, Director, Presupuestador y Auditor) y `WBS_WRITE` (Director y Presupuestador) (`REQ-EDT-13`, `REQ-EDT-14`).
-- Migración `20261113040910_e3a_suppliers`: tabla `suppliers`, columna `resources.supplier_id`, sus FKs `RESTRICT` e índices, sin migración de datos (`D-40`, `D-107`).
+- Seed versionado e idempotente de cuatro roles base, permisos y `RolePermission` (`D-82`). La versión `v5` añade `SUPPLIERS_READ` (Administrador, Director, Presupuestador y Auditor) y `SUPPLIERS_WRITE` (Director y Presupuestador) (`REQ-PROVEEDORES-07`). La versión `v6` reconcilia por diferencia: las asignaciones rol-permiso y los permisos que ya no figuran en la matriz quedan inactivos con `revoked_at_utc` y `seed_version` vigente (`REQ-IDENTIDAD-30`). La versión `v7` añade `WBS_READ` (Administrador, Director, Presupuestador y Auditor) y `WBS_WRITE` (Director y Presupuestador) (`REQ-EDT-13`, `REQ-EDT-14`). La versión `v8` añade `APUS_READ` (Administrador, Director, Presupuestador y Auditor) y `APUS_WRITE` (Director y Presupuestador); el inventario queda en 37 permisos (`REQ-APUS-16`, `REQ-APUS-17`).
+- Migración `20261115092848_apus_add_e3b` (aplicada el 15/11/2026): tablas `apus`, `apu_resources` y
+  `matrix_components` con sus `CHECK`, FKs e índices; `ALTER` de `wbs_items.quantity_work`,
+  `apu_resources.consumption` y `matrix_components.consumption` a `DECIMAL(18,10)`; FK
+  `FK_dbo_wbs_items_apus_apu_id` (`RESTRICT`); columnas `rounding_decimals` y `quantity_decimals` en
+  `project_configurations` con `CHECK` 0–10 y default 2; sin migración de datos (`D-40`, `D-107`,
+  `D-113`, `D-121`). El `Down` revierte el `ALTER`, las columnas y la FK.
 - Migración `20261114065800_wbs_add_i2b` (aplicada el 14/11/2026): tablas `wbs_codes`, `wbs_chapters`,
   `wbs_items` y `wbs_project_activity` con sus índices, `CHECK` y FKs `RESTRICT`,
   `wbs_items.wbs_chapter_id` nullable, índice único filtrado de `apu_id` y sin migración de datos (`D-40`,

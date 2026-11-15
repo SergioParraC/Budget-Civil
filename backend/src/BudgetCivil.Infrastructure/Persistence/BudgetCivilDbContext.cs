@@ -1,4 +1,5 @@
 using BudgetCivil.Domain.Users.Entities;
+using BudgetCivil.Domain.Apus;
 using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Catalogs;
@@ -66,6 +67,12 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
     public DbSet<WbsItem> WbsItems => Set<WbsItem>();
 
     public DbSet<WbsProjectActivity> WbsProjectActivities => Set<WbsProjectActivity>();
+
+    public DbSet<Apu> Apus => Set<Apu>();
+
+    public DbSet<ApuResource> ApuResources => Set<ApuResource>();
+
+    public DbSet<MatrixComponent> MatrixComponents => Set<MatrixComponent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

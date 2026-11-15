@@ -60,14 +60,16 @@ matriz `1.3.2`.
 ### Requirement: REQ-EDT-20 Referencia del APU en el árbol
 
 El sistema DEBE (MUST) devolver en cada ítem del árbol la referencia del APU vinculado con `apuId`, `status`,
-`description` y `unit`, o nula si el ítem no tiene APU; el cliente no puede fijar esos valores. Citas:
-RF-04, RF-07; D-30, D-113.
+`description`, `unit`, `unitPrice` y `rowVersion`, o nula si el ítem no tiene APU; `unitPrice` es `0` hasta
+`E-4a` y `rowVersion` permite la edición unificada. El cliente no puede fijar esos valores. Citas: RF-04,
+RF-07; D-30, D-113, D-121.
 
 #### Scenario: SC-EDT-78 Ítem con APU en el árbol
 
 - **Dado** un ítem vinculado a un APU completo
 - **Cuando** un actor con lectura consulta el árbol
-- **Entonces** el ítem devuelve el identificador, el estado, la descripción y la unidad del APU
+- **Entonces** el ítem devuelve el identificador, el estado, la descripción, la unidad, `unitPrice = 0` y
+  `apuRowVersion` del APU
 
 #### Scenario: SC-EDT-79 Ítem sin APU en el árbol
 
@@ -119,3 +121,30 @@ descendiente responde `409 WBS_CHAPTER_HAS_APU`, y si contiene otros nodos respo
 - **Cuando** un actor autorizado lo elimina
 - **Entonces** el sistema borra el ítem, su código, el APU y sus líneas de composición, y conserva los
   insumos del proyecto
+
+### Requirement: REQ-EDT-22 Alta y edición unificadas con el APU
+
+El sistema DEBE (MUST) crear el ítem y su APU en `POST /projects/{projectId}/wbs/items`, con
+`description` y `unit` del APU obligatorios y `resources` opcionales, y vincularlos 1:1 en una transacción.
+DEBE (MUST) editar `quantityWork` obligatorio, `code` opcional y un bloque `apu` opcional en
+`PUT /projects/{projectId}/wbs/items/{itemId}`, con `apuRowVersion` y `resources` como reemplazo completo.
+El cliente no fija `apuId`. Citas: RF-04, RF-07; D-16, D-31.
+
+#### Scenario: SC-EDT-86 Alta conjunta desde el EDT
+
+- **Dado** un actor autorizado que envía código, cantidad y el bloque `apu`
+- **Cuando** registra el ítem
+- **Entonces** el sistema crea el ítem, el APU, sus líneas y el vínculo en una transacción
+
+#### Scenario: SC-EDT-87 Edición conjunta desde el EDT
+
+- **Dado** un ítem con su APU y ambas versiones vigentes
+- **Cuando** se edita la cantidad y el contenido del APU
+- **Entonces** el sistema aplica ambos cambios o ninguno
+
+#### Scenario: SC-EDT-88 Código opcional en la edición
+
+- **Dado** una edición que no envía `code`
+- **Cuando** se actualiza el ítem
+- **Entonces** el código vigente se conserva
+

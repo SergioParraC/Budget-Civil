@@ -46,7 +46,7 @@
 |---|---|
 | BR-001 | Un usuario pertenece a una sola compañía vigente, registrada en la tabla `users_company` (`account_enable = 1`), que conserva el historial de vínculos. Excepción: el Administrador y el usuario autorregistrado pendiente de asignación no tienen vínculo vigente (`D-02`, `D-72`, `X-25`) |
 | BR-002 | Un proyecto pertenece a una compañía; sus APUs e insumos pertenecen a ese proyecto |
-| BR-003 | Cambiar precio, consumo o rendimiento recalcula ítem, capítulo y proyecto |
+| BR-003 | Cambiar precio o consumo recalcula ítem, capítulo y proyecto |
 | BR-004 | Se registra el último usuario que modificó cada APU o insumo y una aprobación por APU |
 | BR-005 | Un proyecto o APU privado solo es accesible por la compañía propietaria |
 | BR-006 | El catálogo público expone composición, precios y contactos; no expone autoría ni empresa (`D-28`) |
@@ -94,7 +94,8 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | Insumos | Consultar y filtrar | `RESOURCES_READ` | Sí | Sí | Sí (asignados) | Sí (asignados) |
 | Proveedores | Crear, editar, dar de baja y reactivar | `SUPPLIERS_WRITE` | No (lectura) | Sí (su compañía) | Sí (su compañía) | No (lectura) |
 | Proveedores | Consultar el directorio y el selector | `SUPPLIERS_READ` | Sí (cualquier compañía) | Sí (su compañía) | Sí (su compañía) | Sí (su compañía) |
-| APUs y matrices | Crear, editar y copiar | — | No (lectura) | Sí | Sí | No (lectura) |
+| APUs y matrices | Crear, editar, componer y copiar | `APUS_WRITE` | No (lectura) | Sí (con `ProjectMember`) | Sí (con `ProjectMember`) | No (lectura) |
+| APUs y matrices | Consultar APUs, Matrices y conteo de uso | `APUS_READ` / `RESOURCES_READ` | Sí | Sí (proyectos de su compañía) | Sí (proyectos de su compañía) | Sí (proyectos asignados) |
 | Cotización | Cambio masivo a `COTIZADO` | — | No | Sí | Sí | No |
 | Aprobación | Firmar APU | — | No | No | Sí | No |
 | Aprobación | Visto bueno | — | No | No | No | Sí |
@@ -114,25 +115,38 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | `POST /projects` | `name` no vacío; ubicación y `baseCurrencyId` válidos; `aiuAdmin`, `aiuUnforeseen` y `aiuProfit` entre 0 y 100; `budgetLimit` mayor que cero; `signingMode` en `SIN_FIRMA`, `UNICA_POR_PRESUPUESTADOR_ASIGNADO` o `INDEPENDIENTE_POR_PROFESIONAL_RESPONSABLE`; `requiresAuditor` e `isPublic` booleanos; se rechaza si la compañía no tiene Director activo (`D-93`, DEC-24) |
 | `GET /projects/{id}/configuration` | Requiere `PROJECTS_READ`; devuelve la configuración única del proyecto |
 | `PATCH /projects/{id}/status` | Transición válida del dominio; actor por transición (`DEC-22`); `409` si el estado no lo permite |
-| `PUT /projects/{id}` | `name` no vacío; `signingMode` válido; AIU 0–100 con máximo dos decimales; `budgetLimit` > 0 con máximo dos decimales. El Director de proyectos es el único que puede cambiar ubicación, divisa, tope, AIU, modo de firma, firmante y `requiresAuditor` (`D-112`); el Presupuestador que intente cambiarlos recibe `403 PROJECT_CONFIGURATION_FORBIDDEN` o `403 PROJECT_SIGNATURE_CONFIGURATION_FORBIDDEN` |
+| `PUT /projects/{id}` | `name` no vacío; `signingMode` válido; AIU 0–100 con máximo dos decimales; `budgetLimit` > 0 con máximo dos decimales; `roundingDecimals` y `quantityDecimals` entre 0 y 10 (default 2, `D-121`). El Director de proyectos es el único que puede cambiar ubicación, divisa, tope, AIU, decimales, modo de firma, firmante y `requiresAuditor` (`D-112`); el Presupuestador que intente cambiarlos recibe `403 PROJECT_CONFIGURATION_FORBIDDEN` o `403 PROJECT_SIGNATURE_CONFIGURATION_FORBIDDEN` |
 | `POST /projects/{id}/memberships` | Rol objetivo en `DIRECTOR`, `PRESUPUESTADOR` o `AUDITOR`; el usuario debe pertenecer a la compañía del proyecto; el Administrador y el Auditor no gestionan membresías; se permite asignar auditores con `requiresAuditor = false` (`D-112`) |
-| `GET /projects/{id}/wbs` | Árbol completo del proyecto ordenado por `orderIndex`, con los ítems raíz junto a los capítulos raíz (`D-118`); requiere `WBS_READ` |
+| `GET /projects/{id}/wbs` | Árbol completo del proyecto ordenado por `orderIndex`, con los ítems raíz junto a los capítulos raíz (`D-118`); cada ítem expone `apu: { id, status, description, unit }` o `null` (`REQ-EDT-20`); requiere `WBS_READ` |
 | `GET /projects/{id}/wbs/search` | Búsqueda parcial por `code` de ítem o `name` de capítulo; paginación `page`/`pageSize` (`D-101`); requiere `WBS_READ` |
 | `GET /projects/{id}/wbs/activity` | Participantes y última actividad del EDT: una fila por proyecto y usuario, `MAX(last_modified_at)` como última actividad (`D-120`); `200` con `lastActivity=null` y `participants=[]` si no hay actividad; Auditor excluido; requiere `WBS_READ` |
 | `GET /projects/{id}/wbs/codes/validate` | Valida `code` (1–10, `R-19`) y su disponibilidad en el proyecto, con `excludeNodeId` opcional para edición; responde `200` con `isValid`, `isAvailable` y `reason`; requiere `WBS_WRITE` |
 | `POST /projects/{id}/wbs/chapters` | `name` no vacío y ≤ 255; `code` obligatorio de 1–10 caracteres del conjunto de `R-19`, con mayúsculas y minúsculas; `parentChapterId` del mismo proyecto; código único por proyecto sin distinguir mayúsculas (`BR-015`); sin numeración automática ni respaldo (`D-117`); requiere `WBS_WRITE` |
 | `PUT /projects/{id}/wbs/chapters/{chapterId}` | `rowVersion` obligatorio; cambia solo el nombre y el código del capítulo y no reescribe a los descendientes (`D-117`); requiere `WBS_WRITE` |
-| `DELETE /projects/{id}/wbs/chapters/{chapterId}?cascade=true&rowVersion=...` | `rowVersion` obligatorio; sin `cascade` y con descendientes responde `409 WBS_NODE_HAS_CHILDREN`; con `cascade=true` elimina el subárbol completo con sus códigos (`D-119`); requiere `WBS_WRITE` |
-| `POST /projects/{id}/wbs/items` | `code` obligatorio de 1–10 caracteres del conjunto de `R-19`; `wbsChapterId` opcional: nulo crea un ítem raíz (`D-118`); `quantityWork` > 0; `apuId` no se acepta en este incremento (`D-113`); requiere `WBS_WRITE` |
-| `PUT /projects/{id}/wbs/items/{itemId}` | `rowVersion` obligatorio; `code` y `quantityWork` > 0; el traslado se hace con `move`; requiere `WBS_WRITE` |
-| `DELETE /projects/{id}/wbs/items/{itemId}?rowVersion=...` | `rowVersion` obligatorio; elimina el ítem y su código; si tiene APU, el APU no se borra y queda desvinculado (`D-119`); requiere `WBS_WRITE` |
+| `DELETE /projects/{id}/wbs/chapters/{chapterId}?rowVersion=...` | `rowVersion` obligatorio; solo se elimina un capítulo vacío; con APUs en el subárbol responde `409 WBS_CHAPTER_HAS_APU` y, si no hay APUs pero sí subcapítulos o ítems, `409 WBS_NODE_HAS_CHILDREN`; no existe `cascade` (`D-114`, `D-119`); requiere `WBS_WRITE` |
+| `POST /projects/{id}/wbs/items` | Alta unificada de ítem + APU: `code` obligatorio de 1–10 caracteres del conjunto de `R-19`; `wbsChapterId` opcional; `quantityWork` > 0; bloque `apu` obligatorio con `description`, `unit` de 1–5 y `resources` opcional; requiere `WBS_WRITE` + `APUS_WRITE` (`REQ-EDT-22`, `REQ-APUS-21`) |
+| `PUT /projects/{id}/wbs/items/{itemId}` | Edición unificada: `rowVersion` obligatorio; `quantityWork` > 0; `code` opcional; bloque `apu` opcional con `apuRowVersion` y `resources` como reemplazo completo; requiere `WBS_WRITE` + `APUS_WRITE` |
+| `DELETE /projects/{id}/wbs/items/{itemId}?rowVersion=...` | `rowVersion` obligatorio; elimina el ítem y su código; si tiene APU, elimina también el APU y sus líneas y conserva los insumos del proyecto (`D-119`); requiere `WBS_WRITE` |
 | `POST /projects/{id}/wbs/reorder` | Reordena los hijos de un padre, incluida la raíz; la lista debe contener todos los hijos vigentes; compacta posiciones y no renumera códigos (`D-117`); requiere `WBS_WRITE` |
 | `POST /projects/{id}/wbs/move` | Mueve un capítulo con su subárbol o un ítem a otro capítulo del mismo proyecto o a la raíz (`targetParentChapterId` nulo), con `targetIndex` y `rowVersion`, sin cambiar códigos; rechaza ciclos con `400 WBS_MOVE_CYCLE` y destinos ajenos con `404 WBS_TARGET_NOT_FOUND` (`D-118`); requiere `WBS_WRITE` |
 | `POST /projects/{id}/resources` | `description` obligatoria; `unitPrice` ≥ 0; `unit` y `brand` requeridos para salir de `FALTA_INFORMACION`; `resourceTypeId` válido y `municipalityId` existente y obligatorio (`D-96`); `rowVersion` obligatorio en la edición; opcionales sin bloquear |
 | `GET /projects/{id}/resources` | Búsqueda parcial por `description`; filtros por `resourceTypeId`, `quotationStatus`, `brand`, `municipalityId` y rango de precio; orden por `description`, `unitPrice`, `quotationStatus` o `lastModifiedAt`; paginación `page`/`pageSize` (`D-101`) |
-| `POST /apus` | `description` no vacía; `unit` no vacía; `yield` > 0; `projectId` con pertenencia validada |
-| `POST /apus/{id}/resources` | `resourceId` del mismo proyecto; `consumption` > 0; `wastePercentage` entre 0 y 100 |
-| `POST /apus/{id}/approval` | APU del actor; `signatureCapture` como evidencia temporal; frase de confirmación no vacía |
+| `POST /projects/{id}/apus` | **Retirado**: el APU se crea con `POST /wbs/items` (`REQ-APUS-21`) |
+| `GET /projects/{id}/apus` | APUs de otros proyectos de la compañía con `search` (descripción o código del ítem), `departmentId`, `municipalityId` y paginación; no expone `quantityWork` ni AIU; `APUS_READ` (`REQ-APUS-05`) |
+| `GET /projects/{id}/apus/{apuId}` | Detalle con `resources` agrupado por `resourceType` y `subtotal` por insumo; fuera del listado `directCost`, `indirectCosts` y `total`; sin `yield`; `APUS_READ` (`REQ-APUS-19`, `REQ-APUS-22`) |
+| `PUT /projects/{id}/apus/{apuId}` | **Retirado**: la edición va en `PUT /wbs/items/{itemId}` |
+| `POST /projects/{id}/apus/{apuId}/resources` | **Retirado**: las líneas se reemplazan con `PUT /wbs/items/{itemId}` |
+| `PUT /projects/{id}/apus/{apuId}/resources/{lineId}` | **Retirado**: las líneas se reemplazan con `PUT /wbs/items/{itemId}` |
+| `DELETE /projects/{id}/apus/{apuId}/resources/{lineId}?rowVersion=...` | **Retirado**: las líneas se reemplazan con `PUT /wbs/items/{itemId}` |
+| `GET /projects/{id}/apus/copy/preview` | `sourceApuId`; clasifica cada insumo simple como `EXACT` (misma descripción), `SIMILAR` (descripción parcial) o `NONE`, con `requiresResolution`; devuelve hasta diez candidatos del destino y, por candidato, `unit`, `unitPrice` y `comparison` (`unitMatches`, `unitPriceMatches`, `unitPriceDifference = candidato − origen`); las Matrices no se clasifican; `APUS_WRITE` (`REQ-APUS-10`) |
+| `POST /projects/{id}/apus/copy` | Crea el ítem destino + APU: `target { code, wbsChapterId, quantityWork }`; una `resolution` por insumo `EXACT`/`SIMILAR` (`USE_EXISTING` con `existingResourceId` o `KEEP_ORIGIN`); `NONE` y Matrices se copian automáticamente; si falta una resolución responde `400 APU_COMPOSITION_RESOLUTION_REQUIRED`; código duplicado `409 WBS_CODE_DUPLICATED`; origen de otra compañía `404 APU_NOT_FOUND`; transaccional y sin aprobación; `APUS_WRITE` (`REQ-APUS-09`) |
+| `GET /projects/{id}/matrices/{matrixResourceId}/components` | Composición y `directCost` de la Matriz sin AIU; `APUS_READ` (`REQ-APUS-20`) |
+| `POST /projects/{id}/matrices/{matrixResourceId}/components` | `componentResourceId` del mismo proyecto, no Matriz y no ella misma; `consumption` > 0; `wastePercentage` 0–100; `rowVersion` del insumo; `APUS_WRITE` |
+| `PUT /projects/{id}/matrices/{matrixResourceId}/components/{componentId}` | `consumption`, `wastePercentage` y `rowVersion` del insumo; `APUS_WRITE` |
+| `DELETE /projects/{id}/matrices/{matrixResourceId}/components/{componentId}?rowVersion=...` | Retiro físico del componente; `rowVersion` obligatorio; `APUS_WRITE` |
+| `POST /projects/{id}/matrices/copy` | Copia una Matriz con sus componentes e insumos como registros nuevos, sin validar nombres ni duplicados; `APUS_WRITE` (`REQ-APUS-08`) |
+| `GET /projects/{id}/resource-usage` | Reporte de uso agrupado por `resourceType` en el orden del catálogo; cada grupo devuelve `resourceType`, `resourceTypeName`, `subtotal` e `items[]`; cada insumo devuelve `resourceId`, `description`, `unit`, `unitPrice`, `quantity` y `totalPrice = ROUND(quantity × unitPrice, roundingDecimals)`; el reporte devuelve `totalCost`; sin precio, el total del insumo y los totales son `null`; `RESOURCES_READ` (`REQ-APUS-12`) |
+| `POST /apus/{id}/approval` | APU del actor; `signatureCapture` como evidencia temporal; frase de confirmación no vacía (`E-4b`) |
 | `GET /public/apus` | Sin autenticación; solo proyectos públicos; sin autoría, empresa ni firma; precios permitidos |
 
 ## 6. Matriz de trazabilidad

@@ -126,6 +126,13 @@ public sealed class CreateResourceCommandHandler(
             throw new ValidationAppException(exception.Message, "VALIDATION_ERROR");
         }
 
+        if (ResourceTypeCatalog.IsMatrixId(resource.ResourceTypeId))
+        {
+            // Una Matriz recién creada aún no tiene componentes: queda en `FALTA_INFORMACION`
+            // (`REQ-APUS-06`, `REQ-INSUMOS-04`).
+            resource.QuotationStatus = QuotationStatus.FaltaInformacion;
+        }
+
         await resourceRepository.AddAsync(resource, cancellationToken);
         await resourceRepository.SaveChangesAsync(cancellationToken);
 

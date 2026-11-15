@@ -1,3 +1,4 @@
+using BudgetCivil.Domain.Apus;
 using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Users.Entities;
 using BudgetCivil.Domain.Wbs;
@@ -29,7 +30,7 @@ public sealed class WbsItemConfiguration : IEntityTypeConfiguration<WbsItem>
         builder.Property(item => item.WbsChapterId)
             .HasColumnName("wbs_chapter_id");
 
-        // `D-113`: sin FK hasta `I-3b`; la unicidad 1:1 se garantiza con el índice filtrado.
+        // `D-113`: el vínculo 1:1 vive aquí y la FK hacia `apus` se añade en `I-3b` (`RESTRICT`).
         builder.Property(item => item.ApuId)
             .HasColumnName("apu_id");
 
@@ -39,7 +40,7 @@ public sealed class WbsItemConfiguration : IEntityTypeConfiguration<WbsItem>
 
         builder.Property(item => item.QuantityWork)
             .HasColumnName("quantity_work")
-            .HasPrecision(18, 4)
+            .HasPrecision(18, 10)
             .IsRequired();
 
         builder.Property(item => item.OrderIndex)
@@ -88,6 +89,13 @@ public sealed class WbsItemConfiguration : IEntityTypeConfiguration<WbsItem>
         builder.HasOne<WbsChapter>()
             .WithMany()
             .HasForeignKey(item => item.WbsChapterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // El APU se elimina con el ítem; la base impide borrar un APU todavía vinculado
+        // (`FK_wbs_items_apus_apu_id`, `RESTRICT`, `D-113`, `D-119`).
+        builder.HasOne<Apu>()
+            .WithOne()
+            .HasForeignKey<WbsItem>(item => item.ApuId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<UserAccount>()

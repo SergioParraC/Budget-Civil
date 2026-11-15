@@ -115,6 +115,7 @@ public sealed class LayerDependencyTests
             .HaveDependencyOnAny(
                 "BudgetCivil.Application.Projects",
                 "BudgetCivil.Application.Resources",
+                "BudgetCivil.Application.Apus",
                 "BudgetCivil.Application.Suppliers",
                 "BudgetCivil.Application.Memberships",
                 "BudgetCivil.Application.Companies")

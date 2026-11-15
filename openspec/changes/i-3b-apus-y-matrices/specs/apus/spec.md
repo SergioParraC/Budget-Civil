@@ -19,7 +19,7 @@ su baja ocurre con la del ítem (`REQ-EDT-21`). Citas: RF-07; BR-016; D-05, D-16
 #### Scenario: SC-APUS-01 Alta vinculada a un ítem libre
 
 - **Dado** un Director con pertenencia al proyecto y un ítem del EDT de ese proyecto sin APU
-- **Cuando** registra el APU con descripción, unidad y rendimiento válidos
+- **Cuando** registra el APU con descripción y unidad válidas
 - **Entonces** el sistema crea el APU en el proyecto y el ítem queda vinculado a ese único APU
 
 #### Scenario: SC-APUS-02 Alta con un ítem que ya tiene APU
@@ -48,23 +48,21 @@ su baja ocurre con la del ítem (`REQ-EDT-21`). Citas: RF-07; BR-016; D-05, D-16
 
 ### Requirement: REQ-APUS-02 Campos del APU y validación
 
-El sistema DEBE (MUST) exigir `description` no vacía, `unit` de 1 a 5 caracteres y `yield` mayor que cero,
-y permitir editar esos tres campos sin alterar el vínculo con el ítem. `yield` se valida y multiplica la
-cantidad efectiva del costo (`REQ-APUS-19`); no interviene en el conteo (`REQ-APUS-12`) ni en el total del
-proyecto (`E-4a`). `status`, el vínculo y la autoría son de solo lectura para el cliente. Citas: RF-07;
-BR-016; D-31; `02 §5`; `05 §3`.
+El sistema DEBE (MUST) exigir `description` no vacía y `unit` de 1 a 5 caracteres, y permitir editar ambos
+campos junto con el ítem sin alterar el vínculo. `status`, el vínculo y la autoría son de solo lectura para
+el cliente. Citas: RF-07; BR-016; D-31; `02 §5`; `05 §3`.
 
 #### Scenario: SC-APUS-06 Alta con los campos obligatorios
 
 - **Dado** un actor autorizado y un ítem libre
-- **Cuando** registra el APU con descripción, unidad y rendimiento mayor que cero
-- **Entonces** el sistema guarda los tres valores y los devuelve al consultar el APU
+- **Cuando** registra el APU con descripción y unidad válidas
+- **Entonces** el sistema guarda ambos valores y los devuelve al consultar el APU
 
-#### Scenario: SC-APUS-07 Rendimiento no positivo
+#### Scenario: SC-APUS-07 Intento de fijar estado, vínculo o autoría
 
-- **Dado** un actor autorizado que envía rendimiento cero o negativo
+- **Dado** un actor autorizado que envía `status`, `apuId`, `projectId`, `wbsItemId` o autoría
 - **Cuando** confirma el alta o la edición
-- **Entonces** el sistema rechaza la operación con un error de validación y no modifica el APU
+- **Entonces** el sistema no aplica esos valores y conserva los calculados por el servidor
 
 #### Scenario: SC-APUS-08 Unidad o descripción vacías
 
@@ -75,7 +73,7 @@ BR-016; D-31; `02 §5`; `05 §3`.
 #### Scenario: SC-APUS-09 Edición de los campos descriptivos
 
 - **Dado** un APU existente y un actor autorizado con la versión vigente
-- **Cuando** edita la descripción, la unidad o el rendimiento
+- **Cuando** edita la descripción o la unidad junto con el ítem
 - **Entonces** el sistema guarda los cambios y conserva el vínculo con el ítem
 
 #### Scenario: SC-APUS-10 El cliente intenta fijar estado o vínculo
@@ -86,8 +84,8 @@ BR-016; D-31; `02 §5`; `05 §3`.
 
 ### Requirement: REQ-APUS-03 Estado del APU por completitud
 
-El sistema DEBE (MUST) derivar `status` como `COMPLETO` cuando existan descripción, unidad, rendimiento
-mayor que cero y al menos una línea de composición, y `FALTA_INFORMACION` en caso contrario. Una línea de
+El sistema DEBE (MUST) derivar `status` como `COMPLETO` cuando existan descripción, unidad y al menos una
+línea de composición, y `FALTA_INFORMACION` en caso contrario. Una línea de
 Matriz cuenta solo si la Matriz tiene unidad y componentes; si está incompleta, el APU queda en
 `FALTA_INFORMACION`. El cambio de composición o de unidad de una Matriz DEBE (MUST) recalcular los APUs que
 la usan. Citas: RF-07; `05 §3`; `D-48`.
@@ -100,7 +98,7 @@ la usan. Citas: RF-07; `05 §3`; `D-48`.
 
 #### Scenario: SC-APUS-12 La primera línea completa el APU
 
-- **Dado** un APU en estado `FALTA_INFORMACION` con descripción, unidad y rendimiento válidos
+- **Dado** un APU en estado `FALTA_INFORMACION` con descripción y unidad válidas
 - **Cuando** se agrega su primera línea de composición
 - **Entonces** el APU pasa a estado `COMPLETO`
 
@@ -110,15 +108,15 @@ la usan. Citas: RF-07; `05 §3`; `D-48`.
 - **Cuando** se retira esa línea
 - **Entonces** el APU vuelve a `FALTA_INFORMACION`
 
-#### Scenario: SC-APUS-14 La edición del rendimiento recalcula el estado
+#### Scenario: SC-APUS-14 La edición de los campos descriptivos recalcula el estado
 
 - **Dado** un APU `COMPLETO`
-- **Cuando** un actor autorizado edita el APU sin alterar los campos obligatorios
+- **Cuando** un actor autorizado edita la descripción o la unidad sin alterar los campos obligatorios
 - **Entonces** el estado se recalcula y permanece `COMPLETO`
 
 #### Scenario: SC-APUS-84 Una Matriz completa el APU
 
-- **Dado** un APU con descripción, unidad y rendimiento válidos y sin líneas
+- **Dado** un APU con descripción y unidad válidas y sin líneas
 - **Cuando** se agrega una línea que referencia una Matriz completa del proyecto
 - **Entonces** el APU pasa a estado `COMPLETO`
 
@@ -356,22 +354,23 @@ D-29.
 
 ### Requirement: REQ-APUS-09 Copia de un APU desde otro proyecto de la compañía
 
-El sistema DEBE (MUST) copiar un APU de otro proyecto de la misma compañía hacia un ítem libre del
-proyecto destino, conservando su composición, sin aprobación y con el actor como último modificador; DEBE
-(MUST) rechazar la copia desde otra compañía sin revelar si el APU existe. El origen puede ser un APU de un
-proyecto donde el actor no tiene pertenencia. Citas: RF-07; BR-018; D-13, D-16, D-24.
+El sistema DEBE (MUST) copiar un APU de otro proyecto de la misma compañía creando en el proyecto destino un
+ítem del EDT nuevo con su código y cantidad de obra, vinculado 1:1 al APU copiado, conservando su composición,
+sin aprobación y con el actor como último modificador; DEBE (MUST) rechazar la copia desde otra compañía sin
+revelar si el APU existe. El origen puede ser un APU de un proyecto donde el actor no tiene pertenencia.
+Citas: RF-07; BR-018; D-13, D-16, D-24.
 
 #### Scenario: SC-APUS-42 Copia exitosa
 
-- **Dado** un APU de otro proyecto de la misma compañía y un ítem libre del proyecto destino
+- **Dado** un APU de otro proyecto de la misma compañía y los datos de un ítem destino libre
 - **Cuando** un actor autorizado confirma la copia
-- **Entonces** el sistema crea un APU nuevo en el destino con la misma descripción, unidad, rendimiento y composición
+- **Entonces** el sistema crea el ítem, un APU nuevo con la misma descripción, unidad y composición, y los vincula
 
-#### Scenario: SC-APUS-43 Ítem destino ya vinculado
+#### Scenario: SC-APUS-43 Código del ítem destino duplicado
 
-- **Dado** un ítem del proyecto destino que ya tiene un APU
-- **Cuando** un actor autorizado intenta copiar un APU hacia ese ítem
-- **Entonces** el sistema rechaza la operación con `409` y conserva el APU del ítem
+- **Dado** un APU de origen y un código de ítem que ya existe en el proyecto destino
+- **Cuando** un actor autorizado intenta copiar el APU
+- **Entonces** el sistema responde `409 WBS_CODE_DUPLICATED` y no crea el ítem ni el APU
 
 #### Scenario: SC-APUS-44 APU de otra compañía
 
@@ -394,9 +393,10 @@ proyecto donde el actor no tiene pertenencia. Citas: RF-07; BR-018; D-13, D-16, 
 ### Requirement: REQ-APUS-10 Reconciliación de insumos simples al copiar un APU
 
 El sistema DEBE (MUST) comparar los insumos simples del APU de origen con los del proyecto destino y
-clasificar cada uno como existente, similar o inexistente; DEBE (MUST) agregar los inexistentes y DEBE
-(MUST) exigir la decisión del usuario para los demás, sin decidir por él. Las Matrices y sus componentes no
-se comparan ni se validan (`REQ-APUS-08`). Citas: RF-08; D-25.
+clasificarlos como existente, similar o inexistente; DEBE (MUST) agregar los inexistentes y exigir la
+decisión del usuario para los demás. La vista previa DEBE (MUST) devolver por candidato la unidad, el precio
+unitario y su comparativo con el origen; `EXACT` se determina por la descripción normalizada. Las Matrices no
+se comparan (`REQ-APUS-08`). Citas: RF-08; D-25.
 
 #### Scenario: SC-APUS-47 Insumo inexistente en el destino
 
@@ -408,7 +408,16 @@ se comparan ni se validan (`REQ-APUS-08`). Citas: RF-08; D-25.
 
 - **Dado** un APU de origen con un insumo simple cuya descripción coincide parcialmente con uno del destino
 - **Cuando** el actor autorizado solicita la vista previa de la copia
-- **Entonces** el sistema marca el insumo como similar y devuelve los candidatos del destino
+- **Entonces** el sistema marca el insumo como similar y devuelve los candidatos del destino con su unidad,
+  su precio unitario y el comparativo frente al insumo de origen
+
+#### Scenario: SC-APUS-101 El match exacto compara unidad y precio unitario
+
+- **Dado** un APU de origen con un insumo simple cuya descripción coincide con uno del destino, pero cuya
+  unidad o precio unitario difieren
+- **Cuando** el actor autorizado solicita la vista previa de la copia
+- **Entonces** el sistema lo clasifica como existente y devuelve, por candidato, `unitMatches`,
+  `unitPriceMatches` y `unitPriceDifference` calculado como candidato menos origen
 
 #### Scenario: SC-APUS-49 Decisión de usar el insumo existente
 
@@ -462,7 +471,9 @@ R-17; D-29.
 
 El sistema DEBE (MUST) calcular el conteo de uso de cada insumo del proyecto como la suma, sobre los ítems
 del proyecto, de `consumption × (1 + waste_percentage/100) × quantity_work`, y DEBE (MUST) devolver cero
-para los insumos que no participan en ninguna composición. Citas: RF-22; R-21; D-33.
+para los insumos que no participan en ninguna composición. El reporte DEBE (MUST) agrupar por `resourceType`
+y devolver por insumo `unitPrice`, `quantity` y `totalPrice`, además del `subtotal` por tipo y el
+`totalCost`. Citas: RF-22; R-21; D-33, D-121.
 
 #### Scenario: SC-APUS-56 Insumo usado en un ítem
 
@@ -520,6 +531,13 @@ además el conteo propio de la Matriz. Citas: RF-22; R-21; BR-008; UC-05; D-33.
   desperdicio `10`, en un ítem de cantidad `10`
 - **Cuando** se consulta el conteo de uso
 - **Entonces** el componente devuelve `92,4` y la Matriz `42`
+
+#### Scenario: SC-APUS-102 Reporte agrupado con precio unitario y total
+
+- **Dado** un proyecto con insumos de materiales y mano de obra usados en APUs, con precio unitario
+- **Cuando** se consulta el conteo de uso
+- **Entonces** el reporte agrupa los insumos por `resourceType`, cada insumo devuelve `unitPrice`,
+  `quantity` y `totalPrice`, y cada grupo devuelve su `subtotal` y el reporte su `totalCost`
 
 ### Requirement: REQ-APUS-14 Autoría de la última modificación
 
@@ -689,7 +707,7 @@ compañía, sin revelar si el APU, la Matriz o el proyecto existen. Citas: R-10,
 El detalle del APU DEBE (MUST) devolver `description`, `resources` agrupado por `resourceType` con `subtotal`
 por insumo y, fuera de `resources`, `directCost`, `indirectCosts` y `total`. El costo directo es
 `Σ(cantidad efectiva × precio unitario)`, con `cantidad efectiva = ROUND(consumo ×
-(1 + desperdicio/100) × yield, quantityDecimals)`; sin precio los costos son nulos y el APU se informa
+(1 + desperdicio/100), quantityDecimals)`; sin precio los costos son nulos y el APU se informa
 `FALTA_INFORMACION`. Citas: RF-07, RF-10; D-06, D-07, D-33, D-121.
 
 #### Scenario: SC-APUS-86 Costo directo y AIU del APU propio
@@ -747,8 +765,59 @@ Citas: RF-09, RF-10; BR-008; D-48.
 - **Entonces** el sistema indica `FALTA_INFORMACION`, el `subtotal` del componente es nulo y `directCost` es
   nulo
 
-#### Scenario: SC-APUS-99 El rendimiento multiplica el costo
+#### Scenario: SC-APUS-99 La cantidad efectiva aplica el desperdicio
 
-- **Dado** un APU con rendimiento `3` y una línea de consumo `2`, sin desperdicio y con precio unitario `100`
+- **Dado** un APU con una línea de consumo `2`, desperdicio `10` y precio unitario `100`
 - **Cuando** se consulta su vista previa
-- **Entonces** la cantidad efectiva es `6`, el `subtotal` de la línea es `600` y `directCost` es `600`
+- **Entonces** la cantidad efectiva es `2,2`, el `subtotal` de la línea es `220` y `directCost` es `220`
+
+### Requirement: REQ-APUS-21 Alta y edición unificadas con el ítem del EDT
+
+El sistema DEBE (MUST) crear el APU únicamente junto con un ítem del EDT en
+`POST /projects/{projectId}/wbs/items`, con `description` y `unit` obligatorios, `resources` opcionales y
+vínculo 1:1 transaccional. DEBE (MUST) editar ambos en `PUT /projects/{projectId}/wbs/items/{itemId}`:
+`quantityWork` obligatorio, `code` opcional y bloque `apu` opcional; `resources` reemplaza la composición
+completa. No existen altas ni ediciones individuales de APU. Citas: RF-07; D-16, D-31.
+
+#### Scenario: SC-APUS-103 Alta conjunta de ítem y APU
+
+- **Dado** un actor autorizado con un código libre y el bloque `apu`
+- **Cuando** registra el ítem en `POST /wbs/items`
+- **Entonces** el sistema crea ítem, APU y líneas, y los vincula en una sola transacción
+
+#### Scenario: SC-APUS-104 Edición parcial del APU
+
+- **Dado** un APU existente y una solicitud con `apu.description` pero sin `resources`
+- **Cuando** se envía `PUT /wbs/items/{itemId}`
+- **Entonces** solo cambia la descripción y la composición se conserva
+
+#### Scenario: SC-APUS-105 Reemplazo completo de recursos
+
+- **Dado** un APU con dos líneas y una solicitud con una línea existente y una nueva
+- **Cuando** se envía el bloque `apu.resources`
+- **Entonces** la línea existente se actualiza, la nueva se crea y la ausente se elimina
+
+#### Scenario: SC-APUS-106 Copia con ítem nuevo
+
+- **Dado** un APU de otro proyecto y un `target` con código, capítulo y cantidad
+- **Cuando** se copia el APU
+- **Entonces** el sistema crea el ítem destino, el APU copiado y el vínculo 1:1
+
+### Requirement: REQ-APUS-22 Sin rendimiento en el APU
+
+El APU NO DEBE (MUST NOT) almacenar ni exponer `yield`. La cantidad efectiva del costo es
+`ROUND(consumo × (1 + desperdicio/100), quantityDecimals)` y el detalle no incluye rendimiento. Citas: RF-07,
+RF-10; D-06, D-121.
+
+#### Scenario: SC-APUS-107 El detalle no expone rendimiento
+
+- **Dado** un APU existente
+- **Cuando** se consulta su detalle
+- **Entonces** la respuesta no contiene `yield` y sí la cantidad de obra del ítem cuando es del proyecto
+
+#### Scenario: SC-APUS-108 El costo no usa rendimiento
+
+- **Dado** una línea con consumo `2`, desperdicio `0` y precio `100`
+- **Cuando** se calcula la vista previa
+- **Entonces** la cantidad efectiva es `2` y el subtotal es `200`
+

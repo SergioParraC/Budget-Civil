@@ -34,6 +34,12 @@ public sealed class UpdateProjectCommand
 
     public decimal? AiuProfitPercent { get; init; }
 
+    /// <summary>Decimales de redondeo 0–10 (`REQ-PROYECTOS-10`, `D-121`).</summary>
+    public int? RoundingDecimals { get; init; }
+
+    /// <summary>Decimales de cantidades 0–10 (`REQ-PROYECTOS-10`, `D-121`).</summary>
+    public int? QuantityDecimals { get; init; }
+
     public string? SigningMode { get; init; }
 
     public Guid? SignerUserId { get; init; }
@@ -106,6 +112,14 @@ public sealed class UpdateProjectCommandValidator : AbstractValidator<UpdateProj
         RuleFor(command => command.AiuProfitPercent)
             .InclusiveBetween(0m, 100m)
             .When(command => command.AiuProfitPercent.HasValue);
+
+        RuleFor(command => command.RoundingDecimals)
+            .InclusiveBetween(ProjectConfiguration.MinDecimals, ProjectConfiguration.MaxDecimals)
+            .When(command => command.RoundingDecimals.HasValue);
+
+        RuleFor(command => command.QuantityDecimals)
+            .InclusiveBetween(ProjectConfiguration.MinDecimals, ProjectConfiguration.MaxDecimals)
+            .When(command => command.QuantityDecimals.HasValue);
     }
 }
 
@@ -169,7 +183,9 @@ public sealed class UpdateProjectCommandHandler(
                 (command.BudgetLimit.HasValue && command.BudgetLimit != configuration.BudgetLimit) ||
                 (command.AiuAdminPercent.HasValue && command.AiuAdminPercent != configuration.AiuAdminPercent) ||
                 (command.AiuUnforeseenPercent.HasValue && command.AiuUnforeseenPercent != configuration.AiuUnforeseenPercent) ||
-                (command.AiuProfitPercent.HasValue && command.AiuProfitPercent != configuration.AiuProfitPercent);
+                (command.AiuProfitPercent.HasValue && command.AiuProfitPercent != configuration.AiuProfitPercent) ||
+                (command.RoundingDecimals.HasValue && command.RoundingDecimals != configuration.RoundingDecimals) ||
+                (command.QuantityDecimals.HasValue && command.QuantityDecimals != configuration.QuantityDecimals);
 
             if (changesLocation || changesFinancialConfiguration)
             {
@@ -220,6 +236,12 @@ public sealed class UpdateProjectCommandHandler(
             configuration.AiuProfitPercent = command.AiuProfitPercent.HasValue
                 ? ProjectConfiguration.NormalizeAiuPercent(command.AiuProfitPercent, "aiu_profit_percent")
                 : configuration.AiuProfitPercent;
+            configuration.RoundingDecimals = ProjectConfiguration.NormalizeDecimals(
+                command.RoundingDecimals,
+                configuration.RoundingDecimals);
+            configuration.QuantityDecimals = ProjectConfiguration.NormalizeDecimals(
+                command.QuantityDecimals,
+                configuration.QuantityDecimals);
 
             if (!string.IsNullOrWhiteSpace(command.SigningMode))
             {

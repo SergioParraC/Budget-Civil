@@ -9,11 +9,13 @@ public sealed class SecurityBaselineSeeder(
     BudgetCivilDbContext dbContext,
     ILogger<SecurityBaselineSeeder> logger) : ISecurityBaselineSeeder
 {
-    private const string SeedVersion = "v7";
+    private const string SeedVersion = "v8";
 
     private static readonly string[] PermissionKeys =
     {
         "APU_PUBLIC_READ",
+        "APUS_READ",
+        "APUS_WRITE",
         "CATALOGS_READ",
         "USERS_CREATE",
         "USERS_UPDATE",
@@ -81,6 +83,7 @@ public sealed class SecurityBaselineSeeder(
             "RESOURCES_READ",
             "SUPPLIERS_READ",
             "WBS_READ",
+            "APUS_READ",
             "USERS_PASSWORD_RECOVERY_ENABLE",
             "AUDIT_BOOTSTRAP_READ",
             "PROFILE_READ_SELF",
@@ -112,6 +115,9 @@ public sealed class SecurityBaselineSeeder(
             "SUPPLIERS_WRITE",
             "WBS_READ",
             "WBS_WRITE",
+            "APUS_READ",
+            "APUS_WRITE",
+
             "PROFILE_READ_SELF",
             "PROFILE_UPDATE_SELF",
             "PROFILE_CHANGE_PASSWORD_SELF"
@@ -135,6 +141,9 @@ public sealed class SecurityBaselineSeeder(
             "SUPPLIERS_WRITE",
             "WBS_READ",
             "WBS_WRITE",
+            "APUS_READ",
+            "APUS_WRITE",
+
             "PROFILE_READ_SELF",
             "PROFILE_UPDATE_SELF",
             "PROFILE_CHANGE_PASSWORD_SELF"
@@ -142,6 +151,8 @@ public sealed class SecurityBaselineSeeder(
         ["AUDITOR"] =
         [
             "APU_PUBLIC_READ",
+            "APUS_READ",
+
             "CATALOGS_READ",
             "USERS_READ",
             "COMPANY_PROFILE_READ_SELF",

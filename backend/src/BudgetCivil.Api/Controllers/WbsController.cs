@@ -1,14 +1,14 @@
 using System.Security.Claims;
 using BudgetCivil.Api.Auth;
+using BudgetCivil.Application.Apus.Commands.WbsItemApu;
+using BudgetCivil.Application.Apus.Dtos;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Wbs.Commands.CreateWbsChapter;
-using BudgetCivil.Application.Wbs.Commands.CreateWbsItem;
 using BudgetCivil.Application.Wbs.Commands.DeleteWbsChapter;
 using BudgetCivil.Application.Wbs.Commands.DeleteWbsItem;
 using BudgetCivil.Application.Wbs.Commands.MoveWbsNode;
 using BudgetCivil.Application.Wbs.Commands.ReorderWbsNodes;
 using BudgetCivil.Application.Wbs.Commands.UpdateWbsChapter;
-using BudgetCivil.Application.Wbs.Commands.UpdateWbsItem;
 using BudgetCivil.Application.Wbs.Dtos;
 using BudgetCivil.Application.Wbs.Queries;
 using Microsoft.AspNetCore.Authorization;
@@ -154,7 +154,6 @@ public sealed class WbsController(
     public async Task<IActionResult> DeleteChapter(
         [FromRoute] Guid projectId,
         [FromRoute] Guid chapterId,
-        [FromQuery] bool cascade,
         [FromQuery] string? rowVersion,
         CancellationToken cancellationToken)
     {
@@ -164,7 +163,6 @@ public sealed class WbsController(
             chapterId,
             new DeleteWbsChapterCommand
             {
-                Cascade = cascade,
                 RowVersion = rowVersion
             },
             cancellationToken);
@@ -174,8 +172,9 @@ public sealed class WbsController(
 
     [HttpPost("items")]
     [Authorize(Policy = AuthorizationPolicies.WbsWrite)]
-    [ProducesResponseType(typeof(WbsNodeDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<WbsNodeDto>> CreateItem(
+    [Authorize(Policy = AuthorizationPolicies.ApusWrite)]
+    [ProducesResponseType(typeof(WbsItemApuResponse), StatusCodes.Status201Created)]
+    public async Task<ActionResult<WbsItemApuResponse>> CreateItem(
         [FromRoute] Guid projectId,
         [FromBody] CreateWbsItemCommand command,
         CancellationToken cancellationToken)
@@ -191,8 +190,9 @@ public sealed class WbsController(
 
     [HttpPut("items/{itemId:guid}")]
     [Authorize(Policy = AuthorizationPolicies.WbsWrite)]
-    [ProducesResponseType(typeof(WbsNodeDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<WbsNodeDto>> UpdateItem(
+    [Authorize(Policy = AuthorizationPolicies.ApusWrite)]
+    [ProducesResponseType(typeof(WbsItemApuResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<WbsItemApuResponse>> UpdateItem(
         [FromRoute] Guid projectId,
         [FromRoute] Guid itemId,
         [FromBody] UpdateWbsItemCommand command,

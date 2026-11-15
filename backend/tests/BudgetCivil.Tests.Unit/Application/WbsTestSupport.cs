@@ -110,6 +110,39 @@ internal static class WbsTestSupport
         return repository;
     }
 
+    /// <summary>Limpiador de APUs para la baja del EDT (`REQ-EDT-21`, `T-I-45`).</summary>
+    public static Mock<IWbsItemApuCleaner> ApuCleaner(bool hasApusInSubtree = false)
+    {
+        var cleaner = new Mock<IWbsItemApuCleaner>();
+        cleaner
+            .Setup(instance => instance.DeleteApusForItemsAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<IReadOnlyCollection<Guid>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+
+        cleaner
+            .Setup(instance => instance.HasApusInSubtreeAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(hasApusInSubtree);
+
+        return cleaner;
+    }
+
+    public static Mock<IApuSummaryReader> EmptyApuSummaries()
+    {
+        var reader = new Mock<IApuSummaryReader>();
+        reader
+            .Setup(instance => instance.GetByProjectAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, ApuSummary>());
+
+        return reader;
+    }
+
     private static void Set(object target, string property, object value)
     {
         target.GetType().GetProperty(property)!.SetValue(target, value);

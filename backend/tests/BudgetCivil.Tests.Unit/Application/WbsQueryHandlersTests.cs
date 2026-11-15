@@ -119,7 +119,8 @@ public sealed class WbsQueryHandlersTests
 
         var handler = new GetWbsTreeQueryHandler(
             WbsTestSupport.AccessService(),
-            repository.Object);
+            repository.Object,
+            WbsTestSupport.EmptyApuSummaries().Object);
 
         var response = await handler.ExecuteAsync(WbsTestSupport.ActorId, WbsTestSupport.ProjectId);
 

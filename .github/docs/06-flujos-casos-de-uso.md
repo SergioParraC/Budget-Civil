@@ -126,14 +126,15 @@ Los roles base son inmutables y la autorización se decide por `permission_key` 
 - **Precondiciones:** ítem de la EDT e insumos disponibles.
 - **Postcondiciones:** APU 1:1 con el ítem, sin aprobación y con el editor como último modificador.
 - **Flujo:**
-  1. Se crea el APU con descripción, unidad y rendimiento > 0.
-  2. Se agregan insumos con consumo y desperdicio.
+  1. Se crea el ítem de la EDT con su APU en `POST /wbs/items`: descripción y unidad obligatorias.
+  2. Se agregan insumos con consumo y desperdicio en el mismo alta o en `PUT /wbs/items/{itemId}`.
   3. Se puede vincular una Matriz; se expande un solo nivel.
-  4. Se puede copiar un APU desde otro proyecto de la compañía o del catálogo público.
+  4. Se puede copiar un APU desde otro proyecto de la compañía; la copia crea el ítem destino.
   5. Al copiar se comparan los insumos con el destino: los inexistentes se agregan y los similares se sugieren.
   6. El usuario decide usar el insumo existente o conservar el de origen.
 - **Alternos:** copia de una Matriz, que queda independiente y exige reconciliar sus componentes.
-- **Errores:** rendimiento ≤ 0; anidamiento de matrices; copia desde otra compañía; APU ya vinculado a otro ítem.
+- **Errores:** descripción o unidad inválidas; anidamiento de matrices; copia desde otra compañía; código de
+  ítem duplicado (`409 WBS_CODE_DUPLICATED`).
 
 ## 8. UC-06 Calcular, cotizar y alertar
 - **Objetivo:** calcular costos, cotizar insumos y alertar sobre el tope.
@@ -146,8 +147,8 @@ Los roles base son inmutables y la autorización se decide por `permission_key` 
   3. Se calcula el conteo de uso por insumo.
   4. El usuario marca insumos como `COTIZADO` de forma masiva por selección, filtro o totalidad.
   5. Si el costo supera el tope, se muestra la alerta.
-- **Alternos:** recálculo tras cambiar precio, consumo o rendimiento.
-- **Errores:** datos incompletos (`FALTA_INFORMACION`); rendimiento inválido.
+- **Alternos:** recálculo tras cambiar precio o consumo.
+- **Errores:** datos incompletos (`FALTA_INFORMACION`); insumo sin precio.
 
 ## 9. UC-07 Aprobar y cerrar el presupuesto
 - **Objetivo:** aprobar cada APU según el modo de firma y cerrar el proyecto.

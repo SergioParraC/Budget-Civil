@@ -165,6 +165,7 @@ public sealed class WbsChapterCommandHandlersTests
         var handler = new DeleteWbsChapterCommandHandler(
             WbsTestSupport.AccessService(),
             repository.Object,
+            WbsTestSupport.ApuCleaner().Object,
             new DeleteWbsChapterCommandValidator());
 
         var action = () => handler.ExecuteAsync(
@@ -173,7 +174,6 @@ public sealed class WbsChapterCommandHandlersTests
             ChapterId,
             new DeleteWbsChapterCommand
             {
-                Cascade = false,
                 RowVersion = WbsTestSupport.RowVersion(chapter.RowVersion)
             });
 
@@ -205,6 +205,7 @@ public sealed class WbsChapterCommandHandlersTests
         var handler = new DeleteWbsChapterCommandHandler(
             WbsTestSupport.AccessService(),
             repository.Object,
+            WbsTestSupport.ApuCleaner().Object,
             new DeleteWbsChapterCommandValidator());
 
         var action = () => handler.ExecuteAsync(
@@ -213,7 +214,6 @@ public sealed class WbsChapterCommandHandlersTests
             ChapterId,
             new DeleteWbsChapterCommand
             {
-                Cascade = false,
                 RowVersion = WbsTestSupport.RowVersion(chapter.RowVersion)
             });
 
@@ -222,14 +222,11 @@ public sealed class WbsChapterCommandHandlersTests
     }
 
     [Fact]
-    public async Task La_cascada_confirmada_elimina_el_subarbol_y_compacta()
+    public async Task La_baja_de_un_capitulo_con_apus_es_conflicto()
     {
-        // SC-EDT-54 y D-119.
-        var repository = new Mock<IWbsRepository>()
-            .WithTransaction()
-            .WithNoOpActivity();
+        // SC-EDT-84 y D-114: el capítulo con APUs en el subárbol no se elimina.
+        var repository = new Mock<IWbsRepository>();
         var chapter = WbsTestSupport.Chapter(ChapterId);
-        var child = WbsTestSupport.Chapter(Guid.NewGuid(), ChapterId, "1.1");
         repository
             .Setup(repo => repo.GetChapterAsync(
                 WbsTestSupport.ProjectId, ChapterId, It.IsAny<CancellationToken>()))
@@ -237,7 +234,56 @@ public sealed class WbsChapterCommandHandlersTests
         repository
             .Setup(repo => repo.GetSubtreeChaptersAsync(
                 WbsTestSupport.ProjectId, ChapterId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([chapter, child]);
+            .ReturnsAsync([chapter]);
+        repository
+            .Setup(repo => repo.GetItemsByChapterIdsAsync(
+                WbsTestSupport.ProjectId,
+                It.IsAny<IReadOnlyCollection<Guid>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([WbsTestSupport.Item(Guid.NewGuid(), ChapterId, "1.1", 2m)]);
+
+        var handler = new DeleteWbsChapterCommandHandler(
+            WbsTestSupport.AccessService(),
+            repository.Object,
+            WbsTestSupport.ApuCleaner(hasApusInSubtree: true).Object,
+            new DeleteWbsChapterCommandValidator());
+
+        var action = () => handler.ExecuteAsync(
+            WbsTestSupport.ActorId,
+            WbsTestSupport.ProjectId,
+            ChapterId,
+            new DeleteWbsChapterCommand
+            {
+                RowVersion = WbsTestSupport.RowVersion(chapter.RowVersion)
+            });
+
+        var exception = await action.Should().ThrowAsync<ConflictAppException>();
+        exception.Which.Code.Should().Be("WBS_CHAPTER_HAS_APU");
+
+        repository.Verify(
+            repo => repo.DeleteSubtreeAsync(
+                It.IsAny<IReadOnlyList<WbsChapter>>(),
+                It.IsAny<IReadOnlyList<WbsItem>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task La_baja_de_un_capitulo_vacio_elimina_el_nodo_y_compacta()
+    {
+        // SC-EDT-82: solo se elimina un capítulo sin subcapítulos ni ítems.
+        var repository = new Mock<IWbsRepository>()
+            .WithTransaction()
+            .WithNoOpActivity();
+        var chapter = WbsTestSupport.Chapter(ChapterId);
+        repository
+            .Setup(repo => repo.GetChapterAsync(
+                WbsTestSupport.ProjectId, ChapterId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(chapter);
+        repository
+            .Setup(repo => repo.GetSubtreeChaptersAsync(
+                WbsTestSupport.ProjectId, ChapterId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([chapter]);
         repository
             .Setup(repo => repo.GetItemsByChapterIdsAsync(
                 WbsTestSupport.ProjectId,
@@ -258,6 +304,7 @@ public sealed class WbsChapterCommandHandlersTests
         var handler = new DeleteWbsChapterCommandHandler(
             WbsTestSupport.AccessService(),
             repository.Object,
+            WbsTestSupport.ApuCleaner().Object,
             new DeleteWbsChapterCommandValidator());
 
         await handler.ExecuteAsync(
@@ -266,19 +313,14 @@ public sealed class WbsChapterCommandHandlersTests
             ChapterId,
             new DeleteWbsChapterCommand
             {
-                Cascade = true,
                 RowVersion = WbsTestSupport.RowVersion(chapter.RowVersion)
             });
 
         repository.Verify(
             repo => repo.DeleteSubtreeAsync(
-                It.Is<IReadOnlyList<WbsChapter>>(chapters => chapters.Count == 2),
-                It.IsAny<IReadOnlyList<WbsItem>>(),
+                It.Is<IReadOnlyList<WbsChapter>>(chapters => chapters.Count == 1),
+                It.Is<IReadOnlyList<WbsItem>>(items => items.Count == 0),
                 It.IsAny<CancellationToken>()),
-            Times.Once);
-        repository.Verify(
-            repo => repo.CompactAsync(
-                WbsTestSupport.ProjectId, null, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

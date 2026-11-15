@@ -1,3 +1,4 @@
+using BudgetCivil.Application.Apus.Repositories;
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Notifications;
 using BudgetCivil.Application.Common.Security;
@@ -57,6 +58,13 @@ public static class DependencyInjection
         services.AddScoped<ISupplierRepository, SupplierRepository>();
         services.AddScoped<IWbsRepository, WbsRepository>();
         services.AddScoped<IWbsProjectAccessReader, WbsProjectAccessReader>();
+        services.AddScoped<IApuRepository, ApuRepository>();
+        services.AddScoped<IApuProjectAccessReader, ApuProjectAccessReader>();
+        services.AddScoped<IWbsItemReader, WbsApuGateway>();
+        services.AddScoped<IWbsItemApuCleaner, WbsApuGateway>();
+        services.AddScoped<IApuSummaryReader, WbsApuGateway>();
+        services.AddScoped<IApuResourceCopyWriter, ApuResourceCopyWriter>();
+        services.AddScoped<IMatrixApuStatusUpdater, MatrixApuStatusUpdater>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IPasswordRecoveryRepository, PasswordRecoveryRepository>();
         services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();

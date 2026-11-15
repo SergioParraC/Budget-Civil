@@ -1,9 +1,12 @@
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Common.Pagination;
+using BudgetCivil.Application.Apus.Commands.WbsItemApu;
+using BudgetCivil.Application.Apus.Repositories;
+using BudgetCivil.Application.Apus.Services;
 using BudgetCivil.Application.Listings.Queries;
 using BudgetCivil.Application.Wbs.Commands.CreateWbsChapter;
-using BudgetCivil.Application.Wbs.Commands.CreateWbsItem;
 using BudgetCivil.Application.Wbs.Commands.DeleteWbsChapter;
+using BudgetCivil.Application.Wbs.Commands.DeleteWbsItem;
 using BudgetCivil.Application.Wbs.Commands.MoveWbsNode;
 using BudgetCivil.Application.Wbs.Commands.ReorderWbsNodes;
 using BudgetCivil.Application.Wbs.Dtos;
@@ -33,12 +36,15 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
         var data = await TestDataFactory.CreateCompanyWithDirectorAsync(context);
         var project = TestDataFactory.CreateProject(data, "Proyecto EDT");
         context.Projects.Add(project);
+        context.ProjectMembers.Add(TestDataFactory.CreateProjectMember(data, project));
         await context.SaveChangesAsync();
 
         var accessService = new WbsAccessService(
             new ActorAccessReader(context),
             new WbsProjectAccessReader(context));
         var repository = new WbsRepository(context);
+        var apuGateway = new WbsApuGateway(context);
+        var apuRepository = new ApuRepository(context);
 
         var createChapter = new CreateWbsChapterCommandHandler(
             accessService,
@@ -47,6 +53,8 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
         var createItem = new CreateWbsItemCommandHandler(
             accessService,
             repository,
+            apuRepository,
+            new ApuDetailService(apuRepository, apuGateway),
             new CreateWbsItemCommandValidator());
         var moveNode = new MoveWbsNodeCommandHandler(
             accessService,
@@ -59,8 +67,14 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
         var deleteChapter = new DeleteWbsChapterCommandHandler(
             accessService,
             repository,
+            apuGateway,
             new DeleteWbsChapterCommandValidator());
-        var getTree = new GetWbsTreeQueryHandler(accessService, repository);
+        var getTree = new GetWbsTreeQueryHandler(accessService, repository, apuGateway);
+        var deleteItem = new DeleteWbsItemCommandHandler(
+            accessService,
+            repository,
+            apuGateway,
+            new DeleteWbsItemCommandValidator());
         var search = new SearchWbsQueryHandler(
             accessService,
             repository,
@@ -78,7 +92,16 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
         var item = await createItem.ExecuteAsync(
             data.Director.Id,
             project.Id,
-            new CreateWbsItemCommand { Code = "CIM.1", QuantityWork = 12.5m });
+            new CreateWbsItemCommand
+            {
+                Code = "CIM.1",
+                QuantityWork = 12.5m,
+                Apu = new CreateWbsItemApuDraft
+                {
+                    Description = "Actividad de prueba",
+                    Unit = "m3"
+                }
+            });
 
         var tree = await getTree.ExecuteAsync(data.Director.Id, project.Id);
         tree.Nodes.Select(node => node.Code).Should().ContainInOrder("1", "CIM.1");
@@ -127,15 +150,25 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
         projectActivity.Participants.Should().ContainSingle()
             .Which.UserId.Should().Be(data.Director.Id);
 
+        await deleteItem.ExecuteAsync(
+            data.Director.Id,
+            project.Id,
+            item.Id,
+            new DeleteWbsItemCommand { RowVersion = item.RowVersion });
+
+        await deleteChapter.ExecuteAsync(
+            data.Director.Id,
+            project.Id,
+            child.Id,
+            new DeleteWbsChapterCommand { RowVersion = child.RowVersion });
+
+        tree = await getTree.ExecuteAsync(data.Director.Id, project.Id);
+
         await deleteChapter.ExecuteAsync(
             data.Director.Id,
             project.Id,
             root.Id,
-            new DeleteWbsChapterCommand
-            {
-                Cascade = true,
-                RowVersion = tree.Nodes[0].RowVersion
-            });
+            new DeleteWbsChapterCommand { RowVersion = tree.Nodes[0].RowVersion });
 
         var emptyTree = await getTree.ExecuteAsync(data.Director.Id, project.Id);
         emptyTree.Nodes.Should().BeEmpty();
@@ -152,12 +185,14 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
         var data = await TestDataFactory.CreateCompanyWithDirectorAsync(context);
         var project = TestDataFactory.CreateProject(data, "Proyecto compactación");
         context.Projects.Add(project);
+        context.ProjectMembers.Add(TestDataFactory.CreateProjectMember(data, project));
         await context.SaveChangesAsync();
 
         var accessService = new WbsAccessService(
             new ActorAccessReader(context),
             new WbsProjectAccessReader(context));
         var repository = new WbsRepository(context);
+        var apuGateway = new WbsApuGateway(context);
         var createChapter = new CreateWbsChapterCommandHandler(
             accessService,
             repository,
@@ -165,8 +200,9 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
         var deleteChapter = new DeleteWbsChapterCommandHandler(
             accessService,
             repository,
+            apuGateway,
             new DeleteWbsChapterCommandValidator());
-        var getTree = new GetWbsTreeQueryHandler(accessService, repository);
+        var getTree = new GetWbsTreeQueryHandler(accessService, repository, apuGateway);
 
         var root = await createChapter.ExecuteAsync(
             data.Director.Id,
@@ -189,7 +225,7 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
             data.Director.Id,
             project.Id,
             middle.Id,
-            new DeleteWbsChapterCommand { Cascade = false, RowVersion = middle.RowVersion });
+            new DeleteWbsChapterCommand { RowVersion = middle.RowVersion });
 
         var tree = await getTree.ExecuteAsync(data.Director.Id, project.Id);
         var children = tree.Nodes[0].Children;
@@ -225,7 +261,8 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
             new ActorAccessReader(context),
             new WbsProjectAccessReader(context));
         var repository = new WbsRepository(context);
-        var getTree = new GetWbsTreeQueryHandler(accessService, repository);
+        var apuGateway = new WbsApuGateway(context);
+        var getTree = new GetWbsTreeQueryHandler(accessService, repository, apuGateway);
         var createChapter = new CreateWbsChapterCommandHandler(
             accessService,
             repository,

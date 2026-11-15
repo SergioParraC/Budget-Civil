@@ -22,6 +22,153 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.Apu", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("description");
+
+                    b.Property<DateTime>("LastModifiedAtUtc")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("last_modified_at");
+
+                    b.Property<Guid>("LastModifiedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("last_modified_by");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("project_id");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("row_version");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(5)")
+                        .HasColumnName("unit");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_apus");
+
+                    b.HasIndex("LastModifiedByUserId")
+                        .HasDatabaseName("IX_dbo_apus_last_modified_by");
+
+                    b.HasIndex("ProjectId", "Status")
+                        .HasDatabaseName("IX_dbo_apus_project_id_status");
+
+                    b.ToTable("apus", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_apus_status", "status IN ('COMPLETO','FALTA_INFORMACION')");
+                        });
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.ApuResource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ApuId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("apu_id");
+
+                    b.Property<decimal>("Consumption")
+                        .HasPrecision(18, 10)
+                        .HasColumnType("decimal(18,10)")
+                        .HasColumnName("consumption");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("resource_id");
+
+                    b.Property<decimal>("WastePercentage")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("waste_percentage");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_apu_resources");
+
+                    b.HasIndex("ApuId")
+                        .HasDatabaseName("IX_dbo_apu_resources_apu_id");
+
+                    b.HasIndex("ResourceId")
+                        .HasDatabaseName("IX_dbo_apu_resources_resource_id");
+
+                    b.ToTable("apu_resources", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_apu_resources_consumption", "consumption > 0");
+
+                            t.HasCheckConstraint("CK_apu_resources_waste", "waste_percentage >= 0 AND waste_percentage <= 100");
+                        });
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.MatrixComponent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ComponentResourceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("component_resource_id");
+
+                    b.Property<decimal>("Consumption")
+                        .HasPrecision(18, 10)
+                        .HasColumnType("decimal(18,10)")
+                        .HasColumnName("consumption");
+
+                    b.Property<Guid>("MatrixResourceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("matrix_resource_id");
+
+                    b.Property<decimal>("WastePercentage")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("waste_percentage");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_matrix_components");
+
+                    b.HasIndex("ComponentResourceId")
+                        .HasDatabaseName("IX_dbo_matrix_components_component_resource_id");
+
+                    b.HasIndex("MatrixResourceId")
+                        .HasDatabaseName("IX_dbo_matrix_components_matrix_resource_id");
+
+                    b.ToTable("matrix_components", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_matrix_components_consumption", "consumption > 0");
+
+                            t.HasCheckConstraint("CK_matrix_components_waste", "waste_percentage >= 0 AND waste_percentage <= 100");
+                        });
+                });
+
             modelBuilder.Entity("BudgetCivil.Domain.Catalogs.BaseCurrency", b =>
                 {
                     b.Property<Guid>("Id")
@@ -442,11 +589,23 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("budget_limit");
 
+                    b.Property<int>("QuantityDecimals")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(2)
+                        .HasColumnName("quantity_decimals");
+
                     b.Property<bool>("RequiresAuditor")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false)
                         .HasColumnName("requires_auditor");
+
+                    b.Property<int>("RoundingDecimals")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(2)
+                        .HasColumnName("rounding_decimals");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -473,7 +632,12 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.HasIndex("SignerUserId")
                         .HasDatabaseName("IX_dbo_project_configurations_signer_user_id");
 
-                    b.ToTable("project_configurations", (string)null);
+                    b.ToTable("project_configurations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_project_configurations_quantity_decimals", "quantity_decimals >= 0 AND quantity_decimals <= 10");
+
+                            t.HasCheckConstraint("CK_project_configurations_rounding_decimals", "rounding_decimals >= 0 AND rounding_decimals <= 10");
+                        });
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Projects.ProjectStatusTransition", b =>
@@ -1656,8 +1820,8 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasColumnName("project_id");
 
                     b.Property<decimal>("QuantityWork")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)")
+                        .HasPrecision(18, 10)
+                        .HasColumnType("decimal(18,10)")
                         .HasColumnName("quantity_work");
 
                     b.Property<byte[]>("RowVersion")
@@ -1724,6 +1888,61 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_dbo_wbs_project_activity_project_id_last_modified_at");
 
                     b.ToTable("wbs_project_activity", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.Apu", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Users.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("LastModifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_apus_users_last_modified_by");
+
+                    b.HasOne("BudgetCivil.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_apus_projects_project_id");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.ApuResource", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Apus.Apu", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("ApuId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_apu_resources_apus_apu_id");
+
+                    b.HasOne("BudgetCivil.Domain.Resources.Resource", "Resource")
+                        .WithMany()
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_apu_resources_resources_resource_id");
+
+                    b.Navigation("Resource");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.MatrixComponent", b =>
+                {
+                    b.HasOne("BudgetCivil.Domain.Resources.Resource", "ComponentResource")
+                        .WithMany()
+                        .HasForeignKey("ComponentResourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_matrix_components_resources_component_resource_id");
+
+                    b.HasOne("BudgetCivil.Domain.Resources.Resource", null)
+                        .WithMany()
+                        .HasForeignKey("MatrixResourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo_matrix_components_resources_matrix_resource_id");
+
+                    b.Navigation("ComponentResource");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Catalogs.Department", b =>
@@ -2204,6 +2423,12 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("BudgetCivil.Domain.Wbs.WbsItem", b =>
                 {
+                    b.HasOne("BudgetCivil.Domain.Apus.Apu", null)
+                        .WithOne()
+                        .HasForeignKey("BudgetCivil.Domain.Wbs.WbsItem", "ApuId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_dbo_wbs_items_apus_apu_id");
+
                     b.HasOne("BudgetCivil.Domain.Wbs.WbsCode", "Code")
                         .WithOne()
                         .HasForeignKey("BudgetCivil.Domain.Wbs.WbsItem", "CodeId")
@@ -2249,6 +2474,11 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_dbo_wbs_project_activity_users_user_id");
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Apus.Apu", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Projects.Project", b =>

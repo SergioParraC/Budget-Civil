@@ -87,6 +87,7 @@ public sealed class UpdateResourceCommandHandler(
     ResourceAccessService resourceAccessService,
     IResourceRepository resourceRepository,
     ISupplierRepository supplierRepository,
+    IMatrixApuStatusUpdater matrixApuStatusUpdater,
     IValidator<UpdateResourceCommand> validator)
 {
     public async Task<ResourceDto> ExecuteAsync(
@@ -133,6 +134,16 @@ public sealed class UpdateResourceCommandHandler(
         catch (InvalidOperationException exception)
         {
             throw new ValidationAppException(exception.Message, "VALIDATION_ERROR");
+        }
+
+        if (ResourceTypeCatalog.IsMatrixId(command.ResourceTypeId))
+        {
+            // La Matriz se evalúa por unidad y componentes según `REQ-APUS-06`, no por los cinco campos de
+            // `BR-009`; el recálculo y la propagación a los APUs ocurren en la misma transacción (`D4`).
+            await matrixApuStatusUpdater.RecalculateMatrixAsync(
+                projectId,
+                resource.Id,
+                cancellationToken);
         }
 
         await resourceRepository.SaveChangesAsync(cancellationToken);

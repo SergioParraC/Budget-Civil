@@ -16,20 +16,25 @@ controlada del EDT (`INC-15`, `INC-16`).
 
 ## What Changes
 
-- Se crea la entidad `Apu` **propia de cada proyecto**, sin `code` (`D-31`) y sin baja lógica, vinculada
-  **1:1 con un ítem del EDT** del mismo proyecto (`RF-07`, `BR-016`, `D-16`); el vínculo vive en
-  `wbs_items.apu_id`.
+- Se crea la entidad `Apu` **propia de cada proyecto**, sin `code` (`D-31`), sin `yield` (`D-123`) y sin
+  baja lógica, vinculada **1:1 con un ítem del EDT** del mismo proyecto (`RF-07`, `BR-016`, `D-16`); el
+  vínculo vive en `wbs_items.apu_id`.
+- El **alta y la edición unifican ítem EDT + APU** en `POST /wbs/items` y `PUT /wbs/items/{itemId}`:
+  `description`/`unit` obligatorios al crear, `quantityWork` obligatorio al editar y `resources` como
+  reemplazo completo; se retiran `POST /apus`, `PUT /apus/{apuId}` y los endpoints de líneas (`D-122`).
 - La **baja de un ítem elimina físicamente su APU y sus líneas de composición**, y conserva los insumos del
   proyecto. Un capítulo solo se elimina **vacío**; si contiene APUs responde `409 WBS_CHAPTER_HAS_APU` y si
   contiene otros nodos `409 WBS_NODE_HAS_CHILDREN` (`D-114`, `D-119` revisadas).
-- El **árbol del EDT** expone por ítem la referencia del APU (`apuId`, estado, descripción y unidad), que es
-  la vía para llegar al contenido del APU del proyecto (`REQ-EDT-20`).
+- El **árbol del EDT** expone por ítem la referencia del APU (`apuId`, estado, descripción, unidad,
+  `unitPrice = 0` y `rowVersion`), que es la vía para llegar al contenido del APU del proyecto
+  (`REQ-EDT-20`).
 - Se crea `ApuResource` como composición con `consumption > 0` y `waste_percentage` entre 0 y 100
   (valor por defecto 0), y `MatrixComponent` para la composición de una Matriz, sin anidamiento
   (`RF-09`, `BR-008`, `D-48`).
-- Se especifica la **copia de un APU desde otro proyecto de la misma compañía**: los insumos simples se
-  reconcilian; las Matrices y sus componentes se copian siempre como registros nuevos, sin validar nombres
-  ni similitudes (`RF-08`, `D-25`, `BR-021`).
+- Se especifica la **copia de un APU desde otro proyecto de la misma compañía**: crea el ítem destino con
+  `target { code, wbsChapterId, quantityWork }`, reconcilia los insumos simples y copia las Matrices y sus
+  componentes siempre como registros nuevos, sin validar nombres ni similitudes (`RF-08`, `D-25`, `BR-021`,
+  `D-122`).
 - Se especifica la **búsqueda de APUs de otros proyectos** por descripción parcial, por código del ítem
   (`wbs_items`) y por departamento y municipio del proyecto de origen, con paginación y ubicación visible.
 - Se especifica la **vista previa de costo del APU**: el detalle devuelve `description` y `resources`

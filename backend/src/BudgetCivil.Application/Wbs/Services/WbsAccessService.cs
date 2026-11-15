@@ -135,12 +135,7 @@ public sealed class WbsAccessService(
                 "WBS_WRITE_FORBIDDEN");
         }
 
-        if (actor.RoleCode == DirectorRoleCode)
-        {
-            return;
-        }
-
-        if (actor.RoleCode == EstimatorRoleCode && access.IsMember)
+        if (actor.RoleCode is DirectorRoleCode or EstimatorRoleCode && access.IsMember)
         {
             return;
         }

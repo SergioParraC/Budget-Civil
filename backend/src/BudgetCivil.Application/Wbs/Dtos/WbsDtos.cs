@@ -31,7 +31,27 @@ public sealed class WbsNodeDto
 
     public DateTime LastModifiedAt { get; init; }
 
+    /// <summary>Referencia del APU del ítem o nula si no tiene (`REQ-EDT-20`, `D7`).</summary>
+    public WbsApuReferenceDto? Apu { get; init; }
+
     public IReadOnlyList<WbsNodeDto> Children { get; init; } = [];
+}
+
+public sealed class WbsApuReferenceDto
+{
+    public Guid Id { get; init; }
+
+    public string Status { get; init; } = string.Empty;
+
+    public string Description { get; init; } = string.Empty;
+
+    public string Unit { get; init; } = string.Empty;
+
+    /// <summary>Precio unitario reservado para `E-4a`; en `E-3b` siempre es `0` (`D-121`, `RF-10`).</summary>
+    public decimal UnitPrice { get; init; }
+
+    /// <summary>Versión del APU para la edición unificada (`REQ-APUS-21`).</summary>
+    public string RowVersion { get; init; } = string.Empty;
 }
 
 public sealed class GetWbsTreeResponse
@@ -141,7 +161,7 @@ public static class WbsMapper
         Children = children ?? []
     };
 
-    public static WbsNodeDto ToItemNode(WbsItem item) => new()
+    public static WbsNodeDto ToItemNode(WbsItem item, ApuSummary? apu = null) => new()
     {
         Id = item.Id,
         ProjectId = item.ProjectId,
@@ -154,6 +174,17 @@ public static class WbsMapper
         RowVersion = Convert.ToBase64String(item.RowVersion),
         LastModifiedBy = item.LastModifiedByUserId,
         LastModifiedAt = item.LastModifiedAtUtc,
+        Apu = apu is null
+            ? null
+            : new WbsApuReferenceDto
+            {
+                Id = apu.ApuId,
+                Status = apu.Status,
+                Description = apu.Description,
+                Unit = apu.Unit,
+                UnitPrice = 0m,
+                RowVersion = apu.RowVersion
+            },
         Children = []
     };
 

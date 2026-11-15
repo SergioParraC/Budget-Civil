@@ -120,6 +120,18 @@ builder.Services.AddAuthorization(options =>
             .RequirePermission("APU_PUBLIC_READ"));
 
     options.AddPolicy(
+        AuthorizationPolicies.ApusRead,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("APUS_READ"));
+
+    options.AddPolicy(
+        AuthorizationPolicies.ApusWrite,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("APUS_WRITE"));
+
+    options.AddPolicy(
         AuthorizationPolicies.BootstrapAuditRead,
         policy => policy
             .RequireAuthenticatedUser()

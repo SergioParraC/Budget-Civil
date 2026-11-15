@@ -11,7 +11,8 @@ namespace BudgetCivil.Application.Wbs.Queries;
 /// </summary>
 public sealed class GetWbsTreeQueryHandler(
     WbsAccessService wbsAccessService,
-    IWbsRepository wbsRepository)
+    IWbsRepository wbsRepository,
+    IApuSummaryReader apuSummaryReader)
 {
     public async Task<GetWbsTreeResponse> ExecuteAsync(
         Guid actorUserId,
@@ -22,6 +23,16 @@ public sealed class GetWbsTreeQueryHandler(
 
         var chapters = await wbsRepository.GetChaptersAsync(projectId, cancellationToken);
         var items = await wbsRepository.GetItemsAsync(projectId, cancellationToken);
+        var apuSummaries = await apuSummaryReader.GetByProjectAsync(projectId, cancellationToken);
+
+        WbsNodeDto BuildItem(WbsItem item)
+        {
+            var summary = item.ApuId.HasValue && apuSummaries.TryGetValue(item.ApuId.Value, out var found)
+                ? found
+                : null;
+
+            return WbsMapper.ToItemNode(item, summary);
+        }
 
         var chaptersByParent = chapters.ToLookup(chapter => chapter.ParentChapterId);
         var itemsByParent = items.ToLookup(item => item.WbsChapterId);
@@ -39,7 +50,7 @@ public sealed class GetWbsTreeQueryHandler(
                 .Select(BuildChapter)
                 .Concat(itemsByParent[chapter.Id]
                     .OrderBy(item => item.OrderIndex)
-                    .Select(WbsMapper.ToItemNode))
+                    .Select(BuildItem))
                 .OrderBy(node => node.OrderIndex)
                 .ThenBy(node => node.Id)
                 .ToList();
@@ -52,7 +63,7 @@ public sealed class GetWbsTreeQueryHandler(
             .Select(BuildChapter)
             .Concat(itemsByParent[null]
                 .OrderBy(item => item.OrderIndex)
-                .Select(WbsMapper.ToItemNode))
+                .Select(BuildItem))
             .OrderBy(node => node.OrderIndex)
             .ThenBy(node => node.Id)
             .ToList();

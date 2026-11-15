@@ -118,6 +118,7 @@ public sealed class ResourceHandlersTests
             AccessService(Actor("DIRECTOR", CompanyId), CompanyId, isMember: false),
             repository.Object,
             ActiveSupplierRepository(),
+            new Mock<IMatrixApuStatusUpdater>().Object,
             new UpdateResourceCommandValidator());
 
         var response = await handler.ExecuteAsync(
@@ -155,6 +156,7 @@ public sealed class ResourceHandlersTests
             AccessService(Actor("DIRECTOR", CompanyId), CompanyId, isMember: false),
             repository.Object,
             ActiveSupplierRepository(),
+            new Mock<IMatrixApuStatusUpdater>().Object,
             new UpdateResourceCommandValidator());
 
         var action = () => handler.ExecuteAsync(
@@ -441,6 +443,7 @@ public sealed class ResourceHandlersTests
             AccessService(Actor("DIRECTOR", CompanyId), CompanyId, isMember: false),
             repository.Object,
             supplierRepository.Object,
+            new Mock<IMatrixApuStatusUpdater>().Object,
             new UpdateResourceCommandValidator());
 
         var response = await handler.ExecuteAsync(

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BudgetCivil.Application.Wbs.Commands.CreateWbsItem;
+using BudgetCivil.Application.Apus.Commands.WbsItemApu;
 using BudgetCivil.Application.Wbs.Commands.DeleteWbsChapter;
 using BudgetCivil.Application.Wbs.Commands.MoveWbsNode;
 using BudgetCivil.Application.Wbs.Commands.ReorderWbsNodes;
@@ -131,10 +131,10 @@ public sealed class WbsContractTests
         move.Should().Contain("\"rowVersion\":\"AQ==\"");
 
         var delete = JsonSerializer.Serialize(
-            new DeleteWbsChapterCommand { Cascade = true, RowVersion = "AQ==" },
+            new DeleteWbsChapterCommand { RowVersion = "AQ==" },
             WebOptions);
 
-        delete.Should().Contain("\"cascade\":true");
+        delete.Should().NotContain("cascade");
         delete.Should().Contain("\"rowVersion\":\"AQ==\"");
 
         var reorder = JsonSerializer.Serialize(

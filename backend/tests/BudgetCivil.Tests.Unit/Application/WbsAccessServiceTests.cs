@@ -28,13 +28,16 @@ public sealed class WbsAccessServiceTests
     }
 
     [Fact]
-    public async Task El_director_lee_y_escribe_en_su_compania()
+    public async Task El_director_lee_en_su_compania_y_solo_escribe_con_pertenencia()
     {
-        var service = CreateService("DIRECTOR", CompanyId, isMember: false);
+        var reader = CreateService("DIRECTOR", CompanyId, isMember: false);
+        var member = CreateService("DIRECTOR", CompanyId, isMember: true);
 
-        await service.Invoking(instance => instance.EnsureReadAsync(ActorId, ProjectId))
+        await reader.Invoking(instance => instance.EnsureReadAsync(ActorId, ProjectId))
             .Should().NotThrowAsync();
-        await service.Invoking(instance => instance.EnsureWriteAsync(ActorId, ProjectId))
+        await reader.Invoking(instance => instance.EnsureWriteAsync(ActorId, ProjectId))
+            .Should().ThrowAsync<ForbiddenAppException>();
+        await member.Invoking(instance => instance.EnsureWriteAsync(ActorId, ProjectId))
             .Should().NotThrowAsync();
     }
 

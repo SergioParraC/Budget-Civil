@@ -140,10 +140,24 @@ public sealed class WbsItem
         OrderIndex = orderIndex;
     }
 
-    /// <summary>El APU no se acepta en este incremento (`D-113`, `SC-EDT-28`, `SC-EDT-29`).</summary>
-    public void IgnoreApuReference()
+    /// <summary>
+    /// Vincula el ítem con un APU propio del mismo proyecto (`REQ-EDT-20`, `REQ-APUS-01`, `D-113`). El
+    /// vínculo solo lo fija `M-05`; el cliente nunca envía `apuId` y la base garantiza la unicidad 1:1 con
+    /// `UQ_wbs_items_apu_id`.
+    /// </summary>
+    public void LinkApu(Guid apuId)
     {
-        ApuId = null;
+        if (apuId == Guid.Empty)
+        {
+            throw new InvalidOperationException("APU is required.");
+        }
+
+        if (ApuId.HasValue)
+        {
+            throw new InvalidOperationException("WBS item already has an APU.");
+        }
+
+        ApuId = apuId;
     }
 
     /// <summary>Registra al actor autenticado y la fecha UTC de la modificación (`D-116`).</summary>

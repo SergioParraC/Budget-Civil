@@ -47,13 +47,13 @@ La dependencia `E-2` está cerrada. Lo que queda de `E-2b` para este cambio es a
 
 ### D1. Modelo de dominio
 
-`Apu` vive en `BudgetCivil.Domain/Apus` y solo se crea o modifica por métodos que fijan el vínculo, el
-estado y la autoría; no se exponen setters públicos para `ProjectId`, `Status`, `RowVersion`,
-`LastModifiedByUserId` ni `LastModifiedAtUtc`.
+`Apu` vive en `BudgetCivil.Domain/Apus` y solo se crea o modifica por métodos que fijan la descripción,
+la unidad, las líneas, el estado y la autoría; el vínculo 1:1 lo fija el ítem del EDT. No se exponen
+setters públicos para `ProjectId`, `Status`, `RowVersion`, `LastModifiedByUserId` ni `LastModifiedAtUtc`.
 
 ```text
 Apu
-  Id, ProjectId, Description, Unit, Yield
+  Id, ProjectId, Description, Unit
   Status (COMPLETO | FALTA_INFORMACION)
   LastModifiedByUserId, LastModifiedAtUtc, RowVersion
   Lines: IReadOnlyCollection<ApuResource>
@@ -68,11 +68,10 @@ MatrixComponent
 - La baja del APU es **física**: no hay `is_active` ni `deleted_at`; el ítem lo elimina junto con sus
   líneas (`D-49` revisada, `INC-13`). Los `resources` referenciados no se borran.
 - `Apu.CalculateStatus()` recibe la completitud de las Matrices referenciadas por sus líneas: `COMPLETO`
-  cuando `Description` y `Unit` no están vacías, `Yield > 0`, existe al menos una línea y toda línea de
-  Matriz apunta a una Matriz con unidad y al menos un componente; si una Matriz está incompleta, el APU
-  hereda `FALTA_INFORMACION` (`INC-06`); el precio no interviene en el estado. El costo y el precio no
-  forman parte del estado persistido; la vista previa informa `FALTA_INFORMACION` cuando falta un precio
-  (`REQ-APUS-19`).
+  cuando `Description` y `Unit` no están vacías, existe al menos una línea y toda línea de Matriz apunta a
+  una Matriz con unidad y al menos un componente; si una Matriz está incompleta, el APU hereda
+  `FALTA_INFORMACION` (`INC-06`); el precio no interviene en el estado. El costo y el precio no forman parte
+  del estado persistido; la vista previa informa `FALTA_INFORMACION` cuando falta un precio (`REQ-APUS-19`).
 - `ApuResource` y `MatrixComponent` validan `Consumption > 0` y `WastePercentage` entre 0 y 100; el valor
   por defecto del desperdicio es 0.
 - La Matriz es un `Resource` de tipo `MATRIX` (`D-05`, `BR-008`): no es una entidad nueva y su composición
@@ -91,7 +90,6 @@ Tablas nuevas con nombres `snake_case`, esquema único y prefijos `PK_`/`FK_`/`I
 | `project_id` | UUID | No | FK `projects` `RESTRICT` |
 | `description` | NVARCHAR(MAX) | No | No vacía |
 | `unit` | VARCHAR(5) | No | 1–5 caracteres |
-| `yield` | DECIMAL(18,4) | No | `CK_apus_yield`: `yield > 0` |
 | `status` | VARCHAR(30) | No | `CK_apus_status`: `COMPLETO`, `FALTA_INFORMACION` |
 | `last_modified_by` | UUID | No | FK `users` `RESTRICT` |
 | `last_modified_at` | DATETIME2 | No | UTC |
@@ -114,8 +112,8 @@ Tablas nuevas con nombres `snake_case`, esquema único y prefijos `PK_`/`FK_`/`I
 | `waste_percentage` | DECIMAL(5,2) | No | `CK_matrix_components_waste`: `0–100`; default `0` |
 
 - `wbs_items.quantity_work` pasa a `DECIMAL(18,10)` y conserva su `CHECK`; `apu_resources.consumption` y
-  `matrix_components.consumption` también. `yield` se mantiene en `DECIMAL(18,4)` y se usa como factor de
-  cantidad; el producto se redondea en `quantity_decimals` (`D-121`).
+  `matrix_components.consumption` también. `apus.yield` se elimina con la migración `apus_remove_yield`
+  (`REQ-APUS-22`).
 - `wbs_items` no tiene unidad propia: `quantity_work` se interpreta en `apus.unit` del APU vinculado y
   `GET /wbs` expone esa unidad (`REQ-EDT-20`). Cambiar la unidad después de capturar la cantidad reinterpreta
   el valor; el bloqueo o la confirmación explícita se evalúa en `E-4a`.
@@ -129,12 +127,13 @@ Tablas nuevas con nombres `snake_case`, esquema único y prefijos `PK_`/`FK_`/`I
 
 ### D3. Vínculo con el EDT y baja
 
-- `M-05` no usa `DbContext` ni repositorios de `M-03`. Declara en `Application/Apus/Repositories`
-  `IWbsItemReader` (ítem por proyecto, ítem por APU y cantidades del proyecto) e `IWbsItemLinkWriter`
-  (`TryLinkFreeItem(itemId, apuId)`), implementados en `Infrastructure`.
+- `M-05` no usa `DbContext` ni repositorios de infraestructura. Para la creación unificada usa
+  `IWbsRepository` de `Application/Wbs/Repositories` (crear ítem, código, orden y actividad) y declara en
+  `Application/Apus/Repositories` `IWbsItemReader` (ítem por proyecto, ítem por APU y cantidades del
+  proyecto), implementado en `Infrastructure`.
 - `WbsItem` gana `LinkApu(Guid apuId)`, que exige un APU no vacío y un ítem sin APU; la asignación sigue
-  siendo privada y el cliente nunca fija `apuId` (`REQ-EDT-20`). La vinculación usa una actualización
-  condicional `WHERE apu_id IS NULL` después de persistir el APU, dentro de la misma transacción.
+  siendo privada y el cliente nunca fija `apuId` (`REQ-EDT-20`). El alta unificada vincula el ítem antes de
+  persistir ambos en la misma transacción; ya no existe el escritor condicional `TryLinkFreeItem`.
 - La baja del ítem en el EDT invoca `IWbsItemApuCleaner.DeleteApusForItems(ids)` en
   `Application/Wbs/Repositories`, implementado en `Infrastructure`; elimina los `apus` referenciados y sus
   `apu_resources` en la misma transacción. La FK del ítem hacia el APU es `RESTRICT`, así que EF elimina
@@ -166,13 +165,10 @@ Tablas nuevas con nombres `snake_case`, esquema único y prefijos `PK_`/`FK_`/`I
 |---|---|---|---|
 | `GET` | `/api/v1/projects/{projectId}/apus` | `APUS_READ` | APUs de otros proyectos de la compañía, con búsqueda, ubicación y paginación |
 | `GET` | `/api/v1/projects/{projectId}/apus/{apuId}` | `APUS_READ` | Detalle con composición y vista previa de costo |
-| `POST` | `/api/v1/projects/{projectId}/apus` | `APUS_WRITE` | Alta vinculada a un `wbsItemId` libre |
-| `PUT` | `/api/v1/projects/{projectId}/apus/{apuId}` | `APUS_WRITE` | Edición de descripción, unidad y rendimiento |
-| `POST` | `/api/v1/projects/{projectId}/apus/{apuId}/resources` | `APUS_WRITE` | Alta de una línea |
-| `PUT` | `/api/v1/projects/{projectId}/apus/{apuId}/resources/{lineId}` | `APUS_WRITE` | Edición de una línea |
-| `DELETE` | `/api/v1/projects/{projectId}/apus/{apuId}/resources/{lineId}?rowVersion=...` | `APUS_WRITE` | Retiro de una línea |
+| `POST` | `/api/v1/projects/{projectId}/wbs/items` | `WBS_WRITE` + `APUS_WRITE` | Alta unificada de ítem + APU + líneas y vínculo 1:1 |
+| `PUT` | `/api/v1/projects/{projectId}/wbs/items/{itemId}` | `WBS_WRITE` + `APUS_WRITE` | Edición unificada de ítem + APU con bloque `apu` opcional |
 | `GET` | `/api/v1/projects/{projectId}/apus/copy/preview` | `APUS_WRITE` | Reconciliación de insumos simples |
-| `POST` | `/api/v1/projects/{projectId}/apus/copy` | `APUS_WRITE` | Copia de un APU con decisiones por insumo simple |
+| `POST` | `/api/v1/projects/{projectId}/apus/copy` | `APUS_WRITE` | Copia de un APU creando ítem EDT + APU en el destino |
 | `GET` | `/api/v1/projects/{projectId}/matrices/{matrixResourceId}/components` | `APUS_READ` | Composición y costo directo de la Matriz |
 | `POST` | `/api/v1/projects/{projectId}/matrices/{matrixResourceId}/components` | `APUS_WRITE` | Alta de un componente |
 | `PUT` | `/api/v1/projects/{projectId}/matrices/{matrixResourceId}/components/{componentId}` | `APUS_WRITE` | Edición de un componente |
@@ -182,22 +178,22 @@ Tablas nuevas con nombres `snake_case`, esquema único y prefijos `PK_`/`FK_`/`I
 
 - El listado `/apus` **excluye** el proyecto de la ruta y acepta `search` (descripción parcial o código del
   ítem), `departmentId`, `municipalityId`, `page` y `pageSize`; devuelve `apuId`, `code`, `description`,
-  `unit`, `unitPrice` (costo directo unitario, con `yield`), `projectId`, `projectName`, `municipalityName` y
+  `unit`, `unitPrice` (costo directo unitario), `projectId`, `projectName`, `municipalityName` y
   `departmentName`; no devuelve `quantityWork` ni AIU.
 - El detalle del APU devuelve `description` y `resources` agrupado por `resourceType`, con el `subtotal` de
   cada insumo; fuera de `resources` devuelve `directCost`, `indirectCosts` y `total`, todos por unidad de
   APU (el valor del ítem en el presupuesto se calcula en `E-4a`). Para un APU de otro proyecto usa el AIU del
-  proyecto de la ruta y oculta `quantityWork`.
+  proyecto de la ruta y oculta `quantityWork`. No devuelve `yield`.
 - La composición de la Matriz devuelve `description` y `resources` agrupado por `resourceType`, con
   `subtotal` por insumo y `directCost` fuera de `resources`, sin `indirectCosts`.
 - Las rutas y los campos de respuesta quedan en inglés: `apus`, `matrices`, `components`, `resources`,
   `subtotal`, `directCost`, `indirectCosts` y `total`.
-- `GET /wbs` expone por ítem `apu: { id, status, description, unit }` o `null`; es la vía para listar los
-  APUs del proyecto.
-- `CreateApuRequest` lleva `wbsItemId`, `description`, `unit` y `yield`; `UpdateApuRequest` lleva
-  `description`, `unit`, `yield` y `rowVersion`.
-- `AddApuResourceRequest` y `UpdateApuResourceRequest` llevan `resourceId`, `consumption`,
-  `wastePercentage` (default 0) y `rowVersion`; el retiro envía `rowVersion` por *query string*.
+- `GET /wbs` expone por ítem `apu: { id, status, description, unit, unitPrice, rowVersion }` o `null`;
+  `unitPrice` es `0` hasta `E-4a` y `rowVersion` se usa en la edición unificada.
+- La alta y la edición usan `POST /wbs/items` y `PUT /wbs/items/{itemId}`. El alta exige
+  `apu { description, unit, resources? }`; la edición exige `quantityWork`, permite omitir `code` y acepta
+  `apu { description?, unit?, apuRowVersion, resources? }`. `resources` presente reemplaza la composición
+  completa; `resources: []` la vacía; ausente la conserva.
 - Las respuestas de listado usan `items`, `page`, `pageSize`, `totalItems`; `rowVersion` viaja en Base64
   (`D-101`).
 - El endpoint genérico `POST /projects/{projectId}/resources/copy` **rechaza** el tipo `MATRIX` con
@@ -238,6 +234,10 @@ Tablas nuevas con nombres `snake_case`, esquema único y prefijos `PK_`/`FK_`/`I
      (1 + matrix_components.waste_percentage/100) × apu_resources.consumption ×
      (1 + apu_resources.waste_percentage/100) × wbs_items.quantity_work)` para las líneas de Matriz.
   3. El resultado suma ambos; la Matriz conserva su consumo directo.
+- El reporte devuelve `resources` agrupado por `resourceType` en el orden fijo del catálogo; cada insumo
+  incluye `unitPrice`, `quantity` y `totalPrice = ROUND(quantity × unitPrice, roundingDecimals)`, y cada
+  grupo incluye `subtotal`; el reporte incluye `totalCost`. Si un insumo no tiene precio, su `totalPrice`,
+  el `subtotal` de su tipo y el `totalCost` son nulos (misma semántica que `D8`).
 - El conteo **aplica** `waste_percentage` en la línea y en el componente, **no** incluye `yield` y **no**
   expande más de un nivel (`BR-008`). Revisa `R-21` y la nota de `D-33` en el `PLAN`.
 
@@ -245,7 +245,7 @@ Tablas nuevas con nombres `snake_case`, esquema único y prefijos `PK_`/`FK_`/`I
 
 - La vista previa se calcula en `Application/Calculation` con una sola fórmula reutilizada por el detalle
   del APU, el listado de APUs ajenos y la vista de la Matriz. No se persiste ningún costo.
-- Para cada línea: `cantidadEfectiva = ROUND(consumption × (1 + waste/100) × yield, quantityDecimals)`;
+- Para cada línea: `cantidadEfectiva = ROUND(consumption × (1 + waste/100), quantityDecimals)`;
   `valorLinea = ROUND(cantidadEfectiva × precioUnitario, roundingDecimals)`; ese valor es el `subtotal` del
   insumo.
 - Para cada tipo: `valorTipo = ROUND(Σ(valorLinea), roundingDecimals)`; el tipo `MATRIZ` agrupa la línea de
@@ -256,12 +256,11 @@ Tablas nuevas con nombres `snake_case`, esquema único y prefijos `PK_`/`FK_`/`I
   `totalApu = ROUND(costoDirecto + aiuTotal, roundingDecimals)`.
 - Los porcentajes del AIU son los del proyecto de la ruta; nulos se toman como 0.
 - La Matriz: `costoUnitarioMatriz = ROUND(Σ(valorLinea de sus componentes), roundingDecimals)`, y la línea
-  del APU usa ese costo como precio unitario. La Matriz no aplica AIU ni tiene `yield` propio; el `yield` del
-  APU entra en la cantidad efectiva de la línea.
+  del APU usa ese costo como precio unitario. La Matriz no aplica AIU.
 - Si un insumo o componente no tiene precio, el APU o la Matriz se informan `FALTA_INFORMACION`; el
   `subtotal` del insumo y los costos quedan nulos.
-- `yield` multiplica la cantidad efectiva de cada línea y, con ella, el costo directo, el AIU y el total del
-  APU (`F1` revisada, `X-15` parcial; el total del proyecto queda en `E-4a`).
+- La cantidad efectiva de cada línea aplica el desperdicio y no usa rendimiento (`REQ-APUS-22`, `X-15`
+  parcial; el total del proyecto queda en `E-4a`).
 
 #### Contrato de respuesta del APU
 
@@ -322,41 +321,51 @@ Tablas nuevas con nombres `snake_case`, esquema único y prefijos `PK_`/`FK_`/`I
 
 - `resources` solo incluye los tipos con insumos; el `subtotal` de cada insumo ya incorpora el desperdicio.
 - En el APU, la Matriz aparece en el grupo `MATRIZ` con su `subtotal` y su `matrixResourceId`.
-- El ejemplo del contrato supone `yield = 1`; con otro valor, `directCost`, `indirectCosts` y `total` se
-  multiplican por `yield`.
+- El contrato no incluye `yield`; la cantidad efectiva se calcula solo con consumo y desperdicio.
 
 ### D9. Copia y reconciliación
 
 Vista previa (`GET .../apus/copy/preview`) solo para insumos simples:
 
 ```text
-{ sourceApuId, targetWbsItemId, items: [
-    { sourceResourceId, description, unit, resourceTypeCode,
+{ sourceApuId, items: [
+    { sourceResourceId, description, resourceTypeCode, unit, unitPrice,
       match: EXACT | SIMILAR | NONE,
-      candidates: [ { resourceId, description, unitPrice, quotationStatus } ] } ] }
+      requiresResolution: match != NONE,
+      candidates: [ { resourceId, description, resourceTypeCode, unit, unitPrice, quotationStatus,
+                      comparison: { unitMatches, unitPriceMatches, unitPriceDifference } } ] } ] }
 ```
+
+`EXACT` compara la **descripción** normalizada, no la unidad ni el precio. El comparativo de unidad y
+precio unitario viaja en cada candidato (`unitMatches`, `unitPriceMatches` y
+`unitPriceDifference = candidato − origen`; la diferencia es nula si falta cualquiera de los dos precios).
+Así el cliente ve, para un material con la misma descripción, si el insumo del destino usa otra unidad o
+tiene otro precio antes de decidir.
 
 Copia (`POST .../apus/copy`):
 
 ```text
-{ sourceApuId, targetWbsItemId,
+{ sourceApuId, target: { code, wbsChapterId?, quantityWork },
   resolutions: [ { sourceResourceId, decision: USE_EXISTING | KEEP_ORIGIN, existingResourceId? } ] }
 ```
 
-1. Resuelve el proyecto destino y exige escritura con `ProjectMember`; exige `targetWbsItemId` del
-   proyecto y libre.
+1. Resuelve el proyecto destino y exige escritura con `ProjectMember`; valida el código del ítem destino,
+   su cantidad y su capítulo.
 2. Carga el origen y exige lectura sobre su proyecto; si es de otra compañía responde `APU_NOT_FOUND`, sin
    revelar existencia.
 3. Los insumos **simples** se clasifican `EXACT`/`SIMILAR`/`NONE`; `NONE` se copia siempre, `EXACT` y
-   `SIMILAR` exigen una `resolution` o responden `APU_COMPOSITION_RESOLUTION_REQUIRED`.
+   `SIMILAR` exigen una `resolution` o responden `APU_COMPOSITION_RESOLUTION_REQUIRED`. La vista previa y
+   la copia se usan en conjunto: el cliente resuelve cada elemento con `requiresResolution = true` a partir
+   de los `candidates` y su `comparison`; `USE_EXISTING` reutiliza `existingResourceId` y `KEEP_ORIGIN`
+   conserva los datos del origen.
 4. Las líneas de Matriz se copian **sin** clasificación ni decisiones: se crea una Matriz nueva, se copian
    todos sus componentes y se copian los insumos que los componen como registros nuevos, aunque existan
    idénticos. El mismo comportamiento aplica a `POST .../matrices/copy`.
 5. `KEEP_ORIGIN` crea el insumo con los datos del origen y `origin_resource_id`; `USE_EXISTING` referencia
    el insumo del destino.
-6. El APU nuevo se crea con el actor como último modificador, sin aprobación y con estado recalculado según
-   la completitud de su composición y de la Matriz copiada; la Matriz y cada insumo copiado también
-   registran al actor.
+6. Se crea el ítem destino con su código y cantidad, el APU nuevo con el actor como último modificador, sin
+   aprobación y con estado recalculado según la completitud de su composición y de la Matriz copiada; el
+   ítem queda vinculado 1:1 y la Matriz y cada insumo copiado registran al actor.
 7. Todo ocurre en una transacción (`BR-014`): un fallo no deja APU, Matriz ni insumos parciales.
 
 - `M-05` no escribe `resources` con su propio `DbContext`: declara `IApuResourceCopyWriter` en
@@ -369,13 +378,13 @@ Copia (`POST .../apus/copy`):
   `ConflictAppException` con `APU_CONCURRENCY_CONFLICT` y respuesta `409`.
 - La composición de una Matriz compara el `rowversion` del `Resource` Matriz y responde
   `MATRIX_CONCURRENCY_CONFLICT` con `409`.
-- El alta no acepta `rowVersion`; el retiro sí lo exige por *query string*.
-- Códigos: `APU_NOT_FOUND`, `APU_READ_FORBIDDEN`, `APU_WRITE_FORBIDDEN`, `APU_ITEM_NOT_FOUND`,
-  `APU_ITEM_ALREADY_LINKED`, `APU_RESOURCE_NOT_FOUND`, `APU_RESOURCE_PROJECT_MISMATCH`,
-  `APU_CONCURRENCY_CONFLICT`, `APU_COMPOSITION_RESOLUTION_REQUIRED`, `MATRIX_NOT_FOUND`,
-  `MATRIX_TYPE_INVALID`, `MATRIX_NESTING_FORBIDDEN`, `MATRIX_CONCURRENCY_CONFLICT`,
+- La edición unificada exige `rowVersion` del ítem y, si se envía `apu`, `apuRowVersion`; la creación no
+  acepta versiones. El retiro de nodos sigue enviando `rowVersion` por *query string*.
+- Códigos: `APU_NOT_FOUND`, `APU_READ_FORBIDDEN`, `APU_WRITE_FORBIDDEN`, `APU_RESOURCE_NOT_FOUND`,
+  `APU_RESOURCE_PROJECT_MISMATCH`, `APU_CONCURRENCY_CONFLICT`, `APU_COMPOSITION_RESOLUTION_REQUIRED`,
+  `MATRIX_NOT_FOUND`, `MATRIX_TYPE_INVALID`, `MATRIX_NESTING_FORBIDDEN`, `MATRIX_CONCURRENCY_CONFLICT`,
   `RESOURCE_MATRIX_COPY_REQUIRES_MATRIX_OPERATION`, `VALIDATION_ERROR`, `PAGE_SIZE_INVALID`,
-  `PROJECT_NOT_FOUND`, `WBS_CHAPTER_HAS_APU`, `WBS_NODE_HAS_CHILDREN`.
+  `PROJECT_NOT_FOUND`, `WBS_CODE_DUPLICATED`, `WBS_CHAPTER_HAS_APU`, `WBS_NODE_HAS_CHILDREN`.
 
 ### D11. Migración y datos iniciales
 
@@ -392,8 +401,8 @@ Copia (`POST .../apus/copy`):
 ### D12. Pruebas
 
 - **Unitarias**: completitud (incluida la herencia de la Matriz y el recálculo de los APUs que la usan),
-  composición, no anidamiento, copia, reconciliación simple, costo por línea y tipo, AIU, redondeo, `yield`,
-  conteo con desperdicio, autoría y alcance por rol.
+  composición, no anidamiento, copia, reconciliación simple, costo por línea y tipo, AIU, redondeo,
+  conteo con desperdicio, autoría, alta/edición unificada y alcance por rol.
 - **Integración manual** (`D-66`): FKs, `CHECK`, índices, `rowversion`, copia transaccional, baja del ítem
   con APU, bloqueo de capítulos, copia de Matriz sin validación, recálculo del estado al completar una
   Matriz o editar su unidad, vista previa de costo y aislamiento.
@@ -415,15 +424,15 @@ Copia (`POST .../apus/copy`):
 | `INC-08` | `BR-009` dejaría toda Matriz incompleta | `BR-009`, `REQ-INSUMOS-04` ↔ `BR-008`, `BR-021` | Se modifica `REQ-INSUMOS-04`; Matriz por unidad y componentes | Resuelto |
 | `INC-09` | `D-05` «se crea desde cero» admitiría APU sin ítem | `D-05` ↔ `BR-016`, `D-16` | El alta siempre exige ítem libre | **DERIVADO** |
 | `INC-10` | `E-3a` copiaba Matrices como insumo simple | `REQ-INSUMOS-09` ↔ `BR-021` | La copia genérica rechaza `MATRIX`; la copia de Matriz no valida | Resuelto |
-| `INC-11` | `yield` no tiene unidad de esfuerzo ni fórmula | `D-06`, `D-32` ↔ `PLAN §3.3.2`, `X-15` | Multiplica la cantidad efectiva del costo, no la del conteo (`F1` revisada); el total del proyecto sigue en `E-4a` | Resuelto (`X-15` parcial) |
+| `INC-11` | `yield` no tiene unidad de esfuerzo ni fórmula | `D-06`, `D-32` ↔ `PLAN §3.3.2`, `X-15` | Se retira `yield`; la cantidad efectiva usa solo consumo y desperdicio (`REQ-APUS-22`); el total del proyecto sigue en `E-4a` | Resuelto (retiro de `yield`) |
 | `INC-12` | Los identificadores de prueba de `E-2b` colisionaban con `E-3b` | `PLAN §5.6.1`, `§5.6.7` | `T-U-21`…`T-U-24`, `T-I-42`…`T-I-45`, `T-S-18`, `T-S-19`, `T-C-05`, `T-A-04` en `PLAN §5.6.8` | Resuelto como propuesta |
 | `INC-13` | `PLAN §3.3.2` daba baja lógica al APU | `D-49` ↔ `PLAN §3.3.6` | Baja física del APU con el ítem; sin `is_active`/`deleted_at` | Resuelto (revisa `D-49`) |
 | `INC-14` | `PLAN §3.3.1` exige `project_id` en toda entidad | `PLAN §3.3.1` ↔ `D-48` | Sin `project_id` redundante en `apu_resources`/`matrix_components` | Resuelto |
 | `INC-15` | La EDT dejaba el APU desvinculado al borrar el ítem | `D-119`, `SC-EDT-85` ↔ `BR-016` | El ítem elimina el APU y sus líneas; los insumos se conservan | Resuelto (revisa `D-119`) |
-| `INC-16` | `WbsItem` no permitía fijar `ApuId` | `WbsItem.ApuId` ↔ `BR-016`, `D-54` | `WbsItem.LinkApu` + `IWbsItemLinkWriter` condicional | Resuelto |
+| `INC-16` | `WbsItem` no permitía fijar `ApuId` | `WbsItem.ApuId` ↔ `BR-016`, `D-54` | `WbsItem.LinkApu` en la transacción unificada de alta/copia | Resuelto |
 | `INC-17` | La cascada de capítulos borraba APUs | `D-119`, `SC-EDT-84` ↔ decisión del autor | Capítulo solo vacío; `WBS_CHAPTER_HAS_APU` si hay APUs; `WBS_NODE_HAS_CHILDREN` si hay nodos | Resuelto (revisa `D-114`/`D-119`) |
 | `INC-18` | El costo y el AIU estaban en `E-4a` y `X-15` | `RF-10`, `D-06`, `PLAN §4.2` ↔ decisión del autor | Vista previa del APU/Matriz en `E-3b`; total del proyecto sigue en `E-4a` | Resuelto como alcance |
-| `INC-19` | El árbol del EDT no expone el APU del ítem | `GET /wbs` ↔ `RF-07`, decisión del autor | `REQ-EDT-20` con `apu { id, status, description, unit }` | Resuelto |
+| `INC-19` | El árbol del EDT no expone el APU del ítem | `GET /wbs` ↔ `RF-07`, decisión del autor | `REQ-EDT-20` con `apu { id, status, description, unit, unitPrice, rowVersion }` | Resuelto |
 | `INC-20` | El Director dueño no está necesariamente en `ProjectMember` | `Project.DirectorOwnerUserId` ↔ `REQ-APUS-16`, `REQ-EDT-13` | La pertenencia se valida solo con `project_members`; el dueño debe ser miembro para escribir | Resuelto (decisión del autor) |
 
 ## Risks / Trade-offs
@@ -437,7 +446,7 @@ Copia (`POST .../apus/copy`):
 | Copiar Matrices sin validar duplica datos | Es una decisión del autor; la validación es manual y la independencia se conserva |
 | `quantity_work` y `consumption` a 10 decimales amplían las filas | Migración `ALTER COLUMN` con respaldo y `Down` documentado |
 | Permisos de APU y EDT cambian a `ProjectMember` | Se ajustan `REQ-EDT-13` y `REQ-APUS-16` y se prueba `T-S-18`/`T-S-19` |
-| `yield` multiplicativo amplifica el costo si se captura como tasa de producción | Se documenta como factor adimensional; `E-4a` revisa `D-06`/`X-15`; se prueba con `yield ≠ 1` (`T-U-24`) |
+| El retiro de `yield` cambia la fórmula de costo | `REQ-APUS-22`, `D8` y `D-121` fijan la fórmula sin rendimiento; se actualiza `X-15`/`D-06` en el `PLAN` |
 | Heredar la completitud de la Matriz puede revertir un APU aprobado | El recálculo solo cambia `status`; la invalidación de aprobaciones pertenece a `E-4b` (`D-53`) |
 | El conteo con desperdicio contradice `R-21`/`D-33`, confirmados en el `PLAN` | Se actualizan `R-21`, `D-33` y `D-06` en el `PLAN` al archivar (tarea 0.2) |
 | Cambiar `apus.unit` reinterpreta `quantity_work` de los ítems ya vinculados | Se documenta en `D2`; el bloqueo o la confirmación explícita se evalúa en `E-4a` |
