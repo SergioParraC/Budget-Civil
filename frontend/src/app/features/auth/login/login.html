@@ -1,22 +1,80 @@
 <div class="login">
-  <p-card header="Budget Civil" class="login__card">
-    <form [formGroup]="form" (ngSubmit)="submit()" class="login__form">
-      <label for="identifier">Usuario o correo</label>
-      <input id="identifier" pInputText formControlName="identifier" />
-
-      <label for="password">Contraseña</label>
-      <p-password id="password" formControlName="password" [feedback]="false" [toggleMask]="true" />
-
-      @if (errorMessage()) {
-        <p-message severity="error" [text]="errorMessage()!" />
-      }
-
-      <p-button type="submit" label="Ingresar" [loading]="loading()" />
-
-      <div class="login__links">
-        <a routerLink="/recuperar-contrasena">Recuperar contraseña</a>
-        <a routerLink="/registro">No tienes cuenta, crea una</a>
+  <div class="login__panel">
+    <div class="login__brand">
+      <div class="login__brand-mark">
+        <i class="pi pi-building"></i>
       </div>
-    </form>
-  </p-card>
+      <h1 class="login__brand-title">Controla el presupuesto de tus obras en un solo lugar</h1>
+      <p class="login__brand-subtitle">Presupuestos, análisis de precios unitarios y avance de cada proyecto, siempre a la mano.</p>
+      <ul class="login__brand-features">
+        <li><i class="pi pi-check-circle"></i> Presupuestos y APU por proyecto</li>
+        <li><i class="pi pi-check-circle"></i> Seguimiento de avance en tiempo real</li>
+        <li><i class="pi pi-check-circle"></i> Equipos y compañías en un solo panel</li>
+      </ul>
+    </div>
+
+    <div class="login__form-side">
+      <div class="login__form-head">
+        <span class="login__form-brand">Budget Civil</span>
+        <h2 class="login__form-title">Inicia sesión</h2>
+        <p class="login__form-subtitle">Ingresa a tu cuenta para continuar</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="login__form" novalidate>
+        <div class="login__field">
+          <label for="identifier">Usuario o correo</label>
+          <p-iconfield>
+            <p-inputicon styleClass="pi pi-user" />
+            <input
+              #identifierInput
+              id="identifier"
+              pInputText
+              formControlName="identifier"
+              autocomplete="username"
+              class="login__input"
+              [invalid]="identifierInvalid"
+              aria-describedby="identifier-error"
+            />
+          </p-iconfield>
+          @if (identifierInvalid) {
+            <small id="identifier-error" class="login__field-error">El usuario o correo es obligatorio.</small>
+          }
+        </div>
+
+        <div class="login__field">
+          <label for="password">Contraseña</label>
+          <p-iconfield #passwordInput>
+            <p-inputicon styleClass="pi pi-lock" />
+            <p-password
+              id="password"
+              formControlName="password"
+              [feedback]="false"
+              [toggleMask]="true"
+              autocomplete="current-password"
+              styleClass="login__input"
+              [invalid]="passwordInvalid"
+              aria-describedby="password-error"
+            />
+          </p-iconfield>
+          @if (passwordInvalid) {
+            <small id="password-error" class="login__field-error">La contraseña es obligatoria.</small>
+          }
+        </div>
+
+        @if (errorMessage()) {
+          <p-message severity="error" [text]="errorMessage()!" role="alert" aria-live="assertive" />
+        }
+
+        <p-button type="submit" label="Ingresar" [loading]="loading()" styleClass="login__submit" />
+
+        <div class="login__links">
+          <a routerLink="/recuperar-contrasena" class="login__link login__link--muted">Recuperar contraseña</a>
+          <div class="login__divider"></div>
+          <span class="login__signup">
+            ¿No tienes cuenta? <a routerLink="/registro" class="login__link">Regístrate</a>
+          </span>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
