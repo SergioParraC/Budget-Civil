@@ -9,7 +9,7 @@ public sealed class BudgetCivilDbContextFactory : IDesignTimeDbContextFactory<Bu
     {
         var optionsBuilder = new DbContextOptionsBuilder<BudgetCivilDbContext>();
         optionsBuilder.UseSqlServer(
-            "Data Source=LAPTOP-ASUS-F15\\SQLEXPRESS;Initial Catalog=BudgetCivilDb;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Application Name=SQL Server Management Studio;Command Timeout=0");
+            "Server=localhost;Database=BudgetCivilDb;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=False;Application Name=BudgetCivil.Api");
 
         return new BudgetCivilDbContext(optionsBuilder.Options);
     }

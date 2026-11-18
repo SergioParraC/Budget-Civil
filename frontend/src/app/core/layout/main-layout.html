@@ -1,18 +1,82 @@
 <p-toast />
 <p-confirmDialog />
 
-<div class="layout">
+<div class="layout" [class.layout--collapsed]="collapsed()">
   <aside class="layout__sidebar">
-    <div class="layout__brand">Budget Civil</div>
-    <p-menu [model]="menuItems()" styleClass="layout__menu"></p-menu>
+    <div class="layout__brand">
+      <div class="layout__brand-mark"><i class="pi pi-building"></i></div>
+      @if (!collapsed()) {
+        <span class="layout__brand-label">Budget Civil</span>
+      }
+    </div>
+
+    <nav class="layout__nav">
+      @for (group of navGroups(); track group.label) {
+        <div class="layout__nav-group">
+          @if (!collapsed()) {
+            <div class="layout__nav-label">{{ group.label }}</div>
+          }
+          @for (item of group.items; track item.routerLink) {
+            <a
+              [routerLink]="item.routerLink"
+              routerLinkActive="layout__nav-item--active"
+              class="layout__nav-item"
+              [pTooltip]="collapsed() ? item.label : ''"
+              tooltipPosition="right"
+            >
+              <i [class]="item.icon"></i>
+              @if (!collapsed()) {
+                <span>{{ item.label }}</span>
+              }
+            </a>
+          }
+        </div>
+      }
+    </nav>
+
+    <div class="layout__sidebar-footer">
+      <a
+        routerLink="/perfil"
+        routerLinkActive="layout__nav-item--active"
+        class="layout__nav-item layout__nav-item--profile"
+        [pTooltip]="collapsed() ? 'Mi perfil' : ''"
+        tooltipPosition="right"
+      >
+        <span class="layout__avatar">{{ initials() }}</span>
+        @if (!collapsed()) {
+          <span class="layout__who">
+            <strong>{{ currentUser()?.username }}</strong>
+            <small>Mi perfil</small>
+          </span>
+        }
+      </a>
+
+      <button
+        type="button"
+        class="layout__nav-item layout__logout"
+        (click)="logout()"
+        [pTooltip]="collapsed() ? 'Cerrar sesión' : ''"
+        tooltipPosition="right"
+      >
+        <i class="pi pi-sign-out"></i>
+        @if (!collapsed()) {
+          <span>Cerrar sesión</span>
+        }
+      </button>
+
+      <button
+        type="button"
+        class="layout__collapse-btn"
+        (click)="toggleCollapsed()"
+        [pTooltip]="collapsed() ? 'Expandir menú' : 'Colapsar menú'"
+        tooltipPosition="right"
+      >
+        <i [class]="collapsed() ? 'pi pi-angle-right' : 'pi pi-angle-left'"></i>
+      </button>
+    </div>
   </aside>
 
   <div class="layout__content">
-    <header class="layout__topbar">
-      <span>{{ currentUser()?.username }}</span>
-      <p-button icon="pi pi-sign-out" [text]="true" (onClick)="logout()" />
-    </header>
-
     <main class="layout__main">
       <router-outlet />
     </main>
