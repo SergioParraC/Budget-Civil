@@ -175,14 +175,14 @@ verifica la cadena, el índice filtrado y la ausencia de la FK.
 - [x] 5.1 Ejecutar `dotnet build` y `dotnet test` de las suites unitaria y de arquitectura. Verificación:
   compilación sin errores ni advertencias, `T-U-03`, `T-U-04`, `T-U-11`, `T-U-21`…`T-U-24`, `T-C-05` y
   `T-A-04` en verde, y cobertura ≥ 80 % en `Domain/Apus`.
-- [ ] 5.2 Ejecutar la verificación manual contra SQL Server local con dos compañías y dos proyectos:
+- [x] 5.2 Ejecutar la verificación manual contra SQL Server local con dos compañías y dos proyectos:
   `T-I-07`, `T-I-08`, `T-I-09`, `T-I-20`, `T-I-42`…`T-I-45`, `T-S-06`, `T-S-18` y `T-S-19`. Verificación:
   checklist con evidencia por identificador, incluida la baja del ítem con APU, el bloqueo de capítulos, la
   copia de Matriz sin validación y la vista previa de costo.
 - [x] 5.3 Completar la matriz de trazabilidad `requisito → escenario → RF/BR/R → decisión → prueba` para los
   veinte `REQ-APUS-*`, los dos `REQ-INSUMOS-*`, `REQ-EDT-13/20/21` y `REQ-PROYECTOS-10`, y proponer los
   identificadores para `PLAN §5.6.8`. Verificación: ningún requisito queda sin escenario ni sin prueba.
-- [ ] 5.4 Ejecutar `openspec validate i-3b-apus-y-matrices --strict` y archivar solo con la aprobación del
+- [x] 5.4 Ejecutar `openspec validate i-3b-apus-y-matrices --strict` y archivar solo con la aprobación del
   estudiante y las decisiones `INC-04`, `INC-06` e `INC-11` aplicadas. Verificación: validación sin errores,
   checklist firmado y `openspec archive` con `apus`, `edt`, `insumos` y `proyectos` sincronizadas.
 

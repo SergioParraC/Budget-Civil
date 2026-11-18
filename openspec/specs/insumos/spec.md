@@ -93,8 +93,8 @@ catálogo. Citas: RF-05; BR-009, BR-010; D-96.
 El sistema DEBE (MUST) asignar `FALTA_INFORMACION` cuando falte descripción, unidad, precio, marca o
 proveedor, y `POR_COTIZAR` cuando los cinco estén presentes; DEBE (MUST) recalcularlo en cada alta y
 edición. El proveedor es opcional para crear el insumo, pero sin él el insumo permanece en
-`FALTA_INFORMACION` (`REQ-PROVEEDORES-05`). La transición a `COTIZADO` pertenece a `RF-11` y no se
-especifica aquí. Citas: RF-05; BR-009; D-89.
+`FALTA_INFORMACION` (`REQ-PROVEEDORES-05`). La Matriz se evalúa según `REQ-APUS-06`. La transición a
+`COTIZADO` pertenece a `RF-11` y no se especifica aquí. Citas: RF-05; BR-009; D-89.
 
 #### Scenario: SC-INSUMOS-11 Alta incompleta
 
@@ -131,6 +131,18 @@ especifica aquí. Citas: RF-05; BR-009; D-89.
 - **Dado** un insumo en estado `POR_COTIZAR` con proveedor
 - **Cuando** un actor autorizado retira el proveedor
 - **Entonces** el insumo vuelve a `FALTA_INFORMACION`
+
+#### Scenario: SC-INSUMOS-54 Matriz sin composición
+
+- **Dado** un insumo de tipo Matriz con unidad pero sin componentes
+- **Cuando** se consulta su estado de cotización
+- **Entonces** el insumo está en `FALTA_INFORMACION` y no se le exigen precio, marca ni proveedor
+
+#### Scenario: SC-INSUMOS-55 Matriz con unidad y composición
+
+- **Dado** un insumo de tipo Matriz con unidad y al menos un componente
+- **Cuando** se consulta su estado de cotización
+- **Entonces** el insumo está en `POR_COTIZAR`
 
 ### Requirement: REQ-INSUMOS-05 Sugerencia de unicidad
 
@@ -239,7 +251,9 @@ rechazarse. Citas: RF-20; D-101.
 ### Requirement: REQ-INSUMOS-09 Copia desde otro proyecto de la compañía
 
 El sistema DEBE (MUST) permitir copiar un insumo desde otro proyecto de la misma compañía a un proyecto
-destino con permiso de escritura, conservando tipo, datos, precio y municipio. Citas: RF-06; D-27, D-29.
+destino con permiso de escritura, conservando tipo, datos, precio y municipio. La copia de un insumo de
+tipo Matriz se realiza con la operación de copia de Matriz, que reconcilia sus componentes
+(`REQ-APUS-08`); la copia genérica la rechaza. Citas: RF-06, RF-09; BR-021; D-27, D-29.
 
 #### Scenario: SC-INSUMOS-28 Copia exitosa
 
@@ -260,6 +274,12 @@ destino con permiso de escritura, conservando tipo, datos, precio y municipio. C
 - **Dado** un actor que solo puede leer el proyecto destino
 - **Cuando** intenta copiar un insumo hacia ese proyecto
 - **Entonces** el sistema rechaza la operación con `403`
+
+#### Scenario: SC-INSUMOS-56 Copia genérica de una Matriz
+
+- **Dado** un insumo de tipo Matriz con componentes en el proyecto de origen
+- **Cuando** un actor autorizado intenta copiarlo con la operación de copia de insumo
+- **Entonces** el sistema rechaza la operación con un error de validación e indica que debe usarse la copia de Matriz
 
 ### Requirement: REQ-INSUMOS-10 Independencia de la copia
 
