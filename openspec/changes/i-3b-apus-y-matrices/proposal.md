@@ -149,5 +149,5 @@ controlada del EDT (`INC-15`, `INC-16`).
 - **Pruebas**: unitarias de dominio, costo y casos de uso; integración manual contra SQL Server local;
   `NetArchTest` para capas y módulos (`D-63`, `D-66`, `D-105`).
 - **Documentación**: `PLAN_INGENIERIA.md` (`D-06`, `D-32`, `D-33`, `D-49`, `D-114`, `D-119`, `D-121`, `R-21`,
-  `X-15`, `§2.4.2`, `§3.3.2`, `§3.3.3`, `§3.3.5`, `§3.3.6`, `§4.2`, `§5.6`), `.github/docs/02`, `05` y
+  `X-15`, `§2.4.2`, `§3.3.2`, `§3.3.3`, `§3.3.5`, `§3.3.6`, `§4.2`, `§5.6`), `docs/02`, `05` y
   `docs/runbook-migraciones.md`.

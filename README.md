@@ -54,7 +54,7 @@ Flujo general:
 
 Documentacion de soporte:
 - `openspec/` (fuente de verdad del comportamiento: `openspec/specs/`, cambios en `openspec/changes/`)
-- `.github/docs/` (requerimientos, arquitectura, stack, modelo de datos y casos de uso)
+- `docs/` (requerimientos, arquitectura, stack, modelo de datos y casos de uso)
 - `docs/architecture/` (diagramas de arquitectura y modelo de datos)
 - `docs/runbook-migraciones.md` (aplicación manual del esquema, `D-40`)
 - `specs/001` y `specs/002`: **evidencia histórica no normativa** de lo implementado con Spec Kit; no se editan (`D-108`)
@@ -75,7 +75,9 @@ backend/
     BudgetCivil.Backend.BlackBoxTests/
 
 docs/
+  00-idea-problema.md ... 09-operacion-openspec.md
   architecture/
+  runbook-migraciones.md
 
 specs/
   001-gestion-usuarios-companias/

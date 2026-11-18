@@ -8,7 +8,7 @@
 **Autor:** [POR COMPLETAR]
 **Estado:** Documento completo (v0.30). Los seis capítulos están redactados y los documentos base `00`–`06` y `09` actualizados. La v0.28 incorporó el autorregistro público (`D-72`, `D-73`); la v0.29 cierra las 38 decisiones de reconciliación con las especificaciones ya implementadas (`D-74`…`D-111`), declara `specs/001` y `specs/002` como evidencia histórica no normativa y define la etapa `E-1b`. La v0.30 registra las modificaciones decididas al ejecutar `E-1b`: `D-76` modificada (autorregistro con identidad completa), cierre de `D-95`, `D-98` y `D-105` sin migración de datos y con purga y reconstrucción de la suite de pruebas, y la baseline única con la convención `D-107`.
 
-> **Regla de trazabilidad.** Todo enunciado debe poder rastrearse a una fuente: los documentos base `.github/docs/00`–`06` y `09`, una decisión explícita `D-01`…`D-111`, o la evidencia histórica de `specs/001` y `specs/002` cuando el PLAN la adopte de forma expresa. Lo que no tenga fuente se marca `POR CONFIRMAR` o `DERIVADO` y **no se convierte en requisito** hasta ser validado. No se recicla texto ambiguo de los documentos base.
+> **Regla de trazabilidad.** Todo enunciado debe poder rastrearse a una fuente: los documentos base `docs/00`–`06` y `09`, una decisión explícita `D-01`…`D-111`, o la evidencia histórica de `specs/001` y `specs/002` cuando el PLAN la adopte de forma expresa. Lo que no tenga fuente se marca `POR CONFIRMAR` o `DERIVADO` y **no se convierte en requisito** hasta ser validado. No se recicla texto ambiguo de los documentos base.
 
 ## 0. Control del documento
 
@@ -24,18 +24,18 @@ Producir, de forma incremental y verificable, el documento único de ingeniería
 | Capítulo 4 — Estrategia de desarrollo | Cerrado (v0.29); incluye la etapa `E-1b` en `4.8` |
 | Capítulo 5 — Estrategia de calidad | Cerrado (v0.24) |
 | Capítulo 6 — SDD e inteligencia artificial | Cerrado (v0.26) |
-| Actualización de `.github/docs/00`–`09` | Completada el 27/10/2026: `00`–`06` y `09`; `07` y `08` no existen |
+| Actualización de `docs/00`–`09` | Completada el 27/10/2026: `00`–`06` y `09`; `07` y `08` no existen |
 | Autorregistro público de usuarios | Incorporado al alcance el 29/10/2026 (`D-72`, `D-73`): registro anónimo, sin sesión y con nombre de usuario obligatorio |
 | Especificaciones y cambios en OpenSpec | Reconciliación cerrada el 29/10/2026 (`D-74`…`D-111`); `E-1b`, `E-2` y `E-3a` cerrados; el próximo paso es el cambio OpenSpec de `I-2b` (EDT) y después `I-3b` |
 | `specs/001` y `specs/002` (Spec Kit) | Declaradas **evidencia histórica no normativa** el 29/10/2026 (`D-108`): no se editan, no se citan como requisito y solo se usan para el registro de brechas |
 | Etapa `E-1b` (reconciliación) | Definida en `4.8`; cierra brechas de `E-1` y produce la línea base de OpenSpec antes de abrir `E-2` |
 
 ### 0.3 Fuentes utilizadas
-- `.github/docs/00-idea-problema.md` … `06-flujos-casos-de-uso.md`
-- `.github/docs/09-operacion-openspec.md` (reemplaza al antiguo `09-operacion-copilot-spec-kit.md`, `D-09`)
+- `docs/00-idea-problema.md` … `06-flujos-casos-de-uso.md`
+- `docs/09-operacion-openspec.md` (reemplaza al antiguo `09-operacion-copilot-spec-kit.md`, `D-09`)
 - Aclaraciones del autor: `D-01` a `D-10` (registradas en 0.5), `D-72`–`D-73` (29/10/2026) y `D-74`–`D-111` (encuesta de reconciliación, 29/10/2026)
 - **Evidencia histórica (no normativa, `D-108`):** `specs/001-gestion-usuarios-companias/` y `specs/002-gestion-companias-proyectos/`, generadas con Spec Kit y congeladas el 29/10/2026
-- **Excluidos por instrucción:** código implementado, `.github/spec/`, `docs/`
+- **Excluidos por instrucción:** código implementado, `.github/spec/`, `docs/architecture/` y `docs/runbook-migraciones.md`
 
 ### 0.4 Convenciones
 | Marca | Significado |
@@ -1665,7 +1665,7 @@ Alinear lo ya implementado con el PLAN y producir la línea base de OpenSpec ant
 4. `IMPACTO_FRONTEND.md` con `IF-01`…`IF-06` (`4.8.6`).
 5. Correcciones transversales: rol, contrato v1, autorización, modelo de usuario/compañía, persistencia, pruebas.
 6. `RF-18` operativo (correo de creación de cuenta y recuperación) y `RF-23` conforme a `D-73` y `D-80`.
-7. Actualización de `.github/docs/00`, `02`, `03`, `04`, `05` y `06` según `0.7`.
+7. Actualización de `docs/00`, `02`, `03`, `04`, `05` y `06` según `0.7`.
 
 ### 4.8.3 Alcance excluido
 - `RF-04` (EDT) y todo `M-03`: se especifica en `E-2`.
@@ -1704,7 +1704,7 @@ Alinear lo ya implementado con el PLAN y producir la línea base de OpenSpec ant
 4. **Ajustar autorización**: `permission_key`, `seed` versionado, fail-closed y renombrado del rol a Director de proyectos.
 5. **Implementar `RF-18`** y los controles del autorregistro (`D-79`, `D-80`).
 6. **Purgar `BlackBoxTests` y reconstruir la suite** en `Tests.Unit`, `Tests.Integration` y `Tests.Architecture`, con `NetArchTest` (DEC-20).
-7. **Cerrar las `GAP`** con evidencia y actualizar `.github/docs`.
+7. **Cerrar las `GAP`** con evidencia y actualizar `docs`.
 8. **Generar la baseline única** al final de la fase de persistencia, con la convención `D-107`, y retirar `Database.MigrateAsync()` del arranque (`D-40`, `D-107`).
 
 ### 4.8.6 Impacto en el frontend (fuera de alcance, `D-109`)
@@ -1729,7 +1729,7 @@ Alinear lo ya implementado con el PLAN y producir la línea base de OpenSpec ant
 7. La migración se aplicó con respaldo, convención `D-107` y reversión conocida.
 8. `Tests.Unit`, `Tests.Integration` y `Tests.Architecture` en verde; cobertura ≥ 80 % en dominio (`D-61`).
 9. `IMPACTO_FRONTEND.md` firmado y `A-10` aceptado.
-10. `.github/docs` actualizados y `specs/001`/`specs/002` marcadas como históricas (`D-108`).
+10. `docs` actualizados y `specs/001`/`specs/002` marcadas como históricas (`D-108`).
 
 **Capítulo 4 cerrado** (v0.21). Siguiente: **capítulo 5 — Estrategia de calidad**.
 
@@ -1993,7 +1993,7 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | `openspec/project.md` | Contexto, stack, convenciones y restricciones | Contexto operativo |
 | `openspec/specs/` | Comportamiento por capacidad | **Fuente de verdad del comportamiento** |
 | `openspec/changes/` | Cambios activos y archivados | Trabajo en curso e historial |
-| `.github/docs/00`–`09` | Documentación narrativa del proyecto | Apoyo; se actualiza por capítulo (`D-09`) |
+| `docs/00`–`09` | Documentación narrativa del proyecto | Apoyo; se actualiza por capítulo (`D-09`) |
 | `specs/001`, `specs/002` | Evidencia histórica de lo implementado con Spec Kit | **No normativa** (`D-108`): solo insumo para el registro `GAP` |
 | Código y pruebas | Implementación y evidencia | Verificación |
 

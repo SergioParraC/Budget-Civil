@@ -45,7 +45,7 @@ verifica la cadena, el índice filtrado y la ausencia de la FK.
   `yield`), `R-21`/`D-33` (conteo con desperdicio), `D-121` (decimales de redondeo y cantidades) y el ajuste
   de `§2.4.2`, `§3.3.2`, `§3.3.3`, `§3.3.5`, `§3.3.6`, `§4.2`, `§5.6` y `§5.6.8`. Verificación: `git diff
   PLAN_INGENIERIA.md` y `openspec validate --all --strict` en verde.
-- [x] 0.3 Actualizar `.github/docs/02` (rutas, matriz de permisos y campos), `.github/docs/05`
+- [x] 0.3 Actualizar `docs/02` (rutas, matriz de permisos y campos), `docs/05`
   (baja del ítem con APU, capítulo vacío, parámetros de redondeo y `apus.unit` de 5 caracteres) y
   `docs/runbook-migraciones.md` con la migración y el `seed` `v8`.
 
@@ -234,8 +234,8 @@ verifica la cadena, el índice filtrado y la ausencia de la FK.
 ## Estado de implementación
 
 - **Implementada** el 15/11/2026: dominio, persistencia, aplicación, API, `seed` `v8`, pruebas unitarias y
-  de arquitectura, migración `20261115092848_apus_add_e3b` y documentación (`PLAN`, `.github/docs/02`,
-  `.github/docs/05`, runbook e `IMPACTO_FRONTEND.md`).
+  de arquitectura, migración `20261115092848_apus_add_e3b` y documentación (`PLAN`, `docs/02`,
+  `docs/05`, runbook e `IMPACTO_FRONTEND.md`).
 - **Ajuste del 15/11/2026:** la vista previa de copia ahora expone el precio unitario del insumo de origen,
   `requiresResolution` y, por candidato, el comparativo `unitMatches`, `unitPriceMatches` y
   `unitPriceDifference` (`candidato − origen`). `EXACT` clasifica por descripción normalizada y el
