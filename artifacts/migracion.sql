@@ -1120,3 +1120,153 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    ALTER TABLE [resources] ADD [supplier_id] uniqueidentifier NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE TABLE [suppliers] (
+        [id] uniqueidentifier NOT NULL,
+        [company_id] uniqueidentifier NOT NULL,
+        [business_name] nvarchar(200) NOT NULL,
+        [contact_name] nvarchar(150) NULL,
+        [contact_phone] nvarchar(30) NULL,
+        [email] nvarchar(254) NULL,
+        [address] nvarchar(300) NULL,
+        [observations] nvarchar(1000) NULL,
+        [country_id] uniqueidentifier NULL,
+        [department_id] uniqueidentifier NULL,
+        [municipality_id] uniqueidentifier NULL,
+        [is_active] bit NOT NULL DEFAULT CAST(1 AS bit),
+        [row_version] rowversion NOT NULL,
+        [created_by] uniqueidentifier NOT NULL,
+        [created_at] datetime2 NOT NULL,
+        [last_modified_by] uniqueidentifier NOT NULL,
+        [last_modified_at] datetime2 NOT NULL,
+        CONSTRAINT [PK_dbo_suppliers] PRIMARY KEY ([id]),
+        CONSTRAINT [FK_dbo_suppliers_companies_company_id] FOREIGN KEY ([company_id]) REFERENCES [companies] ([id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_dbo_suppliers_countries_country_id] FOREIGN KEY ([country_id]) REFERENCES [countries] ([id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_dbo_suppliers_departments_department_id] FOREIGN KEY ([department_id]) REFERENCES [departments] ([id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_dbo_suppliers_municipalities_municipality_id] FOREIGN KEY ([municipality_id]) REFERENCES [municipalities] ([id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_dbo_suppliers_users_created_by] FOREIGN KEY ([created_by]) REFERENCES [users] ([id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_dbo_suppliers_users_last_modified_by] FOREIGN KEY ([last_modified_by]) REFERENCES [users] ([id]) ON DELETE NO ACTION
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE INDEX [IX_dbo_resources_supplier_id] ON [resources] ([supplier_id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE INDEX [IX_dbo_suppliers_company_id_business_name] ON [suppliers] ([company_id], [business_name]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE INDEX [IX_dbo_suppliers_company_id_country_id] ON [suppliers] ([company_id], [country_id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE INDEX [IX_dbo_suppliers_company_id_department_id] ON [suppliers] ([company_id], [department_id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE INDEX [IX_dbo_suppliers_company_id_is_active] ON [suppliers] ([company_id], [is_active]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE INDEX [IX_dbo_suppliers_company_id_municipality_id] ON [suppliers] ([company_id], [municipality_id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE INDEX [IX_dbo_suppliers_country_id] ON [suppliers] ([country_id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE INDEX [IX_dbo_suppliers_created_by] ON [suppliers] ([created_by]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE INDEX [IX_dbo_suppliers_department_id] ON [suppliers] ([department_id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE INDEX [IX_dbo_suppliers_last_modified_by] ON [suppliers] ([last_modified_by]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    CREATE INDEX [IX_dbo_suppliers_municipality_id] ON [suppliers] ([municipality_id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    ALTER TABLE [resources] ADD CONSTRAINT [FK_dbo_resources_suppliers_supplier_id] FOREIGN KEY ([supplier_id]) REFERENCES [suppliers] ([id]) ON DELETE NO ACTION;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113040910_e3a_suppliers'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261113040910_e3a_suppliers', N'10.0.10');
+END;
+
+COMMIT;
+GO
+

@@ -24,7 +24,7 @@ con Docker Compose (`R-12`).
 | `openspec/project.md` | Stack, convenciones y restricciones | Contexto operativo |
 | `openspec/specs/` | Comportamiento por capacidad | **Comportamiento** |
 | `openspec/changes/` | Cambios activos y archivados | Trabajo en curso e historial |
-| `.github/docs/00`–`06` y `09` | Documentación narrativa | Apoyo; se actualiza por capítulo |
+| `docs/00`–`06` y `09` | Documentación narrativa | Apoyo; se actualiza por capítulo |
 | `specs/001`, `specs/002` | Evidencia histórica de lo implementado con Spec Kit | **No normativa** (`D-108`) |
 | Código y pruebas | Implementación y evidencia | Verificación |
 
