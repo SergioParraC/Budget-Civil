@@ -12,7 +12,15 @@ public sealed class ProjectConfigurationEntityConfiguration : IEntityTypeConfigu
     {
         builder.Property(configuration => configuration.RowVersion).IsRowVersion();
 
-        builder.ToTable("project_configurations");
+        builder.ToTable("project_configurations", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_project_configurations_rounding_decimals",
+                "rounding_decimals >= 0 AND rounding_decimals <= 10");
+            table.HasCheckConstraint(
+                "CK_project_configurations_quantity_decimals",
+                "quantity_decimals >= 0 AND quantity_decimals <= 10");
+        });
 
         // La clave es el propio proyecto: garantiza una sola configuración por proyecto (SC-PROYECTOS-23).
         builder.HasKey(configuration => configuration.ProjectId);
@@ -40,6 +48,16 @@ public sealed class ProjectConfigurationEntityConfiguration : IEntityTypeConfigu
         builder.Property(configuration => configuration.AiuProfitPercent)
             .HasColumnName("aiu_profit_percent")
             .HasPrecision(5, 2);
+
+        builder.Property(configuration => configuration.RoundingDecimals)
+            .HasColumnName("rounding_decimals")
+            .HasDefaultValue(ProjectConfiguration.DefaultDecimals)
+            .IsRequired();
+
+        builder.Property(configuration => configuration.QuantityDecimals)
+            .HasColumnName("quantity_decimals")
+            .HasDefaultValue(ProjectConfiguration.DefaultDecimals)
+            .IsRequired();
 
         builder.Property(configuration => configuration.SignatureMode)
             .HasColumnName("signature_mode")

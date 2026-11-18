@@ -51,13 +51,19 @@ public sealed class MembershipPersistenceTests(DatabaseFixture fixture) : IClass
             firstRepository.AssignAsync(targetUserId, companyId, DateTime.UtcNow),
             secondRepository.AssignAsync(targetUserId, companyId, DateTime.UtcNow));
 
-        // SC-IDENTIDAD-31: solo una asignación queda efectiva.
-        Assert.Equal(1, results.Count(result => result));
+        // SC-IDENTIDAD-31: solo una asignación queda efectiva. La carrera puede resolverse de dos
+        // formas válidas —una inserción gana y la otra choca con `UQ_dbo_users_company_user_id`, o la
+        // segunda reutiliza la fila vigente ya confirmada—, así que la garantía se comprueba sobre la
+        // pertenencia persistida y no sobre el número de llamadas que devolvieron `true`.
+        Assert.Contains(true, results);
 
         await using var verificationContext = SqlServerTestDatabase.CreateContext(fixture.ConnectionString);
-        var storedMembership = await verificationContext.CompanyMemberships
-            .SingleAsync(membership => membership.UserId == targetUserId && membership.AccountEnabled);
-        Assert.Equal(companyId, storedMembership.CompanyId);
+        var activeMemberships = await verificationContext.CompanyMemberships
+            .Where(membership => membership.UserId == targetUserId && membership.AccountEnabled)
+            .ToListAsync();
+
+        Assert.Single(activeMemberships);
+        Assert.Equal(companyId, activeMemberships[0].CompanyId);
     }
 
     [Fact]

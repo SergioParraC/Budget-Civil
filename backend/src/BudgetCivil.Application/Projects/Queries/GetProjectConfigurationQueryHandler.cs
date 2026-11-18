@@ -14,6 +14,12 @@ public sealed class GetProjectConfigurationResponse
 
     public decimal? AiuProfitPercent { get; init; }
 
+    /// <summary>Decimales de redondeo 0–10 (`REQ-PROYECTOS-10`, `D-121`).</summary>
+    public int RoundingDecimals { get; init; }
+
+    /// <summary>Decimales de cantidades 0–10 (`REQ-PROYECTOS-10`, `D-121`).</summary>
+    public int QuantityDecimals { get; init; }
+
     public string SignatureMode { get; init; } = string.Empty;
 
     public Guid? SignerUserId { get; init; }
@@ -42,6 +48,8 @@ public sealed class GetProjectConfigurationQueryHandler(GetProjectByIdQueryHandl
             AiuAdminPercent = project.AiuAdminPercent,
             AiuUnforeseenPercent = project.AiuUnforeseenPercent,
             AiuProfitPercent = project.AiuProfitPercent,
+            RoundingDecimals = project.RoundingDecimals,
+            QuantityDecimals = project.QuantityDecimals,
             SignatureMode = project.SignatureMode,
             SignerUserId = project.SignerUserId,
             RequiresAuditor = project.RequiresAuditor

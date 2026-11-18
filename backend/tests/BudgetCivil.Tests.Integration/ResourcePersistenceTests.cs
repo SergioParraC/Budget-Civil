@@ -32,6 +32,7 @@ public sealed class ResourcePersistenceTests(DatabaseFixture fixture) : IClassFi
                 null,
                 null,
                 null,
+                null,
                 data.Director.Id,
                 DateTime.UtcNow);
 
@@ -74,6 +75,7 @@ public sealed class ResourcePersistenceTests(DatabaseFixture fixture) : IClassFi
                 "m2",
                 10m,
                 "Marca",
+                null,
                 null,
                 null,
                 null,

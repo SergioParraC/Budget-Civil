@@ -82,6 +82,10 @@ public sealed class ResourceConfiguration : IEntityTypeConfiguration<Resource>
         builder.Property(resource => resource.OriginResourceId)
             .HasColumnName("origin_resource_id");
 
+        // Referencia opcional al proveedor de la compañía (`REQ-PROVEEDORES-04`, `D-29`).
+        builder.Property(resource => resource.SupplierId)
+            .HasColumnName("supplier_id");
+
         builder.Property(resource => resource.LastModifiedByUserId)
             .HasColumnName("last_modified_by")
             .IsRequired();
@@ -116,6 +120,9 @@ public sealed class ResourceConfiguration : IEntityTypeConfiguration<Resource>
         builder.HasIndex(resource => resource.OriginResourceId)
             .HasDatabaseName("IX_resources_origin_resource_id");
 
+        builder.HasIndex(resource => resource.SupplierId)
+            .HasDatabaseName("IX_resources_supplier_id");
+
         builder.HasOne(resource => resource.Project)
             .WithMany()
             .HasForeignKey(resource => resource.ProjectId)
@@ -134,6 +141,11 @@ public sealed class ResourceConfiguration : IEntityTypeConfiguration<Resource>
         builder.HasOne(resource => resource.OriginResource)
             .WithMany()
             .HasForeignKey(resource => resource.OriginResourceId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(resource => resource.Supplier)
+            .WithMany()
+            .HasForeignKey(resource => resource.SupplierId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<UserAccount>()

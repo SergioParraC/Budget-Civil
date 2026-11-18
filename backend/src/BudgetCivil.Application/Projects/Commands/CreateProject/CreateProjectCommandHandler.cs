@@ -36,6 +36,12 @@ public sealed class CreateProjectCommand
 
     public decimal? AiuProfitPercent { get; init; }
 
+    /// <summary>Decimales de redondeo 0–10 (`REQ-PROYECTOS-10`, `D-121`).</summary>
+    public int? RoundingDecimals { get; init; }
+
+    /// <summary>Decimales de cantidades 0–10 (`REQ-PROYECTOS-10`, `D-121`).</summary>
+    public int? QuantityDecimals { get; init; }
+
     public string? SigningMode { get; init; }
 
     public Guid? SignerUserId { get; init; }
@@ -114,6 +120,14 @@ public sealed class CreateProjectCommandValidator : AbstractValidator<CreateProj
         RuleFor(command => command.AiuProfitPercent)
             .InclusiveBetween(0m, 100m)
             .When(command => command.AiuProfitPercent.HasValue);
+
+        RuleFor(command => command.RoundingDecimals)
+            .InclusiveBetween(ProjectConfiguration.MinDecimals, ProjectConfiguration.MaxDecimals)
+            .When(command => command.RoundingDecimals.HasValue);
+
+        RuleFor(command => command.QuantityDecimals)
+            .InclusiveBetween(ProjectConfiguration.MinDecimals, ProjectConfiguration.MaxDecimals)
+            .When(command => command.QuantityDecimals.HasValue);
 
         RuleFor(command => command.SigningMode)
             .Must(signingMode =>
@@ -212,6 +226,8 @@ public sealed class CreateProjectCommandHandler(
                     AiuAdminPercent = ProjectConfiguration.NormalizeAiuPercent(command.AiuAdminPercent, "aiu_admin_percent"),
                     AiuUnforeseenPercent = ProjectConfiguration.NormalizeAiuPercent(command.AiuUnforeseenPercent, "aiu_unforeseen_percent"),
                     AiuProfitPercent = ProjectConfiguration.NormalizeAiuPercent(command.AiuProfitPercent, "aiu_profit_percent"),
+                    RoundingDecimals = ProjectConfiguration.NormalizeDecimals(command.RoundingDecimals),
+                    QuantityDecimals = ProjectConfiguration.NormalizeDecimals(command.QuantityDecimals),
                     SignatureMode = Project.NormalizeSignatureModeOrDefault(command.SigningMode),
                     SignerUserId = command.SignerUserId,
                     RequiresAuditor = command.RequiresAuditor ?? false

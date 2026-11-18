@@ -1,3 +1,4 @@
+using BudgetCivil.Application.Suppliers.Dtos;
 using BudgetCivil.Domain.Resources;
 
 namespace BudgetCivil.Application.Resources.Dtos;
@@ -31,6 +32,14 @@ public sealed class ResourceDto
     public string? Details { get; init; }
 
     public string? ContactNumber { get; init; }
+
+    public Guid? SupplierId { get; init; }
+
+    /// <summary>
+    /// Resumen del proveedor cuando el insumo lo tiene; `null` si no (`SC-PROVEEDORES-49`,
+    /// `SC-PROVEEDORES-50`).
+    /// </summary>
+    public SupplierSummary? Supplier { get; init; }
 
     public string QuotationStatus { get; init; } = string.Empty;
 
@@ -78,6 +87,8 @@ public static class ResourceMapper
             UserKey = resource.UserKey,
             Details = resource.Details,
             ContactNumber = resource.ContactNumber,
+            SupplierId = resource.SupplierId,
+            Supplier = resource.Supplier is null ? null : SupplierMapper.ToSummary(resource.Supplier),
             QuotationStatus = QuotationStatusCodes.ToCode(resource.QuotationStatus),
             OriginResourceId = resource.OriginResourceId,
             LastModifiedBy = resource.LastModifiedByUserId,
