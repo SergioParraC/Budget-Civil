@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using BudgetCivil.Api.Auth;
 using BudgetCivil.Application.Common.Exceptions;
+using BudgetCivil.Application.Resources.Commands.ChangeResourceQuotationStatus;
 using BudgetCivil.Application.Resources.Commands.CopyResource;
 using BudgetCivil.Application.Resources.Commands.CreateResource;
 using BudgetCivil.Application.Resources.Commands.UpdateResource;
@@ -17,6 +18,7 @@ public sealed class ResourcesController(
     CreateResourceCommandHandler createResourceCommandHandler,
     UpdateResourceCommandHandler updateResourceCommandHandler,
     CopyResourceCommandHandler copyResourceCommandHandler,
+    ChangeResourceQuotationStatusCommandHandler changeResourceQuotationStatusCommandHandler,
     GetResourcesQueryHandler getResourcesQueryHandler,
     GetResourceByIdQueryHandler getResourceByIdQueryHandler,
     GetResourceSuggestionsQueryHandler getResourceSuggestionsQueryHandler) : ControllerBase
@@ -154,6 +156,24 @@ public sealed class ResourcesController(
                 Description = description,
                 UserKey = userKey
             },
+            cancellationToken);
+
+        return Ok(response);
+    }
+
+    [HttpPatch("quotation-status")]
+    [Authorize(Policy = AuthorizationPolicies.ResourcesWrite)]
+    [ProducesResponseType(typeof(ChangeResourceQuotationStatusResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ChangeResourceQuotationStatusResponse>> ChangeQuotationStatus(
+        [FromRoute] Guid projectId,
+        [FromBody] ChangeResourceQuotationStatusCommand command,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        var response = await changeResourceQuotationStatusCommandHandler.ExecuteAsync(
+            actorUserId,
+            projectId,
+            command,
             cancellationToken);
 
         return Ok(response);

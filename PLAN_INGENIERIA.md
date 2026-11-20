@@ -1283,9 +1283,9 @@ Frontend/src/app/features/apus/
 | M-01 Acceso y organización | `Identity`, `Companies`, `Users`, `Catalogs` | `/auth/register` (anónimo), `/auth/login`, `/profile`, `/users`, `/companies`, `/catalogs` — **dueño único** de compañías, usuarios y catálogos (`D-102`) |
 | M-02 Proyectos | `Projects` | `/projects`, `/projects/{id}/configuration`, `/projects/{id}/memberships` (`D-103`) |
 | M-03 EDT | `Wbs` | `/projects/{id}/wbs` |
-| M-04 Insumos | `Resources` | `/projects/{id}/resources` |
+| M-04 Insumos | `Resources` | `/projects/{id}/resources`, `/projects/{id}/resources/quotation-status` (`PATCH`, `D-11`) |
 | M-05 APUs y matrices | `Apus` | `/apus`, `/apus/{id}/resources`, `/apus/{id}/copy` |
-| M-06 Cálculo | `Calculation` | `/projects/{id}/summary`, `/projects/{id}/resource-usage` |
+| M-06 Cálculo | `Calculation` | `/projects/{id}/budget`, `/projects/{id}/resource-usage` (`REQ-CALCULO-01`…`05`, `D-04`) |
 | M-07 Aprobación y cierre | `Approvals` | `/apus/{id}/approval`, `/projects/{id}/close` |
 | M-08 Catálogo abierto | `Catalog` | `/public/apus`, `/public/resources` |
 | M-09 Alertas | `Alerts` | `/projects/{id}/alerts` |
@@ -1945,6 +1945,30 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | T-I-08 | Reconciliación y copia transaccional de insumos simples | Integración manual |
 | T-I-09 | Persistencia y copia de Matrices sin validación | Integración manual |
 | T-I-20 | Conteo de uso contra datos reales | Integración manual |
+
+Las verificaciones nuevas de `E-4a` se registran en `§5.6.9`.
+
+### 5.6.9 Verificación de la etapa `E-4a`
+
+| Verificación | Qué comprueba | Nivel |
+|---|---|---|
+| T-U-05 | Costo directo, AIU aplicado una vez, redondeo y nulos del presupuesto (`REQ-CALCULO-01`, `REQ-CALCULO-02`, `REQ-CALCULO-05`; `D-06`, `D-07`, `D-121`) | Unitaria |
+| T-U-06 | Completitud, resumen por insumo, idempotencia y autoría de la cotización (`REQ-COTIZACION-02`, `REQ-COTIZACION-05`; `BR-009`, `D-08`, `D-12`) | Unitaria |
+| T-U-09 | Alerta de tope con y sin tope, total nulo y total igual al tope (`REQ-CALCULO-03`; `RF-17`, `D-94`) | Unitaria |
+| T-U-25 | Agregación B de capítulos, ítems raíz, capítulo vacío y propagación de nulos (`REQ-EDT-23`; `D-06`, `D-118`) | Unitaria |
+| T-U-26 | Valores y contrato del árbol: `unitCost`, `directCost` y `apu.unitPrice` (`REQ-EDT-23`; `D-06`, `D-121`) | Unitaria |
+| T-U-27 | Alcance por rol del presupuesto (`REQ-CALCULO-04`; `D-34`, `D-83`, `D-84`) | Unitaria |
+| T-U-28 | Selección, filtro y totalidad con filtros combinados y conteo de pendientes (`REQ-COTIZACION-01`, `REQ-COTIZACION-03`; `D-04`, `D-15`, `D-101`) | Unitaria |
+| T-U-29 | Precondición `REQ-PROYECTOS-05` en la transición a `COTIZADO` (`RF-21`; `BR-007`, `D-89`, `D-13`) | Unitaria |
+| T-I-10 | Cotización masiva contra datos reales, incluidos los omitidos (`REQ-COTIZACION-02`, `REQ-COTIZACION-05`) | Integración manual |
+| T-I-16 | Alerta de tope contra datos reales (`REQ-CALCULO-03`) | Integración manual |
+| T-I-46 | Árbol y presupuesto contra SQL Server, incluido el movimiento (`REQ-EDT-23`, `REQ-CALCULO-01`, `REQ-CALCULO-05`) | Integración manual |
+| T-I-47 | Cotización de 300 insumos y transición a `COTIZADO` con pendientes (`REQ-COTIZACION-03`, `REQ-PROYECTOS-05`) | Integración manual |
+| T-S-20 | Aislamiento entre compañías y solo lectura del presupuesto (`REQ-CALCULO-04`; `D-34`, `D-83`, `D-84`) | Seguridad manual |
+| T-S-21 | Permisos y alcance de la cotización masiva (`REQ-COTIZACION-04`) | Seguridad manual |
+| T-C-06 | Contrato v1 del árbol y del presupuesto (`D-41`, `D-99`, `D-100`) | Contrato en CI |
+| T-C-07 | Contrato del cambio masivo de cotización (`D-11`, `D-99`, `D-100`) | Contrato en CI |
+| T-A-05 | Fronteras de módulos: `Calculation` no depende de `Apus`/`Wbs` y `Wbs` no depende de `Apus` (`D-5`, `D-63`, `D-105`) | Arquitectura en CI |
 
 
 ## 5.7 Herramientas de prueba

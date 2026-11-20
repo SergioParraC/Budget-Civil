@@ -15,14 +15,14 @@
 | RF-07 | APUs por proyecto | Alta | Sí | APU 1:1 con el ítem; creación y copia desde proyectos de la compañía o del catálogo público |
 | RF-08 | Reconciliación de insumos al copiar | Alta | Sí | El sistema sugiere insumos similares; el usuario decide usar el existente o agregar el de origen |
 | RF-09 | Matrices | Alta | Sí | Insumo compuesto reutilizable en varios APUs; no pertenece a la EDT y no se anida |
-| RF-10 | Motor de cálculo | Alta | Sí | Costo directo, AIU y redondeo con una sola implementación; la fórmula exacta cierra `X-15` |
-| RF-11 | Cotización y cambio masivo | Alta | Sí | Director y Presupuestador marcan insumos como `COTIZADO` por selección, filtro o totalidad |
+| RF-10 | Motor de cálculo | Alta | Sí | Costo directo, AIU y redondeo con una sola implementación (`ApuCostCalculator`); el árbol devuelve `unitCost` y `directCost` por ítem y `directCost` por capítulo, y `GET /projects/{id}/budget` devuelve costo directo, AIU discriminado y total sin persistir costos (`REQ-CALCULO-01`…`05`, `D-06`, `D-07`, `D-121`) |
+| RF-11 | Cotización y cambio masivo | Alta | Sí | Director y Presupuestador marcan insumos como `COTIZADO` por selección, filtro o totalidad en una sola operación; solo los completos se cotizan y la transición del proyecto a `COTIZADO` exige el cien por ciento (`REQ-COTIZACION-01`…`05`, `D-11`…`D-13`) |
 | RF-12 | Aprobación por APU según modo | Alta | Sí | Modos sin firma, firma de presupuestador o firma de presupuestador con auditor |
 | RF-13 | Registro único de aprobación | Alta | Sí | Un registro por APU con último aprobador, rol, fecha y modo |
 | RF-14 | Autoría de última modificación | Media | Sí | APU e insumo guardan usuario y fecha de la última modificación |
 | RF-15 | Catálogo público | Media | Sí | Consulta anónima de APUs e insumos de proyectos públicos; copia independiente |
 | RF-16 | Búsqueda y similitud de insumos | Media | Sí | Búsqueda parcial y sugerencia de similitud; la decisión es del usuario |
-| RF-17 | Alertas de tope presupuestal | Media | Sí | Se muestra alerta cuando el costo supera el tope configurado |
+| RF-17 | Alertas de tope presupuestal | Media | Sí | El presupuesto devuelve `budgetLimit` e `isOverBudget`; la alerta se activa solo con total calculable y `total > budget_limit` (`REQ-CALCULO-03`, `D-94`) |
 | RF-18 | Correos transaccionales | Media | Sí | Se envían correos de creación de cuenta y recuperación de contraseña |
 | RF-19 | Importación y exportación | Baja | No | Excluida del MVP (`D-18`) |
 | RF-20 | Listado y filtrado de insumos | Alta | Sí | Filtros por tipo, estado, marca, descripción, ciudad y precio |
@@ -96,7 +96,7 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | Proveedores | Consultar el directorio y el selector | `SUPPLIERS_READ` | Sí (cualquier compañía) | Sí (su compañía) | Sí (su compañía) | Sí (su compañía) |
 | APUs y matrices | Crear, editar, componer y copiar | `APUS_WRITE` | No (lectura) | Sí (con `ProjectMember`) | Sí (con `ProjectMember`) | No (lectura) |
 | APUs y matrices | Consultar APUs, Matrices y conteo de uso | `APUS_READ` / `RESOURCES_READ` | Sí | Sí (proyectos de su compañía) | Sí (proyectos de su compañía) | Sí (proyectos asignados) |
-| Cotización | Cambio masivo a `COTIZADO` | — | No | Sí | Sí | No |
+| Cotización | Cambio masivo a `COTIZADO` | `RESOURCES_WRITE` | No | Sí | Sí | No |
 | Aprobación | Firmar APU | — | No | No | Sí | No |
 | Aprobación | Visto bueno | — | No | No | No | Sí |
 | Cierre | Transición a `FINALIZADO` | `PROJECTS_STATUS_CHANGE` | No | Sí | No | No |
@@ -114,10 +114,12 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | `POST /companies` | `businessName` no vacío; `taxId` único; tipo `PUBLICA`/`PRIVADA`; nivel territorial obligatorio en públicas; representante legal por referencia o datos manuales, no ambos (`D-87`) |
 | `POST /projects` | `name` no vacío; ubicación y `baseCurrencyId` válidos; `aiuAdmin`, `aiuUnforeseen` y `aiuProfit` entre 0 y 100; `budgetLimit` mayor que cero; `signingMode` en `SIN_FIRMA`, `UNICA_POR_PRESUPUESTADOR_ASIGNADO` o `INDEPENDIENTE_POR_PROFESIONAL_RESPONSABLE`; `requiresAuditor` e `isPublic` booleanos; se rechaza si la compañía no tiene Director activo (`D-93`, DEC-24) |
 | `GET /projects/{id}/configuration` | Requiere `PROJECTS_READ`; devuelve la configuración única del proyecto |
-| `PATCH /projects/{id}/status` | Transición válida del dominio; actor por transición (`DEC-22`); `409` si el estado no lo permite |
+| `PATCH /projects/{id}/status` | Transición válida del dominio; actor por transición (`DEC-22`); `409` si el estado no lo permite; el destino `COTIZADO` exige `pendingResources = 0` y responde `409 PROJECT_QUOTATION_INCOMPLETE` con `pendingResources` en `extensions` (`REQ-PROYECTOS-05`, `D-13`) |
 | `PUT /projects/{id}` | `name` no vacío; `signingMode` válido; AIU 0–100 con máximo dos decimales; `budgetLimit` > 0 con máximo dos decimales; `roundingDecimals` y `quantityDecimals` entre 0 y 10 (default 2, `D-121`). El Director de proyectos es el único que puede cambiar ubicación, divisa, tope, AIU, decimales, modo de firma, firmante y `requiresAuditor` (`D-112`); el Presupuestador que intente cambiarlos recibe `403 PROJECT_CONFIGURATION_FORBIDDEN` o `403 PROJECT_SIGNATURE_CONFIGURATION_FORBIDDEN` |
 | `POST /projects/{id}/memberships` | Rol objetivo en `DIRECTOR`, `PRESUPUESTADOR` o `AUDITOR`; el usuario debe pertenecer a la compañía del proyecto; el Administrador y el Auditor no gestionan membresías; se permite asignar auditores con `requiresAuditor = false` (`D-112`) |
-| `GET /projects/{id}/wbs` | Árbol completo del proyecto ordenado por `orderIndex`, con los ítems raíz junto a los capítulos raíz (`D-118`); cada ítem expone `apu: { id, status, description, unit }` o `null` (`REQ-EDT-20`); requiere `WBS_READ` |
+| `GET /projects/{id}/wbs` | Árbol completo del proyecto ordenado por `orderIndex`, con los ítems raíz junto a los capítulos raíz (`D-118`); cada ítem expone `apu: { id, status, description, unit, unitPrice }` o `null`, `unitCost` y `directCost`; cada capítulo expone `directCost` como la suma de los ítems de su subárbol, cada uno una sola vez; un ítem sin APU o con APU incompleto devuelve costos nulos y un capítulo vacío devuelve `0` (`REQ-EDT-23`); requiere `WBS_READ` |
+| `GET /projects/{id}/budget` | Costo directo de todos los ítems (incluidos los raíz), AIU discriminado con porcentaje e importe, costo indirecto, total, `budgetLimit`, `isOverBudget`, `isComplete`, `itemCount`, `itemsWithoutApu`, `itemsWithoutPrice`, divisa base y decimales; con ítems incompletos los bloques monetarios son nulos y `isComplete = false`; `WBS_READ` con el alcance del árbol (`REQ-CALCULO-01`…`05`, `D-04`) |
+| `PATCH /projects/{id}/resources/quotation-status` | `scope` obligatorio (`SELECTION`, `FILTER`, `ALL`); `resourceIds` solo con `SELECTION` y no vacío; `filter` solo con `FILTER` y con criterios del listado; los incompletos y las Matrices sin componentes se omiten con `RESOURCE_QUOTATION_INCOMPLETE`; operación idempotente y transaccional; `RESOURCES_WRITE` (`REQ-COTIZACION-01`…`05`, `D-11`, `D-12`) |
 | `GET /projects/{id}/wbs/search` | Búsqueda parcial por `code` de ítem o `name` de capítulo; paginación `page`/`pageSize` (`D-101`); requiere `WBS_READ` |
 | `GET /projects/{id}/wbs/activity` | Participantes y última actividad del EDT: una fila por proyecto y usuario, `MAX(last_modified_at)` como última actividad (`D-120`); `200` con `lastActivity=null` y `participants=[]` si no hay actividad; Auditor excluido; requiere `WBS_READ` |
 | `GET /projects/{id}/wbs/codes/validate` | Valida `code` (1–10, `R-19`) y su disponibilidad en el proyecto, con `excludeNodeId` opcional para edición; responde `200` con `isValid`, `isAvailable` y `reason`; requiere `WBS_WRITE` |
@@ -157,14 +159,14 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | RF-01 | UC-01 | T-I-01, T-S-01, T-S-04, T-I-27, T-I-28, T-I-29, T-I-31, T-S-09, T-S-10, T-S-11 |
 | RF-02 | UC-01 | T-I-02, T-S-05, T-I-26 |
 | RF-03 | UC-02 | T-I-03, T-I-30, T-I-32, T-U-12 |
-| RF-04 | UC-03 | T-U-01, T-I-04 |
+| RF-04 | UC-03 | T-U-01, T-I-04, T-U-25, T-U-26, T-C-06, T-I-46 |
 | RF-05 | UC-04 | T-U-02, T-I-05, T-U-15, T-U-16, T-U-17, T-I-36, T-I-37, T-I-38, T-S-15, T-C-03 |
 | RF-06 | UC-04 | T-I-06, T-S-15 |
 | RF-07 | UC-05 | T-I-07, T-E-01 |
 | RF-08 | UC-05 | T-U-03, T-I-08 |
 | RF-09 | UC-05 | T-U-04, T-I-09 |
-| RF-10 | UC-06 | T-U-05 |
-| RF-11 | UC-06 | T-U-06, T-I-10 |
+| RF-10 | UC-06 | T-U-05, T-U-25, T-U-26, T-U-27, T-C-06, T-A-05, T-I-46 |
+| RF-11 | UC-06 | T-U-06, T-U-28, T-C-07, T-I-10, T-I-47, T-S-21 |
 | RF-12 | UC-07 | T-U-07, T-I-11 |
 | RF-13 | UC-07 | T-I-12 |
 | RF-14 | UC-07 | T-I-13 |
@@ -174,10 +176,10 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | RF-18 | UC-01 | T-I-17, T-I-22, T-S-12 |
 | RF-19 | — | Fuera del MVP (`D-18`) |
 | RF-20 | UC-04 | T-I-18 |
-| RF-21 | UC-07 | T-U-10, T-I-19, T-U-12, T-I-32 |
+| RF-21 | UC-07 | T-U-10, T-I-19, T-U-12, T-I-32, T-U-29, T-I-47 |
 | RF-22 | UC-05 | T-U-11, T-I-20 |
 | RF-23 | UC-01 | T-I-21, T-S-07 |
 
-`T-I` y `T-S` se ejecutan manualmente sobre la baseline aplicada (`D-66`); las verificaciones de `E-1b` y sus identificadores nuevos están en `PLAN §5.6.5`.
+`T-I` y `T-S` se ejecutan manualmente sobre la baseline aplicada (`D-66`); las verificaciones de `E-1b` y sus identificadores nuevos están en `PLAN §5.6.5`, las de `E-3b` en `§5.6.8` y las de `E-4a` en `§5.6.9`.
 
 

@@ -30,6 +30,7 @@ public sealed class ChangeProjectStatusResponse
 public sealed class ChangeProjectStatusCommandHandler(
     IProjectRepository projectRepository,
     IProjectTransitionRepository projectTransitionRepository,
+    IProjectQuotationStatusReader projectQuotationStatusReader,
     ISecurityAuditService securityAuditService)
 {
     public Task<ChangeProjectStatusResponse> ExecuteAsync(
@@ -86,6 +87,8 @@ public sealed class ChangeProjectStatusCommandHandler(
             throw new ForbiddenAppException("Actor cannot perform this transition.", "PROJECT_STATUS_FORBIDDEN");
         }
 
+        await EnsureQuotationCompleteAsync(project, targetStatus, cancellationToken);
+
 
         var now = DateTime.UtcNow;
         project.Status = targetStatus;
@@ -133,6 +136,30 @@ public sealed class ChangeProjectStatusCommandHandler(
             ChangedAtUtc = now,
             ChangedByUserId = actor.Id
         };
+    }
+
+    private async Task EnsureQuotationCompleteAsync(
+        Project project,
+        ProjectStatus targetStatus,
+        CancellationToken cancellationToken)
+    {
+        if (targetStatus != ProjectStatus.Cotizado)
+        {
+            return;
+        }
+
+        // `REQ-PROYECTOS-05`: la transición a COTIZADO exige el cien por ciento cotizado (`D-89`, D13).
+        var pendingResources = await projectQuotationStatusReader.CountPendingResourcesAsync(
+            project.Id,
+            cancellationToken);
+
+        if (pendingResources > 0)
+        {
+            throw new ConflictAppException(
+                "Project cannot be marked as COTIZADO while resources are pending quotation.",
+                "PROJECT_QUOTATION_INCOMPLETE",
+                new Dictionary<string, object?> { ["pendingResources"] = pendingResources });
+        }
     }
 
     private static ProjectStatus ResolveTargetStatus(string? targetStatusCode, bool isReactivationEndpoint)

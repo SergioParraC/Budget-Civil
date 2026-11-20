@@ -320,7 +320,8 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | Concurrencia | `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource`; el movimiento exige la `rowversion` del nodo movido |
 
 ## 5. Reglas de cálculo
-> `X-15` sigue abierto: la fórmula exacta se cierra antes de E-4a. La base decidida es `D-32`.
+> La fórmula quedó cerrada en `D-06`, `D-07` y `D-121`; `E-4a` la extiende al árbol y al presupuesto del
+> proyecto sin persistir costos (`D-08`, `REQ-CALCULO-05`).
 
 | Concepto | Base |
 |---|---|
@@ -328,14 +329,22 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | Mano de obra | Unidad de esfuerzo configurable (hora-hombre o día-hombre) por jornada o cuadrilla |
 | Insumo con desperdicio | `precio × consumo × (1 + desperdicio / 100)` |
 | Costo directo del APU | Suma de costos de sus insumos y matrices expandidas a un nivel, según la base anterior |
-| Costo del ítem | `cantidad de obra × costo directo del APU` |
-| Costo directo del proyecto | Suma de subtotales de capítulos |
-| AIU | `costo directo × (1 + %administración + %imprevistos + %utilidad)`; solo por proyecto (`D-07`) |
+| Costo unitario del ítem | Costo directo unitario del APU (`unitCost`); nulo si el APU no existe o está incompleto |
+| Costo del ítem | `ROUND(cantidad de obra × unitCost, rounding_decimals)`; nulo si `unitCost` es nulo |
+| Costo directo del capítulo | Acumulado de los costos de los **ítems** de su subárbol, cada uno una sola vez; no suma el subtotal publicado de un capítulo hijo como un ítem adicional; `0` si no hay ítems y `null` si algún ítem es nulo |
+| Costo directo del proyecto | `ROUND(Σ costo directo de todos los ítems, rounding_decimals)`, incluidos los ítems raíz |
+| AIU | `costo directo × (1 + %administración + %imprevistos + %utilidad)`; solo por proyecto y una sola vez sobre el costo directo total (`D-07`) |
+| Costo indirecto | `ROUND(costo directo × %componente / 100, rounding_decimals)` por cada componente, y su suma redondeada |
+| Total del presupuesto | `ROUND(costo directo + costo indirecto, rounding_decimals)` |
+| Tope presupuestal | `isOverBudget` solo con total calculable y `total > budget_limit`; sin tope, total nulo o total igual al tope es `false` (`RF-17`, `D-94`) |
 | Conteo de uso | `Σ (consumo × cantidad de obra)` por ítem, para todos los tipos (`D-33`) |
 | Redondeo | `MidpointRounding.AwayFromZero` con `rounding_decimals` (default 2) en valores monetarios y `quantity_decimals` (default 2) en cantidades; la cantidad efectiva se redondea antes de multiplicar por el precio (`D-121`) |
+| Orden del cálculo | 1) cantidad efectiva; 2) costo directo del APU; 3) `unitCost` del ítem; 4) costo directo del ítem; 5) subtotal del capítulo; 6) costo directo del proyecto; 7) AIU del proyecto; 8) total |
 | Divisa | Una por proyecto, sin conversión (`BR-020`) |
 
-La Matriz se expande un solo nivel; no se permite Matriz dentro de Matriz (`BR-008`).
+La Matriz se expande un solo nivel; no se permite Matriz dentro de Matriz (`BR-008`). El AIU unitario que
+muestra el detalle del APU es información de vista previa: no se distribuye por ítem en el árbol ni se suma
+por ítem en el presupuesto. Los costos no se persisten: se recalculan en cada lectura (`REQ-CALCULO-05`).
 
 ## 6. Aprobaciones y autoría
 - `ApuApproval` guarda **un registro por APU** con el último aprobador, su rol, fecha, modo y evidencia capturada.

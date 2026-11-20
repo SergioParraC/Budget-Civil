@@ -1,4 +1,5 @@
 using BudgetCivil.Application.Apus.Repositories;
+using BudgetCivil.Application.Calculation.Repositories;
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Notifications;
 using BudgetCivil.Application.Common.Security;
@@ -55,6 +56,11 @@ public static class DependencyInjection
         services.AddScoped<IProjectTransitionRepository, ProjectTransitionRepository>();
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IResourceProjectAccessReader, ResourceProjectAccessReader>();
+        services.AddScoped<ResourceQuotationRepository>();
+        services.AddScoped<IResourceQuotationRepository>(
+            provider => provider.GetRequiredService<ResourceQuotationRepository>());
+        services.AddScoped<IProjectQuotationStatusReader>(
+            provider => provider.GetRequiredService<ResourceQuotationRepository>());
         services.AddScoped<ISupplierRepository, SupplierRepository>();
         services.AddScoped<IWbsRepository, WbsRepository>();
         services.AddScoped<IWbsProjectAccessReader, WbsProjectAccessReader>();
@@ -63,6 +69,8 @@ public static class DependencyInjection
         services.AddScoped<IWbsItemReader, WbsApuGateway>();
         services.AddScoped<IWbsItemApuCleaner, WbsApuGateway>();
         services.AddScoped<IApuSummaryReader, WbsApuGateway>();
+        services.AddScoped<IApuCostReader, ProjectCostReader>();
+        services.AddScoped<ICalculationProjectAccessReader, CalculationProjectAccessReader>();
         services.AddScoped<IApuResourceCopyWriter, ApuResourceCopyWriter>();
         services.AddScoped<IMatrixApuStatusUpdater, MatrixApuStatusUpdater>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
