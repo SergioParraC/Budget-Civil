@@ -49,7 +49,7 @@ public sealed class CreateWbsItemCommandValidator : AbstractValidator<CreateWbsI
             .When(command => command.WbsChapterId.HasValue);
 
         RuleFor(command => command.QuantityWork)
-            .GreaterThan(0m);
+            .GreaterThanOrEqualTo(0m);
 
         RuleFor(command => command.Apu)
             .NotNull();

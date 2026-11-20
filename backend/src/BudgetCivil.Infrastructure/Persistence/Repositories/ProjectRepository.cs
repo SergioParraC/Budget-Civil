@@ -1,4 +1,5 @@
 using BudgetCivil.Application.Projects.Repositories;
+using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Users.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,7 @@ public sealed class ProjectRepository(BudgetCivilDbContext dbContext)
     {
         return DbContext.UserAccounts
             .Include(user => user.Role)
+            .Include(user => user.Memberships)
             .SingleOrDefaultAsync(user => user.Id == actorUserId, cancellationToken);
     }
 
@@ -101,6 +103,12 @@ public sealed class ProjectRepository(BudgetCivilDbContext dbContext)
     public Task AddProjectAsync(Project project, CancellationToken cancellationToken = default)
     {
         DbContext.Projects.Add(project);
+        return Task.CompletedTask;
+    }
+
+    public Task AddProjectMemberAsync(ProjectMember member, CancellationToken cancellationToken = default)
+    {
+        DbContext.ProjectMembers.Add(member);
         return Task.CompletedTask;
     }
 

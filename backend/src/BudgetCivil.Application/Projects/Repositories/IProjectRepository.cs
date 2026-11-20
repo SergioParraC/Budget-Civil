@@ -1,3 +1,4 @@
+using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Users.Entities;
 
@@ -23,6 +24,12 @@ public interface IProjectRepository
         CancellationToken cancellationToken = default);
 
     Task AddProjectAsync(Project project, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Registra una pertenencia inicial del proyecto (`project_members`). Se persiste junto con el
+    /// proyecto en el mismo <see cref="SaveChangesAsync"/>.
+    /// </summary>
+    Task AddProjectMemberAsync(ProjectMember member, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Project>> GetProjectsAsync(
         Guid? companyId,

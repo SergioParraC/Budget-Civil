@@ -7,6 +7,7 @@ public static class AuthorizationPolicies
     public const string ApusWrite = "ApusWrite";
     public const string BootstrapAuditRead = "BootstrapAuditRead";
     public const string CatalogsRead = "CatalogsRead";
+    public const string CatalogsWrite = "CatalogsWrite";
     public const string UsersCreate = "UsersCreate";
     public const string UsersUpdate = "UsersUpdate";
     public const string UsersDeactivate = "UsersDeactivate";

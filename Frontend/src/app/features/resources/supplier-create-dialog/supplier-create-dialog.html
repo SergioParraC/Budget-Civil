@@ -1,0 +1,59 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  (onShow)="prepare()"
+  header="Nuevo proveedor"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '34rem', maxWidth: '95vw' }"
+>
+  <form [formGroup]="form" class="supplier-form" (ngSubmit)="submit()">
+    <div class="supplier-form__field">
+      <label for="supplierBusinessName">Razón social</label>
+      <input id="supplierBusinessName" pInputText formControlName="businessName" maxlength="200" />
+      @if (form.controls.businessName.invalid && form.controls.businessName.touched) {
+        <small class="supplier-form__error">La razón social es obligatoria.</small>
+      }
+    </div>
+
+    <div class="supplier-form__grid">
+      <div class="supplier-form__field">
+        <label for="supplierContactName">Contacto</label>
+        <input id="supplierContactName" pInputText formControlName="contactName" maxlength="150" />
+      </div>
+
+      <div class="supplier-form__field">
+        <label for="supplierContactPhone">Teléfono</label>
+        <input id="supplierContactPhone" pInputText formControlName="contactPhone" maxlength="30" />
+      </div>
+    </div>
+
+    <div class="supplier-form__field">
+      <label for="supplierEmail">Correo</label>
+      <input id="supplierEmail" type="email" pInputText formControlName="email" maxlength="254" />
+      @if (form.controls.email.invalid && form.controls.email.touched) {
+        <small class="supplier-form__error">Ingresa un correo válido.</small>
+      }
+    </div>
+
+    <div class="supplier-form__field">
+      <label for="supplierAddress">Dirección</label>
+      <input id="supplierAddress" pInputText formControlName="address" maxlength="300" />
+    </div>
+
+    <div class="supplier-form__field">
+      <label for="supplierObservations">Observaciones</label>
+      <textarea id="supplierObservations" pTextarea formControlName="observations" rows="2" maxlength="1000"></textarea>
+    </div>
+
+    @if (errorMessage()) {
+      <p-message severity="error" [text]="errorMessage() ?? ''" />
+    }
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" [text]="true" (onClick)="visible.set(false)" />
+    <p-button label="Guardar proveedor" icon="pi pi-check" [loading]="saving()" (onClick)="submit()" />
+  </ng-template>
+</p-dialog>

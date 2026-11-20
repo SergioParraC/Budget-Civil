@@ -1,0 +1,70 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  header="Cotización masiva"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '36rem', maxWidth: '95vw' }"
+>
+  <div class="quotation">
+    <p-selectButton
+      [options]="modeOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="mode()"
+      (ngModelChange)="mode.set($event)"
+      [allowEmpty]="false"
+    />
+
+    <p class="quotation__scope">{{ modeSummary() }}.</p>
+
+    @if (mode() === 'SELECTION' && selectionCount() === 0) {
+      <p-message severity="warn" text="Selecciona al menos un insumo en el listado para cotizarlo." />
+    }
+
+    @if (summary(); as result) {
+      <dl class="quotation__summary">
+        <dt>Solicitados</dt>
+        <dd>{{ result.requested }}</dd>
+        <dt>Actualizados</dt>
+        <dd>{{ result.updated }}</dd>
+        <dt>Ya estaban cotizados</dt>
+        <dd>{{ result.alreadyQuoted }}</dd>
+        <dt>Omitidos por información incompleta</dt>
+        <dd>{{ result.skipped.length }}</dd>
+        <dt>Pendientes en el proyecto</dt>
+        <dd>{{ result.pendingResources }}</dd>
+        <dt>Todo el proyecto cotizado</dt>
+        <dd>{{ result.allQuoted ? 'Sí' : 'No' }}</dd>
+      </dl>
+
+      @if (result.skipped.length > 0) {
+        <ul class="quotation__skipped">
+          @for (skipped of result.skipped; track skipped.resourceId) {
+            <li>{{ skipped.code }}</li>
+          }
+        </ul>
+      }
+
+      <p class="quotation__hint">
+        El listado y el estado de cotización se refrescan con los valores del servidor.
+      </p>
+    }
+
+    @if (errorMessage()) {
+      <p-message severity="error" [text]="errorMessage() ?? ''" />
+    }
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cerrar" [text]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Cotizar"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="confirmDisabled()"
+      (onClick)="requestConfirmation()"
+    />
+  </ng-template>
+</p-dialog>

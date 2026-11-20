@@ -1,0 +1,156 @@
+<div class="composition">
+  <div class="composition__header">
+    <h3 class="composition__title">Insumos</h3>
+    @if (editable()) {
+      <p-button label="Agregar insumo" icon="pi pi-plus" [outlined]="true" (onClick)="openPicker()" />
+    }
+  </div>
+
+  @if (lines().length === 0) {
+    <p-message severity="info" text="El APU no tiene insumos." />
+  } @else {
+    @for (group of groups(); track group.code) {
+      <section class="composition__group">
+        <div class="composition__group-header">
+          <h4 class="composition__group-title">{{ group.name }}</h4>
+
+          @if (group.code === 'MATERIAL' || group.code === 'LABOR') {
+            <div class="composition__factor">
+              @if (group.code === 'MATERIAL') {
+                <label for="materialWaste">Desperdicio %</label>
+                @if (editable()) {
+                  <p-inputNumber
+                    inputId="materialWaste"
+                    [ngModel]="materialWaste()"
+                    (ngModelChange)="onWasteChange($event)"
+                    [min]="0"
+                    [max]="100"
+                    [maxFractionDigits]="2"
+                    [useGrouping]="false"
+                    ariaLabel="Desperdicio de materiales"
+                  />
+                } @else {
+                  <span>{{ materialWaste() }} %</span>
+                }
+              } @else {
+                <label for="laborToolsPercent">Herramienta menor %</label>
+                @if (editable()) {
+                  <p-inputNumber
+                    inputId="laborToolsPercent"
+                    [ngModel]="laborToolsPercent()"
+                    (ngModelChange)="onLaborToolsChange($event)"
+                    [min]="0"
+                    [max]="100"
+                    [maxFractionDigits]="2"
+                    [useGrouping]="false"
+                    ariaLabel="Herramienta menor de mano de obra"
+                  />
+                } @else {
+                  <span>{{ laborToolsPercent() }} %</span>
+                }
+              }
+            </div>
+          }
+        </div>
+
+        <p-table [value]="group.lines" dataKey="key" [rowTrackBy]="trackLine">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Insumo</th>
+              <th>Unidad</th>
+              <th>Precio unitario</th>
+              <th>Cantidad</th>
+              <th>Total</th>
+              @if (editable()) {
+                <th></th>
+              }
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-line>
+            <tr>
+              <td>{{ line.description }}</td>
+              <td>{{ line.unit ?? '—' }}</td>
+              <td>{{ line.unitPrice !== null ? (line.unitPrice | number: '1.0-2') : '—' }}</td>
+              <td>
+                @if (editable()) {
+                  <p-inputNumber
+                    styleClass="composition__quantity-input"
+                    [ngModel]="line.consumption"
+                    (ngModelChange)="updateConsumption(line, $event)"
+                    [min]="0"
+                    [maxFractionDigits]="6"
+                    [useGrouping]="false"
+                    ariaLabel="Cantidad"
+                  />
+                  @if (!(line.consumption > 0)) {
+                    <small class="composition__error">La cantidad debe ser mayor que cero.</small>
+                  }
+                } @else {
+                  {{ line.consumption }}
+                }
+              </td>
+              <td class="composition__line-total">{{ lineTotal(line) | number: '1.0-2' }}</td>
+              @if (editable()) {
+                <td>
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    ariaLabel="Quitar línea"
+                    (onClick)="removeLine(line)"
+                  />
+                </td>
+              }
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="footer">
+            @if (groupExtra(group.code); as extra) {
+              <tr class="composition__extra-row">
+                <td>
+                  {{ group.code === 'MATERIAL' ? 'Desperdicio de materiales' : 'Herramienta menor' }}
+                  ({{ extra.percentage }} %)
+                </td>
+                <td>%</td>
+                <td>{{ extra.unitPrice | number: '1.0-2' }}</td>
+                <td>{{ extra.percentage | number: '1.0-2' }}</td>
+                <td class="composition__line-total">{{ extra.total | number: '1.0-2' }}</td>
+                @if (editable()) {
+                  <td></td>
+                }
+              </tr>
+            }
+            <tr class="composition__subtotal-row">
+              <td [attr.colspan]="4">Subtotal {{ group.name }}</td>
+              <td class="composition__line-total">{{ groupSubtotal(group.code) | number: '1.0-2' }}</td>
+              @if (editable()) {
+                <td></td>
+              }
+            </tr>
+          </ng-template>
+        </p-table>
+      </section>
+    }
+
+    <div class="composition__preview">
+      <div class="composition__preview-row">
+        <span>Costo directo APU</span>
+        <strong>{{ directCost() | number: '1.0-2' }}</strong>
+      </div>
+      <div class="composition__preview-row">
+        <span>Costo indirecto APU ({{ aiuSummary() }})</span>
+        <strong>{{ indirectCost() | number: '1.0-2' }}</strong>
+      </div>
+      <div class="composition__preview-row composition__preview-row--total">
+        <span>Precio Unitario</span>
+        <strong>{{ preliminaryTotal() | number: '1.0-2' }}</strong>
+      </div>
+    </div>
+  }
+
+  <app-resource-picker-dialog
+    [(visible)]="pickerVisible"
+    [projectId]="projectId()"
+    [initialUnit]="apuUnit()"
+    (picked)="addLine($event)"
+  />
+</div>

@@ -107,6 +107,15 @@ export class ProyectoForm {
     });
   }
 
+  /** El AIU se registra con máximo 1 decimal; el campo lo normaliza al perder el foco. */
+  normalizeAiu(controlName: 'adminPercent' | 'unforeseenPercent' | 'profitPercent') {
+    const control = this.form.controls[controlName];
+    const value = control.value;
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      control.setValue(Math.round(value * 10) / 10);
+    }
+  }
+
   submit() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();

@@ -44,6 +44,7 @@ public static class DependencyInjection
 
         services.AddScoped<ISecurityAuditRepository, SecurityAuditRepository>();
         services.AddScoped<IGeographicCatalogRepository, GeographicCatalogRepository>();
+        services.AddScoped<IMeasurementUnitRepository, MeasurementUnitRepository>();
         services.AddScoped<IActorAccessReader, ActorAccessReader>();
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IBootstrapRepository, BootstrapRepository>();
@@ -55,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectMembershipRepository, ProjectMembershipRepository>();
         services.AddScoped<IProjectTransitionRepository, ProjectTransitionRepository>();
         services.AddScoped<IResourceRepository, ResourceRepository>();
+        services.AddScoped<IResourceTypeReader, ResourceTypeReader>();
         services.AddScoped<IResourceProjectAccessReader, ResourceProjectAccessReader>();
         services.AddScoped<ResourceQuotationRepository>();
         services.AddScoped<IResourceQuotationRepository>(

@@ -51,4 +51,15 @@ public interface IResourceRepository
         string? userKey,
         int limit,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Resource>> ListByUnitAsync(
+        Guid projectId,
+        string shortUnit,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Indica si el insumo está referenciado por un APU, una Matriz o una copia (`REQ-INSUMOS-19`).</summary>
+    Task<bool> HasReferencesAsync(Guid resourceId, CancellationToken cancellationToken = default);
+
+    /// <summary>Elimina físicamente el insumo; las referencias se verifican antes en el caso de uso.</summary>
+    Task DeleteAsync(Resource resource, CancellationToken cancellationToken = default);
 }

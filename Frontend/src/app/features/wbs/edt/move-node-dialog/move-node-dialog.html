@@ -1,0 +1,56 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  header="Mover nodo"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '34rem', maxWidth: '95vw' }"
+>
+  <div class="move-node">
+    <p class="move-node__subject">
+      Nodo:
+      <strong>{{ node()?.code }}</strong>
+      @if (node()?.nodeType === 'CHAPTER') {
+        <span>· {{ node()?.name }}</span>
+      } @else {
+        <span>· {{ node()?.apu?.description ?? 'Ítem' }}</span>
+      }
+    </p>
+
+    <div class="move-node__field">
+      <label for="moveTarget">Destino</label>
+      <p-select
+        inputId="moveTarget"
+        [options]="targets()"
+        optionLabel="label"
+        optionValue="id"
+        appendTo="body"
+        [ngModel]="targetId()"
+        (ngModelChange)="targetId.set($event); position.set(null)"
+      />
+      <small class="move-node__hint">La lista no incluye el propio nodo ni sus subcapítulos.</small>
+    </div>
+
+    <div class="move-node__field">
+      <label for="movePosition">Posición</label>
+      <p-inputNumber
+        inputId="movePosition"
+        [min]="0"
+        [max]="maxIndex()"
+        [showButtons]="true"
+        [useGrouping]="false"
+        [ngModel]="position()"
+        (ngModelChange)="position.set($event)"
+      />
+      <small class="move-node__hint">
+        0 es el primer lugar. Déjala vacía para moverlo al final del destino.
+      </small>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" [text]="true" (onClick)="visible.set(false)" />
+    <p-button label="Mover" icon="pi pi-arrow-right-arrow-left" (onClick)="submit()" />
+  </ng-template>
+</p-dialog>

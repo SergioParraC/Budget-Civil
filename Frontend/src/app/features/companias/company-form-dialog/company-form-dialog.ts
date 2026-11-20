@@ -1,4 +1,4 @@
-import { Component, effect, inject, input, model, output, signal } from '@angular/core';
+import { Component, effect, inject, input, model, output, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
@@ -91,14 +91,23 @@ export class CompanyFormDialog {
   constructor() {
     this.form.controls.representativeMode.valueChanges.subscribe((mode) => this.syncRepresentativeMode(mode));
 
+    // Solo se prepara el formulario cuando el diálogo pasa de cerrado a abierto: el efecto no debe
+    // reiniciar los campos si cambia la identidad de `company` o se vuelve a notificar `visible`.
+    let wasVisible = false;
     effect(() => {
-      if (!this.visible()) {
+      const visible = this.visible();
+      if (visible === wasVisible) {
         return;
       }
 
-      // Se recargan al abrir: si el catálogo falló al crear el dashboard, el modal se recupera.
+      wasVisible = visible;
+      if (!visible) {
+        return;
+      }
+
+      const source = untracked(() => this.company());
       this.loadCatalogs();
-      this.prepare(this.company());
+      this.prepare(source);
     });
   }
 

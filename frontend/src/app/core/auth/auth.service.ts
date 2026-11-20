@@ -87,6 +87,13 @@ export class AuthService {
         return null;
       }
 
+      const claims = decodeTokenClaims(parsed.accessToken);
+      if (claims.roleCode !== 'ADMINISTRADOR' && !claims.companyId) {
+        // Un token anterior al vínculo users_company no permite operar sobre proyectos.
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+
       return parsed as StoredSession;
     } catch {
       localStorage.removeItem(STORAGE_KEY);

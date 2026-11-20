@@ -1,0 +1,7 @@
+<div class="project-unavailable">
+  <p-message severity="error" text="Proyecto no disponible" />
+  <p class="project-unavailable__detail">{{ detail() }}</p>
+  <div class="project-unavailable__actions">
+    <p-button label="Volver a proyectos" icon="pi pi-arrow-left" (onClick)="retry.emit()" />
+  </div>
+</div>

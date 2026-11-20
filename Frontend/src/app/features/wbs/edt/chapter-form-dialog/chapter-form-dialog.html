@@ -1,0 +1,69 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [header]="isEdit() ? 'Editar capítulo' : 'Nuevo capítulo'"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '34rem', maxWidth: '95vw' }"
+>
+  <form [formGroup]="form" class="chapter-form" (ngSubmit)="submit()">
+    <div class="chapter-form__field">
+      <label for="chapterCode">Código</label>
+      <input
+        id="chapterCode"
+        pInputText
+        formControlName="code"
+        maxlength="10"
+        autocomplete="off"
+        (blur)="onCodeBlur()"
+      />
+      @if (codeMessage()) {
+        <small class="chapter-form__error">{{ codeMessage() }}</small>
+      } @else if (codeState() === 'valid') {
+        <small class="chapter-form__ok"><i class="pi pi-check"></i> Código disponible</small>
+      } @else if (codeState() === 'checking') {
+        <small class="chapter-form__hint">Verificando disponibilidad…</small>
+      } @else {
+        <small class="chapter-form__hint">
+          Entre 1 y 10 caracteres: A-Z a-z 0-9 . - _ / * = ( ) % &amp; # ¡ ' ? ¿
+        </small>
+      }
+    </div>
+
+    <div class="chapter-form__field">
+      <label for="chapterName">Nombre</label>
+      <input id="chapterName" pInputText formControlName="name" maxlength="255" />
+      @if (form.controls.name.invalid && form.controls.name.touched) {
+        <small class="chapter-form__error">El nombre del capítulo es obligatorio.</small>
+      }
+    </div>
+
+    <div class="chapter-form__field">
+      <label for="chapterParent">Ubicación</label>
+      <p-select
+        inputId="chapterParent"
+        formControlName="parentChapterId"
+        [options]="parentOptions()"
+        optionLabel="label"
+        optionValue="id"
+        appendTo="body"
+        [disabled]="isEdit()"
+      />
+      <small class="chapter-form__hint">
+        {{ isEdit() ? 'La ubicación se cambia desde el árbol con “Mover a…”.' : 'Elige la raíz o un capítulo existente.' }}
+      </small>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" [text]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Guardar"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="saving() || codeState() === 'checking'"
+      (onClick)="submit()"
+    />
+  </ng-template>
+</p-dialog>

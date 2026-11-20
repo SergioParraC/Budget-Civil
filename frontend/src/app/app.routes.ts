@@ -4,6 +4,7 @@ import { authGuard } from './core/auth/auth.guard';
 import { permissionGuard } from './core/auth/permission.guard';
 import { Permission } from './core/auth/permissions';
 import { MainLayout } from './core/layout/main-layout';
+import { unsavedChangesGuard } from './features/wbs/apu-edit/unsaved-changes.guard';
 
 export const routes: Routes = [
   {
@@ -38,6 +39,28 @@ export const routes: Routes = [
         loadComponent: () => import('./features/proyectos/proyecto-form/proyecto-form').then((m) => m.ProyectoForm)
       },
       {
+        path: 'proyectos/:id/edt',
+        canActivate: [permissionGuard(Permission.wbsRead)],
+        loadComponent: () => import('./features/wbs/edt/edt').then((m) => m.Edt)
+      },
+      {
+        path: 'proyectos/:id/edt/items/nuevo',
+        canActivate: [permissionGuard(Permission.wbsRead)],
+        loadComponent: () => import('./features/wbs/apu-create/apu-create').then((m) => m.ApuCreate)
+      },
+      {
+        path: 'proyectos/:id/edt/items/:itemId/apu',
+        canActivate: [permissionGuard(Permission.apusRead)],
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () => import('./features/wbs/apu-edit/apu-edit').then((m) => m.ApuEdit)
+      },
+      {
+        path: 'proyectos/:id/insumos',
+        canActivate: [permissionGuard(Permission.resourcesRead)],
+        loadComponent: () =>
+          import('./features/resources/resource-list/resource-list').then((m) => m.ResourceList)
+      },
+      {
         path: 'proyectos/:id',
         loadComponent: () => import('./features/proyectos/proyecto-detalle/proyecto-detalle').then((m) => m.ProyectoDetalle)
       },
@@ -54,10 +77,6 @@ export const routes: Routes = [
       {
         path: 'perfil',
         loadComponent: () => import('./features/perfil/perfil').then((m) => m.Perfil)
-      },
-      {
-        path: 'apu',
-        loadComponent: () => import('./features/apu/apu-placeholder').then((m) => m.ApuPlaceholder)
       }
     ]
   },

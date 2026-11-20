@@ -1,0 +1,72 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  header="Editar ítem"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '36rem', maxWidth: '95vw' }"
+>
+  <form [formGroup]="form" class="item-form" (ngSubmit)="submit()">
+    <p class="item-form__subject">
+      Código actual: <strong>{{ node()?.code }}</strong>
+    </p>
+
+    <div class="item-form__grid">
+      <div class="item-form__field">
+        <label for="itemCode">Código (opcional)</label>
+        <input id="itemCode" pInputText formControlName="code" maxlength="10" />
+        <small class="item-form__hint">Déjalo igual para conservar el código actual.</small>
+      </div>
+
+      <div class="item-form__field">
+        <label for="itemQuantity">Cantidad de obra</label>
+        <p-inputNumber
+          inputId="itemQuantity"
+          formControlName="quantityWork"
+          [min]="0"
+          [minFractionDigits]="0"
+          [maxFractionDigits]="6"
+          [useGrouping]="false"
+        />
+        @if (form.controls.quantityWork.invalid && form.controls.quantityWork.touched) {
+          <small class="item-form__error">La cantidad de obra no puede ser negativa.</small>
+        }
+      </div>
+    </div>
+
+    @if (canEditApu() && node()?.apu) {
+      <h4 class="item-form__section">Datos del APU</h4>
+      <div class="item-form__grid">
+        <div class="item-form__field">
+          <label for="itemDescription">Descripción</label>
+          <input id="itemDescription" pInputText formControlName="description" maxlength="255" />
+        </div>
+        <div class="item-form__field">
+          <label for="itemUnit">Unidad</label>
+          <input id="itemUnit" pInputText formControlName="unit" maxlength="10" />
+        </div>
+      </div>
+      <small class="item-form__hint">
+        Los insumos y el resumen de costos se editan en la página del APU.
+      </small>
+    } @else if (node()?.apu) {
+      <p class="item-form__hint">No tienes permiso para modificar los datos del APU.</p>
+    }
+
+    @if (errorMessage()) {
+      <p-message severity="error" [text]="errorMessage() ?? ''" />
+    }
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" [text]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Guardar"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="saving()"
+      (onClick)="submit()"
+    />
+  </ng-template>
+</p-dialog>

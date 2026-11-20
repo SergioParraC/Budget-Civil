@@ -1,0 +1,427 @@
+@if (projectContext.unavailable()) {
+  <app-project-unavailable (retry)="projectContext.goToList()" />
+} @else {
+  <div class="edt" cdkDropListGroup>
+    <div class="edt__header">
+      <div class="edt__title">
+        <div>
+          <h2>Presupuesto</h2>
+          <p class="edt__subtitle">{{ projectContext.project()?.name }}</p>
+        </div>
+        <div
+          class="edt__total"
+          [pTooltip]="
+            budget()?.isComplete === false
+              ? 'El presupuesto tiene ítems incompletos'
+              : 'Total calculado por el servidor'
+          "
+        >
+          <span class="edt__total-label">Valor total del proyecto</span>
+          <span class="edt__total-value">
+            @if (budget(); as summary) {
+              {{ summary.total !== null ? (summary.total | number: '1.0-2') : '—' }}
+              @if (summary.baseCurrency) {
+                <small>{{ summary.baseCurrency.isoCode }}</small>
+              }
+            } @else {
+              —
+            }
+          </span>
+        </div>
+      </div>
+
+      <div class="edt__toolbar">
+        <p-button
+          icon="pi pi-refresh"
+          [text]="true"
+          ariaLabel="Actualizar árbol"
+          pTooltip="Actualizar"
+          [loading]="loading()"
+          (onClick)="refreshAll()"
+        />
+        <p-button
+          icon="pi pi-users"
+          [text]="true"
+          ariaLabel="Actividad del EDT"
+          pTooltip="Actividad y participantes del EDT"
+          (onClick)="activityModalVisible.set(true)"
+        />
+        <p-button label="Expandir" icon="pi pi-angle-double-down" [text]="true" (onClick)="expandAll()" />
+        <p-button label="Contraer" icon="pi pi-angle-double-up" [text]="true" (onClick)="collapseAll()" />
+        <p-button label="Buscar" icon="pi pi-search" [outlined]="true" (onClick)="searchVisible.set(true)" />
+        @if (canWrite()) {
+          <p-button
+            label="Nuevo capítulo"
+            icon="pi pi-folder"
+            (onClick)="openNewChapter(selectedChapterId())"
+          />
+        }
+        @if (canCreateApu()) {
+          <p-button
+            label="Nuevo APU"
+            icon="pi pi-plus"
+            [outlined]="true"
+            (onClick)="goToNewApu(selectedChapterId())"
+          />
+        }
+        @if (saving()) {
+          <p-tag value="Guardando…" severity="warn" />
+        }
+      </div>
+    </div>
+
+    <div class="edt__layout">
+      <section class="edt__main">
+        @if (loadError()) {
+          <div class="edt__state">
+            <p-message severity="error" text="No se pudo cargar el árbol del EDT." />
+            <p-button label="Reintentar" icon="pi pi-refresh" (onClick)="refreshAll()" />
+          </div>
+        } @else if (loading() && nodes().length === 0) {
+          <div class="edt__skeleton">
+            @for (row of [1, 2, 3, 4, 5]; track row) {
+              <p-skeleton height="2.5rem" />
+            }
+          </div>
+        } @else if (nodes().length === 0) {
+          <div class="edt__state">
+            <p-message severity="info" text="El proyecto aún no tiene capítulos ni ítems." />
+            <div class="edt__state-actions">
+              @if (canWrite()) {
+                <p-button label="Nuevo capítulo" icon="pi pi-folder" (onClick)="openNewChapter(null)" />
+              }
+              @if (canCreateApu()) {
+                <p-button
+                  label="Nuevo APU"
+                  icon="pi pi-plus"
+                  [outlined]="true"
+                  (onClick)="goToNewApu(null)"
+                />
+              }
+            </div>
+          </div>
+        } @else {
+          @if (draggingNode(); as dragged) {
+            <div class="edt__drag-hint" aria-live="polite">
+              Moviendo “{{ dragged.code }}”. Suelta sobre un capítulo para anidarlo, entre filas para
+              reordenarlo o en la zona de raíz. No puedes mover un capítulo dentro de su propio subárbol.
+            </div>
+          }
+
+          <p-treeTable
+            [value]="treeNodes()"
+            [loading]="loading()"
+            dataKey="key"
+            [scrollable]="true"
+            scrollHeight="flex"
+            styleClass="edt__table"
+            (onNodeExpand)="onNodeExpand($event)"
+            (onNodeCollapse)="onNodeCollapse($event)"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th class="edt__col-status" aria-label="Estado del APU"></th>
+                <th class="edt__col-code" [style.width]="codeColumnWidth()">Código</th>
+                <th class="edt__col-description">Descripción</th>
+                <th class="edt__col-quantity">Cantidad</th>
+                <th class="edt__col-unit">Unidad</th>
+                <th class="edt__col-money">Costo unitario</th>
+                <th class="edt__col-money">Costo directo</th>
+                <th class="edt__col-actions"></th>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+              <tr
+                [ttRow]="rowNode"
+                [ngClass]="rowNode.styleClass"
+                cdkDropList
+                [cdkDropListData]="rowData"
+                [cdkDropListSortingDisabled]="true"
+                [cdkDropListEnterPredicate]="canDrop"
+                (cdkDropListDropped)="onRowDrop($event, rowData)"
+                (click)="selectNode(rowData)"
+              >
+                <td class="edt__col-status">
+                  @if (rowData.nodeType === 'ITEM') {
+                    @if (rowData.apu) {
+                      @if (rowData.apu.status === 'COMPLETO') {
+                        <i
+                          class="pi pi-check-circle edt__status-icon edt__status-icon--complete"
+                          pTooltip="APU completo"
+                          aria-label="APU completo"
+                        ></i>
+                      } @else {
+                        <i
+                          class="pi pi-exclamation-circle edt__status-icon edt__status-icon--incomplete"
+                          pTooltip="APU con falta de información"
+                          aria-label="APU con falta de información"
+                        ></i>
+                      }
+                    } @else {
+                      <i
+                        class="pi pi-minus edt__status-icon edt__status-icon--empty"
+                        pTooltip="Sin APU"
+                        aria-label="Sin APU"
+                      ></i>
+                    }
+                  }
+                </td>
+                <td class="edt__col-code" [style.width]="codeColumnWidth()">
+                  <div class="edt__code-cell">
+                    @if (canWrite()) {
+                      <span
+                        class="edt__drag-handle"
+                        cdkDrag
+                        [cdkDragData]="rowData"
+                        [cdkDragDisabled]="saving()"
+                        (cdkDragStarted)="startDrag(rowData)"
+                        (cdkDragEnded)="endDrag()"
+                        pTooltip="Arrastra para mover"
+                        aria-label="Arrastrar nodo"
+                      >
+                        <i class="pi pi-bars"></i>
+                        <div class="edt__drag-preview" *cdkDragPreview>
+                          {{ rowData.code }}
+                          @if (rowData.nodeType === 'CHAPTER') {
+                            · {{ rowData.name }}
+                          } @else {
+                            · {{ rowData.apu?.description }}
+                          }
+                        </div>
+                      </span>
+                    }
+                    @if (rowData.children.length > 0) {
+                      <p-treeTableToggler [rowNode]="rowNode" />
+                    } @else {
+                      <span class="edt__toggler-spacer"></span>
+                    }
+                    <span class="edt__code">{{ rowData.code }}</span>
+                  </div>
+                </td>
+                <td class="edt__col-description">
+                  <span
+                    class="edt__description"
+                    [class.edt__description--chapter]="rowData.nodeType === 'CHAPTER'"
+                    [style.paddingLeft.px]="(rowNode.level ?? 0) * 16"
+                  >
+                    {{
+                      rowData.nodeType === 'CHAPTER'
+                        ? (rowData.name ?? '—')
+                        : (rowData.apu?.description ?? '—')
+                    }}
+                  </span>
+                </td>
+                <td
+                  class="edt__col-quantity"
+                  [class.edt__quantity--zero]="
+                    rowData.nodeType === 'ITEM' &&
+                    rowData.quantityWork !== null &&
+                    rowData.quantityWork <= 0
+                  "
+                >
+                  @if (rowData.nodeType !== 'CHAPTER') {
+                    {{ rowData.quantityWork ?? '—' }}
+                  }
+                </td>
+                <td class="edt__col-unit">
+                  @if (rowData.nodeType !== 'CHAPTER') {
+                    {{ rowData.apu?.unit ?? '—' }}
+                  }
+                </td>
+                <td class="edt__col-money">
+                  @if (rowData.nodeType !== 'CHAPTER') {
+                    @if (rowData.unitCost !== null) {
+                      {{ rowData.unitCost | number: '1.0-2' }}
+                    } @else {
+                      <span pTooltip="APU incompleto o sin precio">—</span>
+                    }
+                  }
+                </td>
+                <td class="edt__col-money">
+                  @if (rowData.directCost !== null) {
+                    {{ rowData.directCost | number: '1.0-2' }}
+                  } @else {
+                    <span pTooltip="APU incompleto o sin precio">—</span>
+                  }
+                </td>
+                <td class="edt__col-actions">
+                  @if (canWriteApu() && rowData.apu) {
+                    <p-button
+                      icon="pi pi-calculator"
+                      [text]="true"
+                      ariaLabel="Editar APU"
+                      pTooltip="Editar APU"
+                      (onClick)="openApu(rowData)"
+                    />
+                  }
+                  @if (canWrite() || canWriteApu()) {
+                    <p-menu #rowMenu [popup]="true" [model]="rowMenuItems(rowData)" appendTo="body" />
+                    <p-button
+                      icon="pi pi-ellipsis-v"
+                      [text]="true"
+                      ariaLabel="Acciones del nodo"
+                      (onClick)="rowMenu.toggle($event)"
+                    />
+                  }
+                </td>
+              </tr>
+            </ng-template>
+          </p-treeTable>
+
+          @if (canWrite()) {
+            <div
+              class="edt__root-zone"
+              cdkDropList
+              [cdkDropListSortingDisabled]="true"
+              [cdkDropListEnterPredicate]="canDropOnRoot"
+              (cdkDropListDropped)="onRootDrop($event)"
+            >
+              <i class="pi pi-arrow-down"></i>
+              Suelta aquí para mover el nodo al final de la raíz
+            </div>
+          }
+        }
+      </section>
+    </div>
+
+    <section class="edt__budget" aria-label="Resumen del presupuesto del proyecto">
+      <table class="edt__budget-table">
+        <thead>
+          <tr>
+            <th scope="col">Concepto</th>
+            <th scope="col">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (budget(); as summary) {
+            <tr>
+              <th scope="row">Total Costo Directo</th>
+              <td>
+                {{ summary.directCost !== null ? (summary.directCost | number: '1.0-2') : '—' }}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Total Costo Indirecto</th>
+              <td>
+                {{
+                  summary.indirectCosts.total !== null
+                    ? (summary.indirectCosts.total | number: '1.0-2')
+                    : '—'
+                }}
+              </td>
+            </tr>
+            <tr class="edt__budget-row--indirect">
+              <th scope="row">
+                Administración ({{ summary.indirectCosts.administration.percent }}%)
+              </th>
+              <td>
+                {{
+                  summary.indirectCosts.administration.amount !== null
+                    ? (summary.indirectCosts.administration.amount | number: '1.0-2')
+                    : '—'
+                }}
+              </td>
+            </tr>
+            <tr class="edt__budget-row--indirect">
+              <th scope="row">Imprevistos ({{ summary.indirectCosts.unforeseen.percent }}%)</th>
+              <td>
+                {{
+                  summary.indirectCosts.unforeseen.amount !== null
+                    ? (summary.indirectCosts.unforeseen.amount | number: '1.0-2')
+                    : '—'
+                }}
+              </td>
+            </tr>
+            <tr class="edt__budget-row--indirect">
+              <th scope="row">Utilidad ({{ summary.indirectCosts.profit.percent }}%)</th>
+              <td>
+                {{
+                  summary.indirectCosts.profit.amount !== null
+                    ? (summary.indirectCosts.profit.amount | number: '1.0-2')
+                    : '—'
+                }}
+              </td>
+            </tr>
+            <tr class="edt__budget-row--total">
+              <th scope="row">Valor total del proyecto</th>
+              <td>
+                {{ summary.total !== null ? (summary.total | number: '1.0-2') : '—' }}
+                @if (summary.baseCurrency) {
+                  <small>{{ summary.baseCurrency.isoCode }}</small>
+                }
+              </td>
+            </tr>
+          } @else if (budgetLoading()) {
+            <tr>
+              <td colspan="2" class="edt__budget-muted">Cargando presupuesto…</td>
+            </tr>
+          } @else {
+            <tr>
+              <td colspan="2" class="edt__budget-muted">Presupuesto no disponible.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <app-chapter-form-dialog
+      [(visible)]="chapterDialogVisible"
+      [projectId]="projectId ?? ''"
+      [chapter]="chapterToEdit()"
+      [parentChapterId]="chapterParentId()"
+      [chapterOptions]="chapterOptions()"
+      (saved)="onChapterSaved($event)"
+      (failed)="onDialogFailure($event)"
+    />
+
+    <app-item-form-dialog
+      [(visible)]="itemDialogVisible"
+      [projectId]="projectId ?? ''"
+      [node]="itemToEdit()"
+      [canEditApu]="canWriteApu()"
+      (saved)="onItemSaved($event)"
+      (failed)="onDialogFailure($event)"
+    />
+
+    <app-move-node-dialog
+      [(visible)]="moveDialogVisible"
+      [node]="nodeToMove()"
+      [targets]="moveTargets()"
+      (confirmed)="onMoveConfirmed($event)"
+    />
+
+    <app-search-panel
+      [(visible)]="searchVisible"
+      [projectId]="projectId ?? ''"
+      (selected)="onSearchSelected($event)"
+    />
+
+    <app-conflict-dialog
+      [(visible)]="alertVisible"
+      [title]="alert().title"
+      [message]="alert().message"
+      [canRefresh]="alert().refresh"
+      [technicalCode]="alert().code"
+      [traceId]="alert().traceId"
+      (refreshRequested)="onAlertRefresh()"
+    />
+
+    <p-dialog
+      [(visible)]="activityModalVisible"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '34rem', maxWidth: '95vw' }"
+      header="Actividad del EDT"
+      appendTo="body"
+    >
+      <app-activity-card
+        title="Participantes y última modificación"
+        [loading]="activityLoading()"
+        [activity]="activity()"
+        [hidden]="activityHidden()"
+      />
+    </p-dialog>
+  </div>
+}

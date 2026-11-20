@@ -43,10 +43,24 @@ public sealed class ApuDomainTests
     }
 
     [Fact]
+    public void El_alta_acepta_una_unidad_de_diez_caracteres()
+    {
+        // SC-APUS-109.
+        var apu = Apu.Create(ProjectId, "Excavación", "ABCDEFGHIJ", ActorId, DateTime.UtcNow);
+
+        apu.Unit.Should().Be("ABCDEFGHIJ");
+    }
+
+    [Fact]
     public void El_alta_valida_descripcion_y_unidad()
     {
         // SC-APUS-08.
-        var invalidUnit = () => Apu.Create(ProjectId, "Excavación", "metros", ActorId, DateTime.UtcNow);
+        var invalidUnit = () => Apu.Create(
+            ProjectId,
+            "Excavación",
+            new string('x', Apu.UnitMaxLength + 1),
+            ActorId,
+            DateTime.UtcNow);
         var invalidDescription = () => Apu.Create(ProjectId, "  ", "m3", ActorId, DateTime.UtcNow);
 
         invalidUnit.Should().Throw<InvalidOperationException>();

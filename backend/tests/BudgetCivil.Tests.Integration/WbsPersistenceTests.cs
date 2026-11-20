@@ -78,9 +78,9 @@ public sealed class WbsPersistenceTests(DatabaseFixture fixture) : IClassFixture
     }
 
     [Fact]
-    public async Task La_base_rechaza_una_cantidad_de_obra_no_positiva()
+    public async Task La_base_rechaza_una_cantidad_de_obra_negativa()
     {
-        // CK_wbs_items_quantity_work y SC-EDT-26.
+        // CK_wbs_items_quantity_work y SC-EDT-27.
         await using var context = SqlServerTestDatabase.CreateContext(fixture.ConnectionString);
         var project = await CreateProjectAsync(context);
         var actorId = await context.UserAccounts.Select(user => user.Id).FirstAsync();
@@ -89,11 +89,29 @@ public sealed class WbsPersistenceTests(DatabaseFixture fixture) : IClassFixture
         await context.SaveChangesAsync();
 
         var action = () => context.Database.ExecuteSqlRawAsync(
-            "UPDATE wbs_items SET quantity_work = 0 WHERE id = {0}",
+            "UPDATE wbs_items SET quantity_work = -1 WHERE id = {0}",
             item.Id);
 
         var exception = await action.Should().ThrowAsync<SqlException>();
         exception.Which.Message.Should().Contain("CK_wbs_items_quantity_work");
+    }
+
+    [Fact]
+    public async Task La_base_acepta_una_cantidad_de_obra_cero()
+    {
+        await using var context = SqlServerTestDatabase.CreateContext(fixture.ConnectionString);
+        var project = await CreateProjectAsync(context);
+        var actorId = await context.UserAccounts.Select(user => user.Id).FirstAsync();
+        var item = CreateItem(project.Id, actorId, null, "CIM.1", 0m, 0);
+        context.WbsItems.Add(item);
+        await context.SaveChangesAsync();
+
+        var stored = await context.WbsItems.AsNoTracking()
+            .Where(candidate => candidate.Id == item.Id)
+            .Select(candidate => candidate.QuantityWork)
+            .SingleAsync();
+
+        stored.Should().Be(0m);
     }
 
     [Fact]

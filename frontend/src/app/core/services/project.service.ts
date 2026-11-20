@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { PagedResult, PageQuery } from '../models/api-envelope.model';
 import {
   Project,
+  ProjectBudget,
   ProjectFormValue,
   ProjectListItem,
   ProjectMemberAssignment,
@@ -32,6 +33,11 @@ export class ProjectService {
 
   getById(projectId: string) {
     return this.http.get<Project>(`${this.baseUrl}/${projectId}`);
+  }
+
+  /** Presupuesto consolidado del proyecto (`GET /projects/{id}/budget`). */
+  getBudget(projectId: string) {
+    return this.http.get<ProjectBudget>(`${this.baseUrl}/${projectId}/budget`);
   }
 
   create(value: ProjectFormValue) {

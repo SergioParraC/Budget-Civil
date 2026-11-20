@@ -45,10 +45,6 @@ export class MainLayout {
       operacion.push({ label: 'Proyectos', icon: 'pi pi-briefcase', routerLink: '/proyectos' });
     }
 
-    if (this.authService.can(Permission.apuPublicRead)) {
-      operacion.push({ label: 'APU', icon: 'pi pi-calculator', routerLink: '/apu' });
-    }
-
     const administracion: NavItem[] = [];
 
     if (this.authService.can(Permission.companiesRead)) {

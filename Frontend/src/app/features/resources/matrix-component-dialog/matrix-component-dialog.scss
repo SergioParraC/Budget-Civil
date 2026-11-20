@@ -1,0 +1,42 @@
+.matrix-component {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  &__selected {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--p-content-border-color, #e5e7eb);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+
+    small {
+      color: var(--p-text-muted-color, #6b7280);
+    }
+  }
+
+  &__empty {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--p-text-muted-color, #6b7280);
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: var(--p-text-muted-color, #6b7280);
+  }
+}

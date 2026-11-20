@@ -1,0 +1,83 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [header]="component() ? 'Editar componente' : 'Agregar componente'"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '34rem', maxWidth: '95vw' }"
+>
+  <div class="matrix-component">
+    <div class="matrix-component__field">
+      <label>Insumo</label>
+      @if (selected(); as chosen) {
+        <div class="matrix-component__selected">
+          <span>{{ chosen.description }}</span>
+          <small>{{ chosen.unit ?? 'Sin unidad' }}</small>
+        </div>
+      } @else {
+        <p class="matrix-component__empty">Ningún insumo seleccionado.</p>
+      }
+      @if (!component()) {
+        <p-button
+          label="Elegir insumo"
+          icon="pi pi-search"
+          [outlined]="true"
+          (onClick)="pickerVisible.set(true)"
+        />
+      }
+      <small class="matrix-component__hint">
+        Solo insumos simples de este proyecto; una Matriz no puede contener Matrices.
+      </small>
+    </div>
+
+    <div class="matrix-component__grid">
+      <div class="matrix-component__field">
+        <label for="matrixConsumption">Consumo</label>
+        <p-inputNumber
+          inputId="matrixConsumption"
+          [ngModel]="consumption()"
+          (ngModelChange)="consumption.set($event ?? 0)"
+          [min]="0"
+          [maxFractionDigits]="6"
+          [useGrouping]="false"
+        />
+      </div>
+
+      <div class="matrix-component__field">
+        <label for="matrixWaste">Desperdicio %</label>
+        <p-inputNumber
+          inputId="matrixWaste"
+          [ngModel]="wastePercentage()"
+          (ngModelChange)="wastePercentage.set($event ?? 0)"
+          [min]="0"
+          [max]="100"
+          [maxFractionDigits]="2"
+          [useGrouping]="false"
+        />
+      </div>
+    </div>
+
+    @if (errorMessage()) {
+      <p-message severity="error" [text]="errorMessage() ?? ''" />
+    }
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" [text]="true" (onClick)="visible.set(false)" />
+    <p-button
+      label="Guardar"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="saving()"
+      (onClick)="submit()"
+    />
+  </ng-template>
+</p-dialog>
+
+<app-resource-picker-dialog
+  [(visible)]="pickerVisible"
+  [projectId]="projectId()"
+  [onlySimple]="true"
+  (picked)="onPicked($event)"
+/>

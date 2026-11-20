@@ -176,7 +176,7 @@
 | `wbs_chapter_id` | UUID | Sí | FK `WbsChapter`; nulo = ítem raíz (`D-118`) |
 | `apu_id` | UUID | Sí | FK `Apu` `RESTRICT` (`FK_wbs_items_apus_apu_id`); único filtrado cuando no es nulo (`D-113`, `BR-016`) |
 | `code_id` | UUID | No | FK `WbsCode`, único; no se recalcula después del alta (`D-117`) |
-| `quantity_work` | DECIMAL(18,10) | No | > 0 (`D-121`) |
+| `quantity_work` | DECIMAL(18,10) | No | >= 0 (`D-121`) |
 | `order_index` | INT | No | Orden |
 | `last_modified_by` | UUID | No | FK `User`; actor autenticado (`D-116`) |
 | `last_modified_at` | DATETIME2 | No | UTC (`D-116`) |
@@ -195,7 +195,7 @@
 | `id` | UUID | No | PK |
 | `project_id` | UUID | No | FK `Project` `RESTRICT` |
 | `description` | NVARCHAR(MAX) | No | Descripción de la actividad; no vacía |
-| `unit` | VARCHAR(5) | No | Unidad de medida; 1–5 caracteres |
+| `unit` | VARCHAR(10) | No | Unidad de medida; 1–10 caracteres (`REQ-APUS-02`, `SC-APUS-109`) |
 | `status` | VARCHAR(30) | No | `CK_apus_status`; `COMPLETO` o `FALTA_INFORMACION` |
 | `last_modified_by` | UUID | No | FK `User` `RESTRICT` |
 | `last_modified_at` | DATETIME2 | No | UTC |
@@ -226,10 +226,23 @@ físicamente con el ítem; sus `apu_resources` caen en cascada (`D-49` revisada,
 | `last_modified_by` | UUID | No | FK `User` |
 | `last_modified_at` | TIMESTAMP | No | UTC |
 | `row_version` | ROWVERSION | No | Concurrencia optimista (`D-50`) |
-| `is_active` | BIT | No | Baja lógica (`D-49`) |
-| `deleted_at` | TIMESTAMP | Sí | Baja lógica (`D-49`) |
+| `is_active` | BIT | No | Reservada; el endpoint de baja del insumo usa borrado físico (`D-49` revisada) |
+| `deleted_at` | TIMESTAMP | Sí | Reservada; no se usa en la baja física (`D-49` revisada) |
 
-Sin `is_public`; la visibilidad es del proyecto.
+Sin `is_public`; la visibilidad es del proyecto. `DELETE /api/v1/projects/{projectId}/resources/{resourceId}`
+elimina la fila físicamente y responde `409 RESOURCE_IN_USE` si el insumo es línea de APU, componente de
+Matriz u origen de una copia (`REQ-INSUMOS-18`…`REQ-INSUMOS-20`).
+
+### `MeasurementUnit`
+| Campo | Tipo | Nulo | Regla |
+|---|---|---|---|
+| `id` | INT IDENTITY | No | PK; catálogo global |
+| `short_unit` | VARCHAR(10) | No | Sigla única sin distinguir mayúsculas (`UQ_dbo_measurement_units_short_unit`); 1–10 caracteres |
+| `unit` | VARCHAR(100) | No | Nombre de la unidad; 1–100 caracteres |
+
+Sin `company_id`, `is_active` ni timestamps. El APU y el insumo guardan la sigla textual en su propio
+`unit` y no una FK (`REQ-UNIDADES-01`, `D-16`). El catálogo solo se llena con `POST /api/v1/catalogs/units`;
+una unidad usada en un APU o insumo no se inserta automáticamente (`REQ-UNIDADES-05`).
 
 ### `Supplier`
 | Campo | Tipo | Nulo | Regla |
@@ -290,7 +303,7 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | `Country` | `id`, `code` único, `name` |
 | `Department` | `id`, `country_id`, `code` único por país, `name` |
 | `Municipality` | `id`, `department_id`, `code` único por departamento, `name` (`D-96`) |
-| `ResourceType` | `id`, `code` único (`MATERIAL`, `LABOR`, `TOOL`, `EQUIPMENT`, `AUXILIARY`, `WORK`, `MATRIX`), `name`, `is_active` |
+| `ResourceType` | `id`, `code` único (`MATERIAL`, `LABOR`, `TOOL`, `EQUIPMENT`, `AUXILIARY`, `WORK`, `TRANSPORT`, `MATRIX`), `name`, `is_active` |
 
 ## 4. Reglas de integridad
 | Regla | Implementación |
@@ -311,12 +324,12 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | Estado del proyecto | Texto con `CHECK` sobre los cinco valores (`D-88`) |
 | Tope presupuestal | `budget_limit` mayor que cero |
 | AIU | 0–100 |
-| Rendimiento y cantidades | `quantity_work > 0`; `apus.yield` se elimina en `apus_remove_yield` (`REQ-APUS-22`) |
+| Rendimiento y cantidades | `quantity_work >= 0`; `apus.yield` se elimina en `apus_remove_yield` (`REQ-APUS-22`) |
 | Consumo y desperdicio | `consumption > 0`, `waste_percentage` 0–100 |
 | Precio | `unit_price >= 0` |
 | Coherencia del nodo | `WbsItem` exige cantidad; su capítulo es nulo solo si es ítem raíz (`D-118`); `apu_id` es opcional y único cuando existe (`FK_wbs_items_apus_apu_id`, `D-113`); `WbsChapter` exige nombre; `WbsCode.node_type` coincide con la tabla |
 | Alcance | `company_id` obligatorio salvo el Administrador y el autorregistrado pendiente de asignación; `project_id` obligatorio en entidades de proyecto |
-| Borrado | Baja lógica en `Project` y `Resource`; el `Apu` se elimina físicamente con el ítem; `RESTRICT` en lo referenciado. La EDT se elimina físicamente y un capítulo solo se elimina vacío (`409 WBS_CHAPTER_HAS_APU` o `409 WBS_NODE_HAS_CHILDREN`); el ítem con APU elimina el ítem, su código, el APU y sus líneas y conserva los insumos (`D-49`, `D-114`, `D-119`) |
+| Borrado | Baja lógica en `Project`; el insumo se elimina físicamente con `DELETE /projects/{id}/resources/{resourceId}` y `409 RESOURCE_IN_USE` si está referenciado (`D-49` revisada); el `Apu` se elimina físicamente con el ítem; `RESTRICT` en lo referenciado. La EDT se elimina físicamente y un capítulo solo se elimina vacío (`409 WBS_CHAPTER_HAS_APU` o `409 WBS_NODE_HAS_CHILDREN`); el ítem con APU elimina el ítem, su código, el APU y sus líneas y conserva los insumos (`D-114`, `D-119`) |
 | Concurrencia | `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource`; el movimiento exige la `rowversion` del nodo movido |
 
 ## 5. Reglas de cálculo
@@ -366,6 +379,7 @@ por ítem en el presupuesto. Los costos no se persisten: se recalculan en cada l
 | `WbsItem(project_id, wbs_chapter_id, order_index)` | Capítulo e ítems raíz (`D-118`) |
 | `WbsProjectActivity(project_id, user_id)` único y `(project_id, last_modified_at)` | Una fila por proyecto y usuario (`D-120`) |
 | `Apu(project_id, status)` | Búsqueda |
+| `MeasurementUnit(short_unit)` único | Catálogo de unidades (`REQ-UNIDADES-01`) |
 | `Resource(project_id, resource_type_id)` | Filtros |
 | `Resource(project_id, quotation_status)` | Cotización |
 | `Resource(project_id, description)` | Búsqueda |
@@ -387,7 +401,12 @@ por ítem en el presupuesto. Los costos no se persisten: se recalculan en cada l
 ## 8. Migraciones y datos iniciales
 - Migraciones manuales con runbook (`docs/runbook-migraciones.md`): respaldo, revisión del script, aplicación y verificación; el arranque de la API **no** aplica migraciones (`D-40`).
 - Baseline única `202610300438_e1b_reconciliacion_baseline` sobre base vacía, con la convención `YYYYMMDDHHMM_<scope>_<change>` (`D-107`, `DEC-19`).
-- Seed versionado e idempotente de cuatro roles base, permisos y `RolePermission` (`D-82`). La versión `v5` añade `SUPPLIERS_READ` (Administrador, Director, Presupuestador y Auditor) y `SUPPLIERS_WRITE` (Director y Presupuestador) (`REQ-PROVEEDORES-07`). La versión `v6` reconcilia por diferencia: las asignaciones rol-permiso y los permisos que ya no figuran en la matriz quedan inactivos con `revoked_at_utc` y `seed_version` vigente (`REQ-IDENTIDAD-30`). La versión `v7` añade `WBS_READ` (Administrador, Director, Presupuestador y Auditor) y `WBS_WRITE` (Director y Presupuestador) (`REQ-EDT-13`, `REQ-EDT-14`). La versión `v8` añade `APUS_READ` (Administrador, Director, Presupuestador y Auditor) y `APUS_WRITE` (Director y Presupuestador); el inventario queda en 37 permisos (`REQ-APUS-16`, `REQ-APUS-17`).
+- Seed versionado e idempotente de cuatro roles base, permisos y `RolePermission` (`D-82`). La versión `v5` añade `SUPPLIERS_READ` (Administrador, Director, Presupuestador y Auditor) y `SUPPLIERS_WRITE` (Director y Presupuestador) (`REQ-PROVEEDORES-07`). La versión `v6` reconcilia por diferencia: las asignaciones rol-permiso y los permisos que ya no figuran en la matriz quedan inactivos con `revoked_at_utc` y `seed_version` vigente (`REQ-IDENTIDAD-30`). La versión `v7` añade `WBS_READ` (Administrador, Director, Presupuestador y Auditor) y `WBS_WRITE` (Director y Presupuestador) (`REQ-EDT-13`, `REQ-EDT-14`). La versión `v8` añade `APUS_READ` (Administrador, Director, Presupuestador y Auditor) y `APUS_WRITE` (Director y Presupuestador); el inventario queda en 37 permisos (`REQ-APUS-16`, `REQ-APUS-17`). La versión `v9` añade `CATALOGS_WRITE` (Administrador, Director y Presupuestador; el Auditor conserva solo `CATALOGS_READ`); el inventario queda en 38 permisos (`REQ-UNIDADES-04`).
+- Migración `20261120125801_units_add_catalog` (aplicada el 20/11/2026): crea `measurement_units`
+  (`id` `INT IDENTITY`, `short_unit` `VARCHAR(10)`, `unit` `VARCHAR(100)`), su índice único
+  `UQ_dbo_measurement_units_short_unit` y los `CHECK` de no vacío; amplía `apus.unit` de `VARCHAR(5)` a
+  `VARCHAR(10)`. Sin migración de datos (`REQ-UNIDADES-01`, `REQ-APUS-02`, `D-16`, `D-107`). El `Down` revierte
+  la columna y elimina la tabla; puede fallar si hay unidades de 6–10 caracteres.
 - Migración `20261115092848_apus_add_e3b` (aplicada el 15/11/2026): tablas `apus`, `apu_resources` y
   `matrix_components` con sus `CHECK`, FKs e índices; `ALTER` de `wbs_items.quantity_work`,
   `apu_resources.consumption` y `matrix_components.consumption` a `DECIMAL(18,10)`; FK
@@ -398,7 +417,7 @@ por ítem en el presupuesto. Los costos no se persisten: se recalculan en cada l
   `wbs_items` y `wbs_project_activity` con sus índices, `CHECK` y FKs `RESTRICT`,
   `wbs_items.wbs_chapter_id` nullable, índice único filtrado de `apu_id` y sin migración de datos (`D-40`,
   `D-107`, `D-113`…`D-120`).
-- Seed de siete tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos y Matriz.
+- Seed de ocho tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos, Transporte y Matriz.
 - Catálogo base de países, departamentos, municipios, tipos de documento y monedas (`D-96`).
 - Administrador inicial por semilla en local o por bootstrap idempotente y auditado en demo, excluyentes (`D-110`).
 

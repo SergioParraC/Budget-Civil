@@ -30,6 +30,7 @@ public sealed record CostItemResult(
     string Description,
     string? Unit,
     decimal? UnitPrice,
+    decimal Consumption,
     decimal Quantity,
     decimal WastePercentage,
     decimal? Subtotal,

@@ -13,7 +13,7 @@ public sealed class WbsItemConfiguration : IEntityTypeConfiguration<WbsItem>
     {
         builder.ToTable("wbs_items", table =>
         {
-            table.HasCheckConstraint("CK_wbs_items_quantity_work", "quantity_work > 0");
+            table.HasCheckConstraint("CK_wbs_items_quantity_work", "quantity_work >= 0");
             table.HasCheckConstraint("CK_wbs_items_order_index", "order_index >= 0");
         });
 

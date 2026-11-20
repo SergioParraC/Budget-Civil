@@ -183,6 +183,66 @@ public sealed class LayerDependencyTests
             $"el módulo Wbs no debe depender de Apus: {string.Join(", ", result.FailingTypeNames ?? [])}");
     }
 
+    [Fact]
+    public void El_catalogo_de_unidades_no_depende_de_apu_ni_insumos()
+    {
+        // T-A-06: `Application/Catalogs` no conoce los módulos que consumen el catálogo.
+        var result = Types.InAssembly(ApplicationAssembly)
+            .That()
+            .ResideInNamespaceStartingWith("BudgetCivil.Application.Catalogs")
+            .ShouldNot()
+            .HaveDependencyOnAny(
+                "BudgetCivil.Application.Apus",
+                "BudgetCivil.Application.Resources")
+            .GetResult();
+
+        Assert.True(
+            result.IsSuccessful,
+            $"Application/Catalogs no debe depender de APU ni insumos: {string.Join(", ", result.FailingTypeNames ?? [])}");
+    }
+
+    [Fact]
+    public void El_alta_de_apu_e_insumo_no_depende_del_catalogo_de_unidades()
+    {
+        // REQ-UNIDADES-05: una unidad fuera del catálogo no se inserta desde el APU o el insumo.
+        var resourcesResult = Types.InAssembly(ApplicationAssembly)
+            .That()
+            .ResideInNamespaceStartingWith("BudgetCivil.Application.Resources")
+            .ShouldNot()
+            .HaveDependencyOn("BudgetCivil.Application.Catalogs")
+            .GetResult();
+
+        var apusResult = Types.InAssembly(ApplicationAssembly)
+            .That()
+            .ResideInNamespaceStartingWith("BudgetCivil.Application.Apus")
+            .ShouldNot()
+            .HaveDependencyOn("BudgetCivil.Application.Catalogs")
+            .GetResult();
+
+        Assert.True(
+            resourcesResult.IsSuccessful,
+            $"Application/Resources no debe depender del catálogo de unidades: {string.Join(", ", resourcesResult.FailingTypeNames ?? [])}");
+        Assert.True(
+            apusResult.IsSuccessful,
+            $"Application/Apus no debe depender del catálogo de unidades: {string.Join(", ", apusResult.FailingTypeNames ?? [])}");
+    }
+
+    [Fact]
+    public void El_modulo_Resources_no_depende_de_Apus()
+    {
+        // T-A-06: el módulo de insumos no conoce la composición del APU.
+        var result = Types.InAssembly(ApplicationAssembly)
+            .That()
+            .ResideInNamespaceStartingWith("BudgetCivil.Application.Resources")
+            .ShouldNot()
+            .HaveDependencyOn("BudgetCivil.Application.Apus")
+            .GetResult();
+
+        Assert.True(
+            result.IsSuccessful,
+            $"Application/Resources no debe depender de Apus: {string.Join(", ", result.FailingTypeNames ?? [])}");
+    }
+
     private static void AssertNoDependency(Assembly assembly, params string[] dependencies)
     {
         var result = Types.InAssembly(assembly)

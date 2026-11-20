@@ -54,10 +54,60 @@
     </div>
 
     <label>AIU (%)</label>
+    <small class="form-grid__aiu-hint">
+      AIU = Administración, Imprevistos y Utilidad. Cada porcentaje admite hasta 1 decimal.
+    </small>
     <div class="form-grid__aiu">
-      <p-inputnumber formControlName="adminPercent" suffix="%" placeholder="Administración" />
-      <p-inputnumber formControlName="unforeseenPercent" suffix="%" placeholder="Imprevistos" />
-      <p-inputnumber formControlName="profitPercent" suffix="%" placeholder="Utilidad" />
+      <div class="form-grid__aiu-field">
+        <label for="adminPercent">Administración (A)</label>
+        <p-inputnumber
+          inputId="adminPercent"
+          formControlName="adminPercent"
+          suffix="%"
+          placeholder="0"
+          [min]="0"
+          [max]="100"
+          [minFractionDigits]="0"
+          [maxFractionDigits]="1"
+          [step]="0.1"
+          (onBlur)="normalizeAiu('adminPercent')"
+        />
+        <small class="form-grid__aiu-hint">Costos de administración de la obra.</small>
+      </div>
+
+      <div class="form-grid__aiu-field">
+        <label for="unforeseenPercent">Imprevistos (I)</label>
+        <p-inputnumber
+          inputId="unforeseenPercent"
+          formControlName="unforeseenPercent"
+          suffix="%"
+          placeholder="0"
+          [min]="0"
+          [max]="100"
+          [minFractionDigits]="0"
+          [maxFractionDigits]="1"
+          [step]="0.1"
+          (onBlur)="normalizeAiu('unforeseenPercent')"
+        />
+        <small class="form-grid__aiu-hint">Reserva para imprevistos de la obra.</small>
+      </div>
+
+      <div class="form-grid__aiu-field">
+        <label for="profitPercent">Utilidad (U)</label>
+        <p-inputnumber
+          inputId="profitPercent"
+          formControlName="profitPercent"
+          suffix="%"
+          placeholder="0"
+          [min]="0"
+          [max]="100"
+          [minFractionDigits]="0"
+          [maxFractionDigits]="1"
+          [step]="0.1"
+          (onBlur)="normalizeAiu('profitPercent')"
+        />
+        <small class="form-grid__aiu-hint">Ganancia esperada del proyecto.</small>
+      </div>
     </div>
 
     @if (errorMessage()) {

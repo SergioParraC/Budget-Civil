@@ -78,9 +78,100 @@ const CODE_MESSAGES: Record<string, string> = {
   PROJECT_MEMBER_DEACTIVATE_FORBIDDEN: 'No puedes retirar miembros de este proyecto.',
   PROJECT_MEMBERSHIP_NOT_FOUND: 'La membresía del proyecto no existe.',
   PAGE_SIZE_INVALID: 'El tamaño de página debe ser 10, 50 o 100.',
+  WBS_NOT_FOUND: 'El nodo ya no existe en el proyecto. Actualizamos el árbol.',
+  WBS_CODE_INVALID: 'El código debe tener entre 1 y 10 caracteres; se permiten letras, números y símbolos como . , - _.',
+  WBS_CODE_DUPLICATED: 'Ese código ya está en uso en el proyecto (sin distinguir mayúsculas). Elige otro.',
+  WBS_QUANTITY_INVALID: 'La cantidad de obra no puede ser negativa.',
+  WBS_CONCURRENCY_CONFLICT:
+    'Otro usuario modificó el EDT mientras trabajabas. Actualizamos el árbol; revisa los cambios y vuelve a intentarlo.',
+  WBS_TARGET_NOT_FOUND:
+    'El destino ya no existe en el proyecto. Actualizamos el árbol; elige un capítulo vigente.',
+  WBS_MOVE_CYCLE: 'No puedes mover un capítulo dentro de sí mismo ni dentro de uno de sus subcapítulos.',
+  WBS_CHAPTER_HAS_APU: 'El capítulo contiene ítems con APU. Elimina o mueve primero esos ítems.',
+  WBS_NODE_HAS_CHILDREN: 'El capítulo tiene subcapítulos o ítems; solo se elimina un capítulo vacío.',
+  WBS_READ_FORBIDDEN: 'No tienes permisos para consultar el EDT de este proyecto.',
+  WBS_WRITE_FORBIDDEN: 'No tienes permisos para modificar el EDT de este proyecto.',
+  APU_NOT_FOUND: 'El APU ya no existe en el proyecto.',
+  APU_READ_FORBIDDEN: 'No tienes permisos para consultar los APUs de este proyecto.',
+  APU_WRITE_FORBIDDEN: 'No tienes permisos para modificar los APUs de este proyecto.',
+  APU_RESOURCE_NOT_FOUND: 'Uno de los insumos del APU ya no existe en el proyecto.',
+  APU_RESOURCE_PROJECT_MISMATCH: 'El APU solo admite insumos de este proyecto.',
+  APU_CONCURRENCY_CONFLICT:
+    'Otro usuario modificó el APU mientras editabas. Actualizamos el APU; revisa los cambios y vuelve a intentarlo.',
+  APU_COMPOSITION_RESOLUTION_REQUIRED: 'Falta resolver los insumos de la copia del APU.',
+  MATRIX_NOT_FOUND: 'La Matriz ya no existe en el proyecto.',
+  MATRIX_TYPE_INVALID: 'El insumo seleccionado no es un insumo simple del proyecto.',
+  MATRIX_NESTING_FORBIDDEN: 'Una Matriz no puede contener otra Matriz ni a sí misma.',
+  MATRIX_CONCURRENCY_CONFLICT:
+    'Otro usuario modificó la Matriz. Actualizamos la composición; vuelve a intentarlo.',
+  RESOURCE_NOT_FOUND: 'Este insumo ya no existe en el proyecto.',
+  RESOURCE_IN_USE:
+    'Este insumo está en uso en un APU, en una Matriz o como origen de una copia. No se puede eliminar.',
+  RESOURCE_CONCURRENCY_CONFLICT:
+    'Otro usuario modificó este insumo mientras editabas. Actualizamos los datos; vuelve a intentarlo.',
+  RESOURCE_TYPE_INVALID: 'El tipo de insumo seleccionado no es válido.',
+  MUNICIPALITY_INVALID: 'El municipio seleccionado no es válido.',
+  RESOURCE_READ_FORBIDDEN: 'No tienes permisos para consultar los insumos de este proyecto.',
+  RESOURCE_WRITE_FORBIDDEN: 'No tienes permisos para modificar los insumos de este proyecto.',
+  RESOURCE_MATRIX_COPY_REQUIRES_MATRIX_OPERATION:
+    'La copia de una Matriz requiere la operación de copia de Matriz.',
+  RESOURCE_QUOTATION_INCOMPLETE:
+    'El insumo está incompleto; completa descripción, unidad, precio, marca y proveedor antes de cotizarlo.',
+  RESOURCE_QUOTATION_CHANGED: 'El estado de cotización del insumo cambió durante la operación.',
+  UNIT_ALREADY_EXISTS: 'Ya existe una unidad con esa sigla. Elige otra o usa la existente.',
+  UNIT_VALIDATION_ERROR: 'La sigla debe tener de 1 a 10 caracteres y el nombre de 1 a 100.',
   REGISTRATION_RATE_LIMIT_EXCEEDED: 'Demasiados intentos de registro. Intenta más tarde.',
   TOO_MANY_REQUESTS: 'Demasiadas solicitudes. Intenta nuevamente en unos minutos.'
 };
+
+/**
+ * Códigos que dejan el estado del cliente desactualizado: además del mensaje, la pantalla debe refrescar
+ * los datos del servidor (`D-50`).
+ */
+const REFRESH_CODES = new Set<string>([
+  'WBS_TARGET_NOT_FOUND',
+  'WBS_CONCURRENCY_CONFLICT',
+  'WBS_NOT_FOUND',
+  'APU_CONCURRENCY_CONFLICT',
+  'MATRIX_CONCURRENCY_CONFLICT',
+  'RESOURCE_CONCURRENCY_CONFLICT',
+  'RESOURCE_NOT_FOUND',
+  'MATRIX_NOT_FOUND',
+  'APU_NOT_FOUND'
+]);
+
+const ALERT_TITLES: Record<string, string> = {
+  WBS_MOVE_CYCLE: 'Movimiento no permitido',
+  WBS_TARGET_NOT_FOUND: 'El destino cambió',
+  WBS_CONCURRENCY_CONFLICT: 'El EDT cambió',
+  WBS_NOT_FOUND: 'El nodo cambió',
+  WBS_CHAPTER_HAS_APU: 'No se puede eliminar el capítulo',
+  WBS_NODE_HAS_CHILDREN: 'No se puede eliminar el capítulo',
+  WBS_CODE_DUPLICATED: 'Código en uso',
+  WBS_CODE_INVALID: 'Código inválido',
+  WBS_QUANTITY_INVALID: 'Cantidad de obra inválida',
+  APU_CONCURRENCY_CONFLICT: 'El APU cambió',
+  APU_RESOURCE_NOT_FOUND: 'Insumo no disponible',
+  APU_RESOURCE_PROJECT_MISMATCH: 'Insumo de otro proyecto',
+  MATRIX_CONCURRENCY_CONFLICT: 'La Matriz cambió',
+  MATRIX_NESTING_FORBIDDEN: 'Composición no permitida',
+  MATRIX_TYPE_INVALID: 'Insumo no permitido',
+  RESOURCE_IN_USE: 'Insumo en uso',
+  RESOURCE_NOT_FOUND: 'El insumo cambió',
+  RESOURCE_CONCURRENCY_CONFLICT: 'El insumo cambió',
+  UNIT_ALREADY_EXISTS: 'Unidad duplicada',
+  UNIT_VALIDATION_ERROR: 'Unidad inválida'
+};
+
+/** Indica si la causa del error exige volver a consultar el servidor. */
+export function errorNeedsRefresh(code: string): boolean {
+  return REFRESH_CODES.has(code);
+}
+
+/** Título en español para el modal de alerta; cae en un título genérico si el código no está mapeado. */
+export function alertTitleFor(code: string): string {
+  return ALERT_TITLES[code] ?? 'No se pudo completar la operación';
+}
 
 const STATUS_CODES: Record<number, string> = {
   0: 'NETWORK_ERROR',

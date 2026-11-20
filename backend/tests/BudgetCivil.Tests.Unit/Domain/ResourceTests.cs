@@ -283,12 +283,13 @@ public sealed class ResourceTests
     }
 
     [Fact]
-    public void El_catalogo_tiene_exactamente_siete_tipos_unicos()
+    public void El_catalogo_tiene_exactamente_ocho_tipos_unicos()
     {
-        ResourceTypeCatalog.Definitions.Should().HaveCount(7);
+        ResourceTypeCatalog.Definitions.Should().HaveCount(8);
         ResourceTypeCatalog.Definitions.Select(definition => definition.Id).Should().OnlyHaveUniqueItems();
         ResourceTypeCatalog.Definitions.Select(definition => definition.Code).Should().OnlyHaveUniqueItems();
         ResourceTypeCatalog.IsKnownCode("matrix").Should().BeTrue();
+        ResourceTypeCatalog.IsKnownCode("transport").Should().BeTrue();
         ResourceTypeCatalog.IsKnownCode("DESCONOCIDO").Should().BeFalse();
     }
 

@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using BudgetCivil.Application.Common.Auditing;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Projects.Repositories;
+using BudgetCivil.Domain.Memberships;
 using BudgetCivil.Domain.Projects;
 using BudgetCivil.Domain.Users.Entities;
 using FluentValidation;
@@ -242,6 +243,14 @@ public sealed class CreateProjectCommandHandler(
         project.Configuration.ProjectId = project.Id;
 
         await projectRepository.AddProjectAsync(project, cancellationToken);
+
+        // `INC-20`: el Director responsable debe quedar registrado en `project_members` para poder
+        // escribir el EDT y los APUs; el Presupuestador creador también necesita su pertenencia.
+        foreach (var member in BuildInitialMemberships(project, actor, directorOwnerUserId, now))
+        {
+            await projectRepository.AddProjectMemberAsync(member, cancellationToken);
+        }
+
         await projectRepository.SaveChangesAsync(cancellationToken);
 
         await securityAuditService.WriteAsync(
@@ -271,6 +280,41 @@ public sealed class CreateProjectCommandHandler(
             BaseCurrencyId = project.Configuration.BaseCurrencyId,
             CreatedAtUtc = project.CreatedAtUtc
         };
+    }
+
+    private static IReadOnlyList<ProjectMember> BuildInitialMemberships(
+        Project project,
+        UserAccount actor,
+        Guid directorOwnerUserId,
+        DateTime utcNow)
+    {
+        var members = new List<ProjectMember>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(),
+                ProjectId = project.Id,
+                UserId = directorOwnerUserId,
+                RoleInProject = ProjectStatusTransitionPolicy.DirectorRoleCode,
+                AssignedByUserId = actor.Id,
+                AssignedAtUtc = utcNow
+            }
+        };
+
+        if (actor.Role.Code == ProjectStatusTransitionPolicy.EstimatorRoleCode && actor.Id != directorOwnerUserId)
+        {
+            members.Add(new ProjectMember
+            {
+                Id = Guid.NewGuid(),
+                ProjectId = project.Id,
+                UserId = actor.Id,
+                RoleInProject = ProjectStatusTransitionPolicy.EstimatorRoleCode,
+                AssignedByUserId = actor.Id,
+                AssignedAtUtc = utcNow
+            });
+        }
+
+        return members;
     }
 
     private static Guid ResolveCompanyId(UserAccount actor, Guid? requestedCompanyId)

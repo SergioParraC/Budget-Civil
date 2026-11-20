@@ -20,6 +20,7 @@ public sealed class AuthRepository(BudgetCivilDbContext dbContext) : IAuthReposi
 
         return dbContext.UserAccounts
             .Include(user => user.Role)
+            .Include(user => user.Memberships)
             .SingleOrDefaultAsync(
                 user =>
                     user.Email.ToUpper() == normalizedIdentifier ||

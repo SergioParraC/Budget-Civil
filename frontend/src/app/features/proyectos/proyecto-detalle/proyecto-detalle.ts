@@ -8,7 +8,7 @@ import {
   ValidationErrors,
   Validators
 } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { ButtonModule } from 'primeng/button';
@@ -81,6 +81,7 @@ const NEXT_STATUS: Partial<Record<ProjectStatus, { target: ProjectStatus; label:
     TextareaModule,
     ToggleSwitchModule,
     DatePipe,
+    RouterLink,
     ProjectMemberDialog
   ],
   templateUrl: './proyecto-detalle.html',
@@ -126,6 +127,10 @@ export class ProyectoDetalle {
 
   readonly canSearchUsers = this.authService.can(Permission.usersRead);
   readonly canRemoveMembers = this.authService.can(Permission.projectMembersDeactivate);
+
+  /** Accesos a los módulos del proyecto; sin permiso de lectura no se muestran. */
+  readonly canOpenEdt = this.authService.can(Permission.wbsRead);
+  readonly canOpenResources = this.authService.can(Permission.resourcesRead);
 
   /** El Administrador no puede asignar ni retirar miembros de proyecto (`ProjectMembershipPolicy`). */
   readonly canManageMembers = computed(

@@ -1,0 +1,43 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [header]="title()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '32rem', maxWidth: '95vw' }"
+>
+  <p class="conflict-dialog__message">{{ message() }}</p>
+
+  @if (technicalCode() || traceId()) {
+    <div class="conflict-dialog__details">
+      <button
+        type="button"
+        class="conflict-dialog__toggle"
+        [attr.aria-expanded]="showDetails()"
+        (click)="showDetails.set(!showDetails())"
+      >
+        Detalle técnico
+      </button>
+      @if (showDetails()) {
+        <dl class="conflict-dialog__detail-list">
+          @if (technicalCode()) {
+            <dt>Código</dt>
+            <dd>{{ technicalCode() }}</dd>
+          }
+          @if (traceId()) {
+            <dt>Traza</dt>
+            <dd>{{ traceId() }}</dd>
+          }
+        </dl>
+      }
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    @if (canRefresh()) {
+      <p-button label="Actualizar" icon="pi pi-refresh" (onClick)="refresh()" />
+    }
+    <p-button label="Entendido" (onClick)="close()" />
+  </ng-template>
+</p-dialog>
