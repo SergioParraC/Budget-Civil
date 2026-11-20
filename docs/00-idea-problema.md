@@ -36,7 +36,7 @@ Automatizar el cálculo de presupuestos estructurados, garantizar integridad y t
 | Identidad | Usuarios, roles por permiso, autorregistro público con identidad completa y verificación de correo, asignación a compañía y proyecto, dos correos transaccionales (`D-17`, `D-72`, `D-73`, `D-80`, `D-82`) |
 | Compañías y proyectos | Creación, datos de registro, divisa, AIU, tope, modo de firma, requisito de auditor, visibilidad (`D-03`, `D-07`, `D-22`, `D-93`) |
 | EDT | Capítulos e ítems recursivos, numeración automática editable, códigos únicos por proyecto, búsqueda por código o nombre (`D-30`, `D-51`) |
-| Insumos | Siete tipos, estados de cotización, listado con filtros, sugerencia de unicidad, copia desde otros proyectos (`D-05`, `D-29`) |
+| Insumos | Ocho tipos, estados de cotización, listado con filtros, sugerencia de unicidad, copia desde otros proyectos (`D-05`, `D-29`) |
 | APUs y matrices | APU 1:1 con el ítem, copia desde proyectos o catálogo, reconciliación de insumos, matriz reutilizable (`D-13`, `D-16`, `D-25`, `D-48`) |
 | Cálculo | Consumo, costo directo, AIU y redondeo (`D-06`, `D-07`) |
 | Cierre | Todo cotizado, aprobación por APU, cierre por el Director (`D-04`, `D-14`, `D-52`) |

@@ -448,7 +448,7 @@ No quedan vacíos abiertos de actores. Permanecen `X-21` (contenido publicado de
 | S-02 | Compañías: creación y configuración; el Administrador solo edita datos de registro. | `D-01`, `D-02`, `D-15` | CONFIRMADO |
 | S-03 | Proyectos y su configuración: divisa, AIU, tope presupuestal, modo de firma y requisito de visto bueno del auditor. | `D-02`, `D-03`, `D-07`, `D-14` | CONFIRMADO |
 | S-04 | EDT recursiva: capítulos y subcapítulos sin límite de profundidad, ítems por nodo o en la raíz, código manual único por proyecto, reorganización libre, baja en cascada y búsqueda parcial por código de ítem o nombre de capítulo. | `D-30`, `D-31`, `D-117`…`D-120` | CONFIRMADO |
-| S-05 | Insumos por proyecto: siete tipos, incluida la Matriz, con estados de cotización, sugerencia de unicidad, reutilización desde otros proyectos de la compañía mediante copia independiente y listado con filtros. | `D-05`, `FR-004`, `Q-09`, `D-27`, `D-29` | CONFIRMADO |
+| S-05 | Insumos por proyecto: ocho tipos, incluida la Matriz, con estados de cotización, sugerencia de unicidad, reutilización desde otros proyectos de la compañía mediante copia independiente y listado con filtros. | `D-05`, `FR-004`, `Q-09`, `D-27`, `D-29` | CONFIRMADO |
 | S-06 | APUs por proyecto: creación, edición, relación 1:1 con el ítem, copia desde APUs públicos o de la misma compañía sin restricción de estado y reconciliación de insumos al copiar. | `D-05`, `D-13`, `D-16`, `D-24`, `D-25` | CONFIRMADO |
 | S-07 | Matrices: reutilizables dentro del proyecto y copiables a otro proyecto. | `D-05`, `D-16` | CONFIRMADO |
 | S-08 | Catálogo abierto global de APUs e insumos, con publicación automática por proyecto y exposición de todos los campos del insumo, incluidos precio unitario, distribuidor y contacto. | `D-12`, `D-22`, `D-28` | CONFIRMADO |
@@ -564,7 +564,7 @@ El capítulo se considera cerrado cuando:
 | RT-04 | La duplicación de APUs e insumos por proyecto incrementa el volumen de datos y la divergencia entre proyectos. | `D-05` | Medio |
 | RT-05 | El catálogo abierto no tiene curaduría ni criterios de calidad: puede llenarse de composiciones incompletas o duplicadas. | `D-12` | Medio |
 | RT-06 | El auditor interno puede tener conflicto de interés; el sistema no lo impide. | `Q-03` | Medio |
-| RT-07 | El alcance (tres modos de firma + matrices + catálogo + siete tipos de insumo) es amplio para un solo desarrollador. | `D-03`, `D-05`, `D-10` | Alto |
+| RT-07 | El alcance (tres modos de firma + matrices + catálogo + ocho tipos de insumo) es amplio para un solo desarrollador. | `D-03`, `D-05`, `D-10` | Alto |
 | RT-08 | Sin métricas del problema, los criterios de éxito no serán medibles. | 1.1.6 | Medio |
 | RT-09 | Las funcionalidades excluidas del MVP (importación/exportación) pueden reingresar sin control de alcance. | `D-18` | Bajo |
 | RT-10 | La publicación automática y sin curaduría puede exponer información comercial si un usuario marca público un proyecto con datos sensibles. | `D-12` | Alto |
@@ -732,7 +732,7 @@ La frontera del MVP está fijada por `D-18` (alertas sí; importación/exportaci
 | RF-02 | Compañías: creación y datos de registro | M-01 | Alta | Sí | `S-02` |
 | RF-03 | Configuración del proyecto: divisa, AIU, tope, modo de firma, requisito de auditor y visibilidad | M-02 | Alta | Sí | `S-03`, `D-03`, `D-07`, `D-18`, `D-93`, `D-94` |
 | RF-04 | EDT recursiva con códigos manuales únicos, reorganización libre, baja en cascada, actividad por participantes y búsqueda parcial por código de ítem o nombre de capítulo | M-03 | Alta | Sí | `S-04`, `D-30`, `D-31`, `D-117`…`D-120` |
-| RF-05 | Insumos del proyecto: siete tipos, estados de cotización y sugerencia de unicidad | M-04 | Alta | Sí | `S-05`, `D-05`, `Q-09` |
+| RF-05 | Insumos del proyecto: ocho tipos, estados de cotización y sugerencia de unicidad | M-04 | Alta | Sí | `S-05`, `D-05`, `Q-09` |
 | RF-06 | Reutilización de insumos de la compañía mediante copia independiente | M-04 | Media | Sí | `S-05`, `D-27`, `D-29` |
 | RF-07 | APUs por proyecto con relación 1:1 con el ítem; creación y copia desde proyectos de la compañía (I-3b) y desde el catálogo público (I-5) | M-05 | Alta | Sí | `S-06`, `D-13`, `D-16`, `D-24` |
 | RF-08 | Reconciliación de insumos al incorporar un APU (agregar, sugerir, decidir) | M-05 | Alta | Sí | `S-06`, `D-25` |
@@ -1154,7 +1154,7 @@ Fuente: `03 §6`, `04 §1`, `R-12`.
 | Divisa | `CHAR(3)` con `CHECK` de longitud y mayúsculas |
 | AIU | `DECIMAL(5,2)` con `CHECK` entre 0 y 100 |
 | Rendimiento | **Retirado** (`D-123`): el APU no almacena `yield` |
-| Cantidad de obra | `quantity_work > 0` solo para ítems |
+| Cantidad de obra | `quantity_work >= 0` solo para ítems |
 | Consumo y desperdicio | `consumption > 0`; `waste_percentage` entre 0 y 100 |
 | Precio unitario | `unit_price >= 0` |
 | Tipo de nodo | `node_type IN ('CHAPTER','ITEM')` |
@@ -1224,7 +1224,7 @@ Runbook manual (`D-40`):
 **Seed inicial obligatorio:**
 - Cuatro roles con GUID fijo: Administrador, Director de proyectos, Presupuestador y Auditor.
 - Catálogo `Permission` y asignaciones `RolePermission` con `seed_version`, idempotentes y versionadas (`D-82`).
-- Siete tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos y Matriz.
+- Ocho tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos, Transporte y Matriz.
 - Catálogo base de países, departamentos, municipios y monedas (`D-96`).
 - Usuario Administrador inicial **sin compañía**, creado por semilla en local y por bootstrap controlado en demo (`D-110`); una empresa demo con usuarios de prueba.
 
@@ -1915,7 +1915,7 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | Verificación | Qué comprueba | Nivel |
 |---|---|---|
 | T-U-18 | Código manual obligatorio, validación de formato 1–10, unicidad case-insensitive, endpoint de validación, inmutabilidad del código y compactación de posiciones (`RF-04`; `D-30`, `D-117`, `R-19`) | Unitaria |
-| T-U-19 | Conjunto cerrado de caracteres con mayúsculas y minúsculas, longitud 1–10 del código completo, unicidad sin distinguir mayúsculas, `quantityWork > 0`, validación de ciclo, movimiento con `targetIndex` y orden de borrado en cascada (`RF-04`; `BR-015`; `R-19`; `D-118`, `D-119`) | Unitaria |
+| T-U-19 | Conjunto cerrado de caracteres con mayúsculas y minúsculas, longitud 1–10 del código completo, unicidad sin distinguir mayúsculas, `quantityWork >= 0`, validación de ciclo, movimiento con `targetIndex` y orden de borrado en cascada (`RF-04`; `BR-015`; `R-19`; `D-118`, `D-119`) | Unitaria |
 | T-I-39 | Persistencia de `wbs_codes`, `wbs_chapters`, `wbs_items` y `wbs_project_activity`: `CHECK`, FKs `RESTRICT`, índice único sin distinguir mayúsculas, índice único filtrado de `apu_id`, `wbs_chapter_id` nullable y `rowversion` (`D-51`, `D-107`, `D-113`, `D-118`, `D-120`) | Integración manual |
 | T-I-40 | Jerarquía, búsqueda por código o nombre, orden de nodos e ítems raíz, movimiento, cascada, actividad y participantes, y aislamiento entre dos proyectos de la misma compañía (`RF-04`; `D-30`, `D-118`, `D-119`, `D-120`) | Integración manual |
 | T-S-16 | Aislamiento entre compañías: un actor de la compañía A no lee ni escribe la EDT de la compañía B (`R-10`, `R-14`; `D-02`, `D-36`) | Seguridad manual |

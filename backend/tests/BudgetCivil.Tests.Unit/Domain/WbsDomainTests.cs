@@ -17,6 +17,7 @@ public sealed class WbsDomainTests
     [InlineData("CIM.1", true)]
     [InlineData("a", true)]
     [InlineData("A-1_2/3*4=", true)]
+    [InlineData("19,77", true)]
     [InlineData("(A)%&#'¡?¿", true)]
     [InlineData("", false)]
     [InlineData("   ", false)]
@@ -85,13 +86,19 @@ public sealed class WbsDomainTests
         item.Code.NodeType.Should().Be(WbsNodeType.Item);
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void La_cantidad_de_obra_debe_ser_mayor_que_cero(decimal quantity)
+    [Fact]
+    public void La_cantidad_de_obra_cero_es_valida()
     {
-        // SC-EDT-26 y SC-EDT-27.
-        var action = () => CreateItem(null, "CIM.1", quantity, 0);
+        var item = CreateItem(null, "CIM.1", 0m, 0);
+
+        item.QuantityWork.Should().Be(0m);
+    }
+
+    [Fact]
+    public void La_cantidad_de_obra_negativa_es_invalida()
+    {
+        // SC-EDT-27.
+        var action = () => CreateItem(null, "CIM.1", -1m, 0);
 
         action.Should().Throw<InvalidOperationException>();
     }

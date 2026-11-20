@@ -58,7 +58,7 @@ public sealed class WbsItem
             throw new InvalidOperationException("WBS parent chapter is invalid.");
         }
 
-        if (quantityWork <= 0m)
+        if (quantityWork < 0m)
         {
             throw new InvalidOperationException("WBS quantity work is invalid.");
         }
@@ -88,10 +88,10 @@ public sealed class WbsItem
         };
     }
 
-    /// <summary>Cambia la cantidad de obra; debe ser mayor que cero (`SC-EDT-25`…`27`).</summary>
+    /// <summary>Cambia la cantidad de obra; debe ser mayor o igual que cero (`SC-EDT-25`…`27`).</summary>
     public void ChangeQuantity(decimal quantityWork)
     {
-        if (quantityWork <= 0m)
+        if (quantityWork < 0m)
         {
             throw new InvalidOperationException("WBS quantity work is invalid.");
         }

@@ -25,7 +25,7 @@ idempotente y versionado (`D-82`).
    - sin `user_company_memberships`, `project_user_memberships` ni `user_profiles` (`D-98`, `D-78`);
    - `project_configurations` con clave `project_id` y `projects` sin `base_currency_id` ni AIU (`D-93`);
    - `resources` con `project_id`, `resource_type_id`, `municipality_id`, `row_version`, autoría y baja
-     lógica; `resource_types` con exactamente siete tipos (`D-49`, `D-50`, `D-96`);
+     lógica; `resource_types` con exactamente ocho tipos (`D-49`, `D-50`, `D-96`);
    - `suppliers` con `company_id`, `business_name` obligatorio, contacto y ubicación opcionales,
      `is_active`, `row_version` y autoría; `resources.supplier_id` opcional con FK `RESTRICT` e índice;
      sin índice único sobre `business_name` ni `email` (`REQ-PROVEEDORES-01`…`06`, `D-27`, `D-96`).
@@ -131,5 +131,5 @@ CREATE DATABASE BudgetCivilDb;
 ```
 
 Después de crearla, aplicar la baseline con el procedimiento de la sección 2. El `seed` de seguridad
-(roles, permisos y administrador inicial), el `seed` de los siete tipos de insumo y los catálogos se
+(roles, permisos y administrador inicial), el `seed` de los ocho tipos de insumo y los catálogos se
 ejecutan en el siguiente arranque de la API.

@@ -49,7 +49,7 @@ public sealed class CopyApuCommandValidator : AbstractValidator<CopyApuCommand>
         RuleFor(command => command.Target.WbsChapterId)
             .NotEqual(Guid.Empty)
             .When(command => command.Target.WbsChapterId.HasValue);
-        RuleFor(command => command.Target.QuantityWork).GreaterThan(0m);
+        RuleFor(command => command.Target.QuantityWork).GreaterThanOrEqualTo(0m);
     }
 }
 

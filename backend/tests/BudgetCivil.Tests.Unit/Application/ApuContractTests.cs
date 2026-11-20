@@ -13,7 +13,7 @@ public sealed class ApuContractTests
     private static readonly JsonSerializerOptions WebOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void El_detalle_del_apu_usa_camel_case_y_expone_los_campos_de_costo()
+    public void El_detalle_del_apu_usa_camel_case_y_expone_la_composicion_base()
     {
         var response = new ApuDetailResponse
         {
@@ -35,21 +35,12 @@ public sealed class ApuContractTests
                             Description = "Cemento",
                             Unit = "kg",
                             UnitPrice = 1200m,
-                            Quantity = 2.5m,
-                            Subtotal = 3000m
+                            Consumption = 2.5m,
+                            WastePercentage = 10m
                         }
                     ]
                 }
-            ],
-            DirectCost = 3000m,
-            IndirectCosts = new IndirectCostsDto
-            {
-                Administration = new AiuComponentDto { Percent = 10m, Amount = 300m },
-                Unforeseen = new AiuComponentDto { Percent = 5m, Amount = 150m },
-                Profit = new AiuComponentDto { Percent = 8m, Amount = 240m },
-                Total = 690m
-            },
-            Total = 3690m
+            ]
         };
 
         var json = JsonSerializer.Serialize(response, WebOptions);
@@ -62,15 +53,13 @@ public sealed class ApuContractTests
         json.Should().Contain("\"resources\"");
         json.Should().Contain("\"resourceType\":\"MATERIAL\"");
         json.Should().Contain("\"items\"");
-        json.Should().Contain("\"subtotal\":3000");
-        json.Should().Contain("\"directCost\":3000");
-        json.Should().Contain("\"indirectCosts\"");
-        json.Should().Contain("\"administration\"");
-        json.Should().Contain("\"unforeseen\"");
-        json.Should().Contain("\"profit\"");
-        json.Should().Contain("\"total\":3690");
+        json.Should().Contain("\"consumption\":2.5");
+        json.Should().Contain("\"wastePercentage\":10");
         json.Should().NotContain("direct_cost");
-        json.Should().NotContain("\"DirectCost\"");
+        json.Should().NotContain("\"directCost\"");
+        json.Should().NotContain("\"indirectCosts\"");
+        json.Should().NotContain("\"subtotal\"");
+        json.Should().NotContain("\"quantity\"");
     }
 
     [Fact]
@@ -267,15 +256,12 @@ public sealed class ApuContractTests
                                 Description = "Cemento",
                                 Unit = "kg",
                                 UnitPrice = 1200m,
-                                Quantity = 2m,
-                                Subtotal = 2400m
+                                Consumption = 2m,
+                                WastePercentage = 10m
                             }
                         ]
                     }
-                ],
-                DirectCost = 2400m,
-                IndirectCosts = new IndirectCostsDto { Total = 360m },
-                Total = 2760m
+                ]
             },
             WebOptions);
 
@@ -290,8 +276,11 @@ public sealed class ApuContractTests
         json.Should().Contain("\"unit\":\"m3\"");
         json.Should().Contain("\"resources\"");
         json.Should().Contain("\"lineId\"");
-        json.Should().Contain("\"directCost\":2400");
-        json.Should().Contain("\"total\":2760");
+        json.Should().Contain("\"consumption\":2");
+        json.Should().Contain("\"wastePercentage\":10");
+        json.Should().NotContain("\"directCost\"");
+        json.Should().NotContain("\"indirectCosts\"");
+        json.Should().NotContain("\"total\"");
         json.Should().Contain("\"children\":[]");
     }
 

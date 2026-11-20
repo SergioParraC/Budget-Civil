@@ -20,20 +20,20 @@ public static class WbsRules
         if (!WbsCodePolicy.IsValidCode(code))
         {
             throw new ValidationAppException(
-                "El código del EDT debe tener entre 1 y 10 caracteres y usar solo A-Z, a-z, 0-9 y . - _ / * = ( ) % & # ¡ ' ? ¿.",
+                "El código del EDT debe tener entre 1 y 10 caracteres y usar solo A-Z, a-z, 0-9 y . , - _ / * = ( ) % & # ¡ ' ? ¿.",
                 CodeInvalid);
         }
 
         return WbsCodePolicy.NormalizeCode(code);
     }
 
-    /// <summary>La cantidad de obra debe ser mayor que cero (`R-21`, `SC-EDT-25`…`27`).</summary>
+    /// <summary>La cantidad de obra debe ser mayor o igual que cero (`R-21`, `SC-EDT-25`…`27`).</summary>
     public static decimal EnsureValidQuantity(decimal quantityWork)
     {
-        if (quantityWork <= 0m)
+        if (quantityWork < 0m)
         {
             throw new ValidationAppException(
-                "La cantidad de obra debe ser mayor que cero.",
+                "La cantidad de obra no puede ser negativa.",
                 QuantityInvalid);
         }
 

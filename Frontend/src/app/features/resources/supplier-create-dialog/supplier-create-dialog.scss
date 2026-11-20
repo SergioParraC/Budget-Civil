@@ -1,0 +1,22 @@
+.supplier-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  &__error {
+    color: #dc2626;
+    font-size: 0.75rem;
+  }
+}

@@ -9,8 +9,8 @@ public static class WbsCodePolicy
     public const int MinLength = 1;
     public const int MaxLength = 10;
 
-    // R-19: A-Z, a-z, 0-9 y los símbolos . - _ / * = ( ) % & # ¡ ' ? ¿
-    private const string AllowedSymbols = ".-_/*=()%&#¡'?¿";
+    // R-19: A-Z, a-z, 0-9 y los símbolos . , - _ / * = ( ) % & # ¡ ' ? ¿
+    private const string AllowedSymbols = ".,-_/*=()%&#¡'?¿";
 
     /// <summary>Valida el código ya recortado: 1–10 caracteres del conjunto cerrado de `R-19`.</summary>
     public static bool IsValidCode(string? code)

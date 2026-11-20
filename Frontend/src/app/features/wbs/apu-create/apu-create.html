@@ -1,0 +1,158 @@
+@if (projectContext.unavailable()) {
+  <app-project-unavailable (retry)="projectContext.goToList()" />
+} @else {
+  <div class="apu-create">
+    <div class="apu-create__header">
+      <div>
+        <h2>Nuevo APU</h2>
+        <p class="apu-create__subtitle">
+          Crea el ítem del EDT que contiene este APU. El ítem y el APU se guardan en una sola operación.
+        </p>
+      </div>
+      <p-button label="Volver al EDT" icon="pi pi-arrow-left" [text]="true" (onClick)="goToEdt()" />
+    </div>
+
+    @if (!authorized()) {
+      <p-message
+        severity="error"
+        text="No tienes permisos para crear APUs en este proyecto. Se requieren los permisos de escritura del EDT y de APUs."
+      />
+    } @else {
+      @if (loadError()) {
+        <p-message severity="error" text="No se pudieron cargar los capítulos del proyecto." />
+      }
+
+      <form [formGroup]="form" class="apu-create__form" (ngSubmit)="submit()">
+        <h3 class="apu-create__section">Ítem del EDT</h3>
+        <div class="apu-create__grid">
+          <div class="apu-create__field">
+            <label for="apuItemCode">Código</label>
+            <input
+              id="apuItemCode"
+              pInputText
+              formControlName="code"
+              maxlength="10"
+              autocomplete="off"
+              (blur)="onCodeBlur()"
+            />
+            <small class="apu-create__hint">Obligatorio, único en el proyecto y sin renumeración.</small>
+          </div>
+
+          <div class="apu-create__field">
+            <label for="apuChapter">Ubicación</label>
+            <p-select
+              inputId="apuChapter"
+              formControlName="wbsChapterId"
+              [options]="chapterSelectOptions()"
+              optionLabel="label"
+              optionValue="id"
+              appendTo="body"
+            />
+            <small class="apu-create__hint">Elige la raíz o un capítulo existente.</small>
+          </div>
+
+          <div class="apu-create__field">
+            <label for="apuQuantity">Cantidad de obra</label>
+            <p-inputNumber
+              inputId="apuQuantity"
+              formControlName="quantityWork"
+              [min]="0"
+              [maxFractionDigits]="6"
+              [useGrouping]="false"
+            />
+            @if (form.controls.quantityWork.invalid && form.controls.quantityWork.touched) {
+              <small class="apu-create__error">La cantidad de obra no puede ser negativa.</small>
+            } @else if (form.controls.quantityWork.value === 0) {
+              <small class="apu-create__error">La cantidad de obra es 0; podrás completarla después.</small>
+            }
+          </div>
+        </div>
+
+        <h3 class="apu-create__section">APU</h3>
+        <div class="apu-create__grid">
+          <div class="apu-create__field">
+            <label for="apuDescription">Descripción</label>
+            <textarea
+              id="apuDescription"
+              pTextarea
+              formControlName="description"
+              rows="2"
+              maxlength="255"
+            ></textarea>
+            @if (form.controls.description.invalid && form.controls.description.touched) {
+              <small class="apu-create__error">La descripción es obligatoria.</small>
+            }
+          </div>
+
+          <div class="apu-create__field">
+            <label for="apuUnit">Unidad</label>
+            <div class="apu-create__unit-row">
+              <p-select
+                inputId="apuUnit"
+                formControlName="unit"
+                [options]="unitOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [editable]="true"
+                [filter]="true"
+                filterBy="label"
+                filterPlaceholder="Buscar unidad"
+                appendTo="body"
+                placeholder="Sigla de la unidad"
+              />
+              @if (canCreateUnit) {
+                <p-button
+                  label="Nueva unidad"
+                  icon="pi pi-plus"
+                  [text]="true"
+                  (onClick)="unitDialogVisible.set(true)"
+                />
+              }
+            </div>
+            <small class="apu-create__hint">
+              El catálogo es una sugerencia: también se acepta una unidad escrita a mano.
+            </small>
+          </div>
+        </div>
+
+        <app-composition-editor
+          [projectId]="projectId ?? ''"
+          [apuUnit]="form.controls.unit.value"
+          [(lines)]="lines"
+          [(materialWaste)]="materialWaste"
+          [(laborToolsPercent)]="laborToolsPercent"
+          [aiuAdminPercent]="projectContext.project()?.aiuAdminPercent ?? 0"
+          [aiuUnforeseenPercent]="projectContext.project()?.aiuUnforeseenPercent ?? 0"
+          [aiuProfitPercent]="projectContext.project()?.aiuProfitPercent ?? 0"
+        />
+
+        @if (errorMessage()) {
+          <p-message severity="error" [text]="errorMessage() ?? ''" />
+        }
+
+        <div class="apu-create__actions">
+          <p-button label="Cancelar" [text]="true" (onClick)="goToEdt()" />
+          <p-button
+            label="Crear APU"
+            icon="pi pi-check"
+            type="submit"
+            [loading]="saving()"
+            [disabled]="saving() || codeState() === 'checking'"
+          />
+        </div>
+      </form>
+    }
+
+    <app-unit-create-dialog [(visible)]="unitDialogVisible" (created)="onUnitCreated($event)" />
+
+    <app-conflict-dialog
+      [(visible)]="alertVisible"
+      [title]="alert().title"
+      [message]="alert().message"
+      [canRefresh]="alert().refresh"
+      [technicalCode]="alert().code"
+      [traceId]="alert().traceId"
+      (refreshRequested)="onAlertRefresh()"
+    />
+  </div>
+}

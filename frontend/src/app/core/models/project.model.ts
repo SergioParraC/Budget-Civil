@@ -87,3 +87,39 @@ export interface ProjectMemberItem {
 export interface ProjectMembersResponse {
   items: ProjectMemberItem[];
 }
+
+/** AIU de una respuesta de presupuesto (`ProjectBudgetResponse`). */
+export interface ProjectBudgetAiuComponent {
+  percent: number;
+  amount: number | null;
+}
+
+export interface ProjectBudgetIndirectCosts {
+  administration: ProjectBudgetAiuComponent;
+  unforeseen: ProjectBudgetAiuComponent;
+  profit: ProjectBudgetAiuComponent;
+  total: number | null;
+}
+
+export interface ProjectBudgetCurrency {
+  id: string;
+  isoCode: string;
+  name: string;
+}
+
+/** Presupuesto consolidado del proyecto (`GET /projects/{id}/budget`). */
+export interface ProjectBudget {
+  projectId: string;
+  baseCurrency: ProjectBudgetCurrency | null;
+  roundingDecimals: number;
+  quantityDecimals: number;
+  directCost: number | null;
+  indirectCosts: ProjectBudgetIndirectCosts;
+  total: number | null;
+  budgetLimit: number | null;
+  isOverBudget: boolean;
+  isComplete: boolean;
+  itemCount: number;
+  itemsWithoutApu: number;
+  itemsWithoutPrice: number;
+}

@@ -10,7 +10,7 @@ public static class ApuMapper
     public static ApuDetailResponse ToDetail(
         Apu apu,
         ApuCostPayload payload,
-        ApuCostResult cost,
+        ApuStatus status,
         WbsItemInfo? wbsItem,
         bool includeQuantityWork)
     {
@@ -19,7 +19,7 @@ public static class ApuMapper
             ApuId = apu.Id,
             Description = apu.Description,
             Unit = apu.Unit,
-            Status = cost.IsComplete ? ApuStatusCodes.ToCode(apu.Status) : ApuStatusCodes.FaltaInformacion,
+            Status = ApuStatusCodes.ToCode(status),
             WbsItem = wbsItem is null
                 ? null
                 : new WbsItemReferenceDto
@@ -28,16 +28,7 @@ public static class ApuMapper
                     QuantityWork = includeQuantityWork ? wbsItem.QuantityWork : null,
                     Unit = apu.Unit
                 },
-            Resources = ToResourceGroups(cost.Resources),
-            DirectCost = cost.DirectCost,
-            IndirectCosts = new IndirectCostsDto
-            {
-                Administration = ToAiu(cost.IndirectCosts.Administration),
-                Unforeseen = ToAiu(cost.IndirectCosts.Unforeseen),
-                Profit = ToAiu(cost.IndirectCosts.Profit),
-                Total = cost.IndirectCosts.Total
-            },
-            Total = cost.Total,
+            Resources = ToResourceGroups(payload.Lines),
             RowVersion = Convert.ToBase64String(apu.RowVersion),
             LastModifiedBy = apu.LastModifiedByUserId,
             LastModifiedAt = apu.LastModifiedAtUtc
@@ -77,25 +68,43 @@ public static class ApuMapper
         };
     }
 
+    private static readonly string[] ResourceTypeOrder =
+    [
+        "MATERIAL",
+        "LABOR",
+        "TOOL",
+        "EQUIPMENT",
+        "AUXILIARY",
+        "WORK",
+        "TRANSPORT",
+        "MATRIX"
+    ];
+
     public static IReadOnlyList<ApuResourceGroupDto> ToResourceGroups(
-        IReadOnlyList<CostGroupResult> groups)
+        IReadOnlyList<ApuCostLineSource> lines)
     {
-        return groups
+        return lines
+            .GroupBy(line => string.IsNullOrWhiteSpace(line.ResourceTypeCode)
+                ? string.Empty
+                : line.ResourceTypeCode.Trim().ToUpperInvariant())
+            .OrderBy(group => Array.IndexOf(ResourceTypeOrder, group.Key) is var index && index >= 0
+                ? index
+                : ResourceTypeOrder.Length)
+            .ThenBy(group => group.Key, StringComparer.Ordinal)
             .Select(group => new ApuResourceGroupDto
             {
-                ResourceType = group.ResourceType,
-                Items = group.Items
-                    .Select(item => new ApuResourceItemDto
+                ResourceType = group.Key,
+                Items = group
+                    .Select(line => new ApuResourceItemDto
                     {
-                        LineId = item.LineId,
-                        ResourceId = item.ResourceId,
-                        Description = item.Description,
-                        Unit = item.Unit,
-                        UnitPrice = item.UnitPrice,
-                        Quantity = item.Quantity,
-                        WastePercentage = item.WastePercentage,
-                        Subtotal = item.Subtotal,
-                        MatrixResourceId = item.MatrixResourceId
+                        LineId = line.LineId,
+                        ResourceId = line.ResourceId,
+                        Description = line.Description,
+                        Unit = line.Unit,
+                        UnitPrice = line.UnitPrice,
+                        Consumption = line.Consumption,
+                        WastePercentage = line.WastePercentage,
+                        MatrixResourceId = line.IsMatrix ? line.ResourceId : null
                     })
                     .ToList()
             })
@@ -133,9 +142,4 @@ public static class ApuMapper
             .ToList();
     }
 
-    private static AiuComponentDto ToAiu(AiuComponentResult result) => new()
-    {
-        Percent = result.Percent,
-        Amount = result.Amount
-    };
 }

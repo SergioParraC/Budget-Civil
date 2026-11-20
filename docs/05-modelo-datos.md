@@ -176,7 +176,7 @@
 | `wbs_chapter_id` | UUID | Sí | FK `WbsChapter`; nulo = ítem raíz (`D-118`) |
 | `apu_id` | UUID | Sí | FK `Apu` `RESTRICT` (`FK_wbs_items_apus_apu_id`); único filtrado cuando no es nulo (`D-113`, `BR-016`) |
 | `code_id` | UUID | No | FK `WbsCode`, único; no se recalcula después del alta (`D-117`) |
-| `quantity_work` | DECIMAL(18,10) | No | > 0 (`D-121`) |
+| `quantity_work` | DECIMAL(18,10) | No | >= 0 (`D-121`) |
 | `order_index` | INT | No | Orden |
 | `last_modified_by` | UUID | No | FK `User`; actor autenticado (`D-116`) |
 | `last_modified_at` | DATETIME2 | No | UTC (`D-116`) |
@@ -303,7 +303,7 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | `Country` | `id`, `code` único, `name` |
 | `Department` | `id`, `country_id`, `code` único por país, `name` |
 | `Municipality` | `id`, `department_id`, `code` único por departamento, `name` (`D-96`) |
-| `ResourceType` | `id`, `code` único (`MATERIAL`, `LABOR`, `TOOL`, `EQUIPMENT`, `AUXILIARY`, `WORK`, `MATRIX`), `name`, `is_active` |
+| `ResourceType` | `id`, `code` único (`MATERIAL`, `LABOR`, `TOOL`, `EQUIPMENT`, `AUXILIARY`, `WORK`, `TRANSPORT`, `MATRIX`), `name`, `is_active` |
 
 ## 4. Reglas de integridad
 | Regla | Implementación |
@@ -324,7 +324,7 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | Estado del proyecto | Texto con `CHECK` sobre los cinco valores (`D-88`) |
 | Tope presupuestal | `budget_limit` mayor que cero |
 | AIU | 0–100 |
-| Rendimiento y cantidades | `quantity_work > 0`; `apus.yield` se elimina en `apus_remove_yield` (`REQ-APUS-22`) |
+| Rendimiento y cantidades | `quantity_work >= 0`; `apus.yield` se elimina en `apus_remove_yield` (`REQ-APUS-22`) |
 | Consumo y desperdicio | `consumption > 0`, `waste_percentage` 0–100 |
 | Precio | `unit_price >= 0` |
 | Coherencia del nodo | `WbsItem` exige cantidad; su capítulo es nulo solo si es ítem raíz (`D-118`); `apu_id` es opcional y único cuando existe (`FK_wbs_items_apus_apu_id`, `D-113`); `WbsChapter` exige nombre; `WbsCode.node_type` coincide con la tabla |
@@ -417,7 +417,7 @@ por ítem en el presupuesto. Los costos no se persisten: se recalculan en cada l
   `wbs_items` y `wbs_project_activity` con sus índices, `CHECK` y FKs `RESTRICT`,
   `wbs_items.wbs_chapter_id` nullable, índice único filtrado de `apu_id` y sin migración de datos (`D-40`,
   `D-107`, `D-113`…`D-120`).
-- Seed de siete tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos y Matriz.
+- Seed de ocho tipos de insumo: Materiales, Mano de obra, Herramienta, Equipos, Auxiliares, Trabajos, Transporte y Matriz.
 - Catálogo base de países, departamentos, municipios, tipos de documento y monedas (`D-96`).
 - Administrador inicial por semilla en local o por bootstrap idempotente y auditado en demo, excluyentes (`D-110`).
 

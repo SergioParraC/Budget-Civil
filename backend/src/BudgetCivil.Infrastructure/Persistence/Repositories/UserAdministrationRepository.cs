@@ -10,6 +10,7 @@ public sealed class UserAdministrationRepository(BudgetCivilDbContext dbContext)
     {
         return dbContext.UserAccounts
             .Include(user => user.Role)
+            .Include(user => user.Memberships)
             .SingleOrDefaultAsync(user => user.Id == actorUserId, cancellationToken);
     }
 
@@ -17,6 +18,7 @@ public sealed class UserAdministrationRepository(BudgetCivilDbContext dbContext)
     {
         return dbContext.UserAccounts
             .Include(user => user.Role)
+            .Include(user => user.Memberships)
             .SingleOrDefaultAsync(user => user.Id == userId, cancellationToken);
     }
 

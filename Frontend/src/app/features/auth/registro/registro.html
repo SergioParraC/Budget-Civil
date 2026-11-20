@@ -6,7 +6,7 @@
         <a routerLink="/login">Volver al inicio de sesión</a>
       </div>
     } @else {
-      <form [formGroup]="form" (ngSubmit)="submit()" class="registro__form">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="registro__form" novalidate>
         <label for="documentType">Tipo de documento</label>
         <p-select
           id="documentType"
@@ -14,34 +14,90 @@
           [options]="documentTypes()"
           optionLabel="name"
           optionValue="code"
+          [invalid]="isInvalid(form.controls.documentType)"
         />
+        @if (isInvalid(form.controls.documentType)) {
+          <small class="registro__field-error">Selecciona el tipo de documento.</small>
+        }
 
         <label for="documentNumber">Número de documento</label>
-        <input id="documentNumber" pInputText formControlName="documentNumber" />
+        <input
+          id="documentNumber"
+          pInputText
+          formControlName="documentNumber"
+          [invalid]="isInvalid(form.controls.documentNumber)"
+        />
+        @if (isInvalid(form.controls.documentNumber)) {
+          <small class="registro__field-error">El número de documento es obligatorio.</small>
+        }
 
         <label for="firstName">Primer nombre</label>
-        <input id="firstName" pInputText formControlName="firstName" />
+        <input id="firstName" pInputText formControlName="firstName" [invalid]="isInvalid(form.controls.firstName)" />
+        @if (isInvalid(form.controls.firstName)) {
+          <small class="registro__field-error">El primer nombre es obligatorio.</small>
+        }
 
         <label for="middleName">Segundo nombre (opcional)</label>
         <input id="middleName" pInputText formControlName="middleName" />
 
         <label for="lastName">Primer apellido</label>
-        <input id="lastName" pInputText formControlName="lastName" />
+        <input id="lastName" pInputText formControlName="lastName" [invalid]="isInvalid(form.controls.lastName)" />
+        @if (isInvalid(form.controls.lastName)) {
+          <small class="registro__field-error">El primer apellido es obligatorio.</small>
+        }
 
         <label for="secondLastName">Segundo apellido (opcional)</label>
         <input id="secondLastName" pInputText formControlName="secondLastName" />
 
         <label for="birthDate">Fecha de nacimiento</label>
-        <input id="birthDate" type="date" pInputText formControlName="birthDate" />
+        <input
+          id="birthDate"
+          type="date"
+          pInputText
+          formControlName="birthDate"
+          [invalid]="isInvalid(form.controls.birthDate)"
+        />
+        @if (isInvalid(form.controls.birthDate)) {
+          <small class="registro__field-error">La fecha de nacimiento es obligatoria.</small>
+        }
 
         <label for="email">Correo electrónico</label>
-        <input id="email" type="email" pInputText formControlName="email" autocomplete="email" />
+        <input
+          id="email"
+          type="email"
+          pInputText
+          formControlName="email"
+          autocomplete="email"
+          [invalid]="isInvalid(form.controls.email)"
+        />
+        @if (emailError) {
+          <small class="registro__field-error">{{ emailError }}</small>
+        }
 
         <label for="username">Nombre de usuario</label>
-        <input id="username" pInputText formControlName="username" autocomplete="username" />
+        <input
+          id="username"
+          pInputText
+          formControlName="username"
+          autocomplete="username"
+          [invalid]="isInvalid(form.controls.username)"
+        />
+        @if (usernameError) {
+          <small class="registro__field-error">{{ usernameError }}</small>
+        }
 
         <label for="password">Contraseña</label>
-        <p-password id="password" formControlName="password" [feedback]="false" [toggleMask]="true" />
+        <p-password
+          id="password"
+          formControlName="password"
+          [feedback]="false"
+          [toggleMask]="true"
+          autocomplete="new-password"
+          [invalid]="isInvalid(form.controls.password)"
+        />
+        @if (passwordError) {
+          <small class="registro__field-error">{{ passwordError }}</small>
+        }
         <small class="registro__hint">Mínimo 8 caracteres, una mayúscula, un número y un símbolo.</small>
 
         <label for="country">País</label>
@@ -52,7 +108,11 @@
           optionLabel="name"
           optionValue="id"
           (onChange)="onCountryChange($event.value)"
+          [invalid]="isInvalid(form.controls.countryId)"
         />
+        @if (isInvalid(form.controls.countryId)) {
+          <small class="registro__field-error">Selecciona el país.</small>
+        }
 
         <label for="department">Departamento</label>
         <p-select
@@ -62,7 +122,11 @@
           optionLabel="name"
           optionValue="id"
           (onChange)="onDepartmentChange($event.value)"
+          [invalid]="isInvalid(form.controls.departmentId)"
         />
+        @if (isInvalid(form.controls.departmentId)) {
+          <small class="registro__field-error">Selecciona el departamento.</small>
+        }
 
         <label for="municipality">Municipio</label>
         <p-select
@@ -71,7 +135,11 @@
           [options]="municipalities()"
           optionLabel="name"
           optionValue="id"
+          [invalid]="isInvalid(form.controls.municipalityId)"
         />
+        @if (isInvalid(form.controls.municipalityId)) {
+          <small class="registro__field-error">Selecciona el municipio.</small>
+        }
 
         @if (errorMessage()) {
           <p-message severity="error" [text]="errorMessage()!" />

@@ -1,0 +1,40 @@
+.quotation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__scope {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  &__summary {
+    display: grid;
+    grid-template-columns: minmax(12rem, 16rem) 1fr;
+    gap: 0.25rem 1rem;
+    margin: 0;
+
+    dt {
+      font-size: 0.8125rem;
+      color: var(--p-text-muted-color, #6b7280);
+    }
+
+    dd {
+      margin: 0;
+      font-size: 0.875rem;
+    }
+  }
+
+  &__skipped {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 0.75rem;
+    color: var(--p-text-muted-color, #6b7280);
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--p-text-muted-color, #6b7280);
+  }
+}

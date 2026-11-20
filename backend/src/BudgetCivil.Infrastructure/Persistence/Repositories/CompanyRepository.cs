@@ -11,6 +11,7 @@ public sealed class CompanyRepository(BudgetCivilDbContext dbContext)
     {
         return DbContext.UserAccounts
             .Include(user => user.Role)
+            .Include(user => user.Memberships)
             .SingleOrDefaultAsync(user => user.Id == actorUserId, cancellationToken);
     }
 

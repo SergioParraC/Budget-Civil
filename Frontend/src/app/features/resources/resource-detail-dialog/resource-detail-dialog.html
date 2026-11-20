@@ -1,0 +1,155 @@
+@if (resource(); as item) {
+  <p-dialog
+    [visible]="visible()"
+    (visibleChange)="visible.set($event)"
+    header="Detalle del insumo"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '52rem', maxWidth: '95vw' }"
+  >
+    <div class="resource-detail">
+      <div class="resource-detail__head">
+        <div>
+          <h3 class="resource-detail__title">{{ item.description }}</h3>
+          <p class="resource-detail__subtitle">{{ item.resourceTypeName }}</p>
+        </div>
+        <p-tag [value]="item.quotationStatus" [severity]="item.quotationStatus === 'COTIZADO' ? 'success' : 'warn'" />
+      </div>
+
+      <dl class="resource-detail__grid">
+        <dt>Unidad</dt>
+        <dd>{{ item.unit ?? '—' }}</dd>
+        <dt>Precio unitario</dt>
+        <dd>{{ item.unitPrice !== null ? (item.unitPrice | number: '1.0-2') : '—' }}</dd>
+        <dt>Marca</dt>
+        <dd>{{ item.brand ?? '—' }}</dd>
+        <dt>Distribuidor</dt>
+        <dd>{{ item.distributor ?? '—' }}</dd>
+        <dt>Proveedor</dt>
+        <dd>{{ item.supplier?.businessName ?? '—' }}</dd>
+        <dt>Municipio</dt>
+        <dd>{{ item.supplier?.municipalityName ?? item.municipalityId }}</dd>
+        <dt>Contacto</dt>
+        <dd>{{ item.contactNumber ?? '—' }}</dd>
+        <dt>Clave de usuario</dt>
+        <dd>{{ item.userKey ?? '—' }}</dd>
+        <dt>Detalles</dt>
+        <dd>{{ item.details ?? '—' }}</dd>
+        <dt>Origen de copia</dt>
+        <dd>{{ item.originResourceId ?? '—' }}</dd>
+        <dt>Última modificación</dt>
+        <dd>{{ item.lastModifiedAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </dl>
+
+      @if (isMatrix()) {
+        <h4 class="resource-detail__section">Composición de la Matriz</h4>
+
+        @if (!canReadApus()) {
+          <p-message
+            severity="info"
+            text="No tienes permiso para ver la composición de esta Matriz."
+          />
+        } @else {
+          <div class="resource-detail__matrix-actions">
+            @if (canWriteApus()) {
+              <p-button
+                label="Agregar componente"
+                icon="pi pi-plus"
+                [outlined]="true"
+                (onClick)="openAddComponent()"
+              />
+            }
+          </div>
+
+          <p-table [value]="matrixComponents()" [loading]="matrixLoading()" dataKey="componentId">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Descripción</th>
+                <th>Tipo</th>
+                <th>Unidad</th>
+                <th>Precio</th>
+                <th>Cantidad</th>
+                <th>Desperdicio %</th>
+                <th>Subtotal</th>
+                @if (canWriteApus()) {
+                  <th></th>
+                }
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-component>
+              <tr>
+                <td>{{ component.description }}</td>
+                <td>{{ component.resourceType }}</td>
+                <td>{{ component.unit ?? '—' }}</td>
+                <td>{{ component.unitPrice !== null ? (component.unitPrice | number: '1.0-2') : '—' }}</td>
+                <td>{{ component.quantity }}</td>
+                <td>{{ component.wastePercentage }}</td>
+                <td>{{ component.subtotal !== null ? (component.subtotal | number: '1.0-2') : '—' }}</td>
+                @if (canWriteApus()) {
+                  <td class="resource-detail__row-actions">
+                    <p-button
+                      icon="pi pi-pencil"
+                      [text]="true"
+                      ariaLabel="Editar componente"
+                      (onClick)="openEditComponent(component)"
+                    />
+                    <p-button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      [text]="true"
+                      ariaLabel="Quitar componente"
+                      (onClick)="removeComponent(component)"
+                    />
+                  </td>
+                }
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td [attr.colspan]="canWriteApus() ? 8 : 7">
+                  La Matriz no tiene componentes; su estado es FALTA_INFORMACION.
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+
+          <p class="resource-detail__hint">
+            Costo directo de la Matriz:
+            {{ matrix()?.directCost !== null && matrix()?.directCost !== undefined ? (matrix()!.directCost | number: '1.0-2') : '—' }}
+          </p>
+        }
+      }
+
+      <div class="resource-detail__actions">
+        @if (canWrite()) {
+          <p-button label="Editar" icon="pi pi-pencil" [outlined]="true" (onClick)="requestEdit()" />
+          <p-button label="Copiar" icon="pi pi-copy" [outlined]="true" (onClick)="requestCopy()" />
+          <p-button
+            label="Eliminar"
+            icon="pi pi-trash"
+            severity="danger"
+            [text]="true"
+            [loading]="deleting()"
+            (onClick)="confirmDelete()"
+          />
+        }
+        <p-button label="Cerrar" (onClick)="visible.set(false)" />
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <span></span>
+    </ng-template>
+  </p-dialog>
+
+  <app-matrix-component-dialog
+    [(visible)]="componentDialogVisible"
+    [projectId]="projectId()"
+    [matrixResourceId]="item.resourceId"
+    [matrixRowVersion]="matrix()?.rowVersion ?? ''"
+    [component]="componentToEdit()"
+    (saved)="onComponentSaved($event)"
+    (failed)="onComponentFailed($event)"
+  />
+}

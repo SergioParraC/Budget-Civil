@@ -52,7 +52,7 @@ public sealed class UpdateWbsItemCommandValidator : AbstractValidator<UpdateWbsI
             .NotEmpty();
 
         RuleFor(command => command.QuantityWork)
-            .GreaterThan(0m);
+            .GreaterThanOrEqualTo(0m);
 
         When(command => command.Apu is not null, () =>
         {

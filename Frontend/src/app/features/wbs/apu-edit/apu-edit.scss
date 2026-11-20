@@ -1,0 +1,86 @@
+.apu-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+
+    h2 {
+      margin: 0;
+    }
+  }
+
+  &__subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    color: var(--p-text-muted-color, #6b7280);
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__section {
+    margin: 0.5rem 0 0;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--p-text-muted-color, #6b7280);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  &__unit-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__labor-tools {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  &__error {
+    color: #dc2626;
+    font-size: 0.75rem;
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--p-text-muted-color, #6b7280);
+  }
+
+  &__ok {
+    color: #15803d;
+    font-size: 0.75rem;
+  }
+}

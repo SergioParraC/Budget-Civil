@@ -8,6 +8,8 @@ public sealed class ResourceTypeOptionDto
 {
     public Guid Id { get; init; }
 
+    public string Code { get; init; } = string.Empty;
+
     public string Name { get; init; } = string.Empty;
 }
 
@@ -30,7 +32,7 @@ public sealed class GetResourceTypesQueryHandler(
         return types
             .OrderBy(type => catalogOrder.TryGetValue(type.Id, out var index) ? index : int.MaxValue)
             .ThenBy(type => type.Name, StringComparer.OrdinalIgnoreCase)
-            .Select(type => new ResourceTypeOptionDto { Id = type.Id, Name = type.Name })
+            .Select(type => new ResourceTypeOptionDto { Id = type.Id, Code = type.Code, Name = type.Name })
             .ToList();
     }
 }

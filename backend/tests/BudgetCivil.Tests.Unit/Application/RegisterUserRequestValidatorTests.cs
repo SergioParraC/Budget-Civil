@@ -38,10 +38,24 @@ public sealed class RegisterUserRequestValidatorTests
     }
 
     [Theory]
+    [InlineData("ClaveSegura1!")]
+    [InlineData("Ándres2024!")]
+    [InlineData("ñandÚ2024!")]
+    [InlineData("Clave Segura1#")]
+    public void Acepta_una_contrasena_que_cumple_la_politica(string password)
+    {
+        var result = _validator.Validate(CreateRequest(password: password));
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Theory]
     [InlineData("corta1!")]
     [InlineData("sinmayusculas1!")]
     [InlineData("SinNumeros!")]
     [InlineData("SinEspeciales1")]
+    [InlineData("contraseña2024")]
+    [InlineData("Clave Segura1")]
     public void Rechaza_una_contrasena_que_no_cumple_la_politica(string password)
     {
         var result = _validator.Validate(CreateRequest(password: password));

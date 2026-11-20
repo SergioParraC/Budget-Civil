@@ -10,6 +10,7 @@ public sealed class ProfileRepository(BudgetCivilDbContext dbContext) : IProfile
     {
         return dbContext.UserAccounts
             .Include(user => user.Role)
+            .Include(user => user.Memberships)
             .SingleOrDefaultAsync(user => user.Id == actorUserId, cancellationToken);
     }
 
@@ -17,6 +18,7 @@ public sealed class ProfileRepository(BudgetCivilDbContext dbContext) : IProfile
     {
         return dbContext.UserAccounts
             .Include(user => user.Role)
+            .Include(user => user.Memberships)
             .Include(user => user.Country)
             .Include(user => user.Department)
             .Include(user => user.Municipality)

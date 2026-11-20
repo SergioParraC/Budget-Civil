@@ -27,15 +27,15 @@ public sealed class UnitContractTests
     }
 
     [Fact]
-    public void El_tipo_de_insumo_expone_id_y_name()
+    public void El_tipo_de_insumo_expone_id_code_y_name()
     {
         var json = JsonSerializer.Serialize(
-            new ResourceTypeOptionDto { Id = Guid.NewGuid(), Name = "Materiales" },
+            new ResourceTypeOptionDto { Id = Guid.NewGuid(), Code = "MATERIAL", Name = "Materiales" },
             WebOptions);
 
         json.Should().Contain("\"id\":");
+        json.Should().Contain("\"code\":\"MATERIAL\"");
         json.Should().Contain("\"name\":\"Materiales\"");
-        json.Should().NotContain("\"code\"");
         json.Should().NotContain("\"isActive\"");
     }
 

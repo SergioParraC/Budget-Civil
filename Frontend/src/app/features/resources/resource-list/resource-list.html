@@ -1,0 +1,260 @@
+@if (projectContext.unavailable()) {
+  <app-project-unavailable (retry)="projectContext.goToList()" />
+} @else {
+  <div class="resource-list">
+    <div class="resource-list__header">
+      <div>
+        <h2>Insumos del proyecto</h2>
+        <p class="resource-list__subtitle">{{ project()?.name }}</p>
+      </div>
+
+      <div class="resource-list__actions">
+        @if (canWrite()) {
+          <p-button label="Nuevo insumo" icon="pi pi-plus" (onClick)="openCreate()" />
+          <p-button
+            label="Cotizar seleccionados"
+            icon="pi pi-check"
+            [outlined]="true"
+            [disabled]="selectedIds().length === 0"
+            (onClick)="openQuotation()"
+          />
+          <p-button label="Cotización masiva" icon="pi pi-list-check" [text]="true" (onClick)="openQuotation()" />
+        }
+      </div>
+    </div>
+
+    <div class="resource-list__filters">
+      <div class="resource-list__field">
+        <label for="resourceSearch">Buscar</label>
+        <input
+          id="resourceSearch"
+          pInputText
+          placeholder="Descripción o clave"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          (keyup.enter)="applyFilters()"
+        />
+      </div>
+
+      <div class="resource-list__field">
+        <label for="resourceTypeFilter">Tipo</label>
+        <p-select
+          inputId="resourceTypeFilter"
+          [options]="types()"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Todos"
+          appendTo="body"
+          [showClear]="true"
+          [ngModel]="typeId()"
+          (ngModelChange)="typeId.set($event ?? '')"
+        />
+      </div>
+
+      <div class="resource-list__field">
+        <label for="resourceStatusFilter">Estado</label>
+        <p-select
+          inputId="resourceStatusFilter"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todos"
+          appendTo="body"
+          [showClear]="true"
+          [ngModel]="quotationStatus()"
+          (ngModelChange)="quotationStatus.set($event ?? '')"
+        />
+      </div>
+
+      <div class="resource-list__field">
+        <label for="resourceBrandFilter">Marca</label>
+        <input
+          id="resourceBrandFilter"
+          pInputText
+          [ngModel]="brand()"
+          (ngModelChange)="brand.set($event)"
+          (keyup.enter)="applyFilters()"
+        />
+      </div>
+
+      <div class="resource-list__field">
+        <label for="resourceMunicipalityFilter">Municipio</label>
+        <p-select
+          inputId="resourceMunicipalityFilter"
+          [options]="municipalities()"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Todos"
+          appendTo="body"
+          [showClear]="true"
+          [ngModel]="municipalityId()"
+          (ngModelChange)="municipalityId.set($event ?? '')"
+        />
+      </div>
+
+      <div class="resource-list__field">
+        <label for="resourceMinPrice">Precio mínimo</label>
+        <p-inputNumber
+          inputId="resourceMinPrice"
+          [min]="0"
+          [maxFractionDigits]="2"
+          [ngModel]="minPrice()"
+          (ngModelChange)="minPrice.set($event)"
+        />
+      </div>
+
+      <div class="resource-list__field">
+        <label for="resourceMaxPrice">Precio máximo</label>
+        <p-inputNumber
+          inputId="resourceMaxPrice"
+          [min]="0"
+          [maxFractionDigits]="2"
+          [ngModel]="maxPrice()"
+          (ngModelChange)="maxPrice.set($event)"
+        />
+      </div>
+
+      <div class="resource-list__filter-actions">
+        <p-button label="Aplicar filtros" icon="pi pi-filter" (onClick)="applyFilters()" />
+        <p-button label="Limpiar" icon="pi pi-filter-slash" [text]="true" (onClick)="clearFilters()" />
+      </div>
+    </div>
+
+    @if (loadError()) {
+      <p-message severity="error" text="No se pudieron cargar los insumos del proyecto." />
+    }
+
+    <p-table
+      [value]="rows()"
+      [lazy]="true"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 50, 100]"
+      [totalRecords]="totalRecords()"
+      [loading]="loading()"
+      [selection]="selection()"
+      (selectionChange)="selection.set($event)"
+      dataKey="resourceId"
+      [sortField]="sortBy()"
+      [sortOrder]="sortDirection() === 'desc' ? -1 : 1"
+      (onLazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          @if (canWrite()) {
+            <th class="resource-list__col-select">
+              <p-tableHeaderCheckbox />
+            </th>
+          }
+          <th pSortableColumn="description">Descripción <p-sortIcon field="description" /></th>
+          <th>Tipo</th>
+          <th>Unidad</th>
+          <th pSortableColumn="unitPrice">Precio unitario <p-sortIcon field="unitPrice" /></th>
+          <th>Marca</th>
+          <th>Proveedor</th>
+          <th>Municipio</th>
+          <th pSortableColumn="quotationStatus">Estado <p-sortIcon field="quotationStatus" /></th>
+          <th pSortableColumn="lastModifiedAt">Última modificación <p-sortIcon field="lastModifiedAt" /></th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-resource>
+        <tr>
+          @if (canWrite()) {
+            <td class="resource-list__col-select">
+              <p-tableCheckbox [value]="resource" />
+            </td>
+          }
+          <td>{{ resource.description }}</td>
+          <td>{{ resource.resourceTypeName }}</td>
+          <td>{{ resource.unit ?? '—' }}</td>
+          <td>{{ resource.unitPrice !== null ? (resource.unitPrice | number: '1.0-2') : '—' }}</td>
+          <td>{{ resource.brand ?? '—' }}</td>
+          <td>{{ resource.supplier?.businessName ?? '—' }}</td>
+          <td>{{ resource.supplier?.municipalityName ?? '—' }}</td>
+          <td>
+            <p-tag
+              [value]="resource.quotationStatus"
+              [severity]="resource.quotationStatus === 'COTIZADO' ? 'success' : 'warn'"
+            />
+          </td>
+          <td>{{ resource.lastModifiedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td class="resource-list__col-actions">
+            <p-menu #rowMenu [popup]="true" [model]="rowMenuItems(resource)" appendTo="body" />
+            <p-button
+              icon="pi pi-ellipsis-v"
+              [text]="true"
+              ariaLabel="Acciones del insumo"
+              (onClick)="rowMenu.toggle($event)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td [attr.colspan]="canWrite() ? 11 : 10">
+            <div class="resource-list__empty">
+              <span>Aún no hay insumos en este proyecto.</span>
+              @if (canWrite()) {
+                <p-button label="Nuevo insumo" icon="pi pi-plus" (onClick)="openCreate()" />
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    <app-resource-form-dialog
+      [(visible)]="formVisible"
+      [projectId]="projectId ?? ''"
+      [resource]="formResource()"
+      [companyId]="project()?.companyId ?? null"
+      [defaultCountryId]="project()?.countryId ?? null"
+      [defaultDepartmentId]="project()?.departmentId ?? null"
+      [defaultMunicipalityId]="project()?.municipalityId ?? null"
+      (saved)="onSaved($event)"
+      (failed)="onDetailFailed($event)"
+    />
+
+    <app-resource-detail-dialog
+      [(visible)]="detailVisible"
+      [projectId]="projectId ?? ''"
+      [resource]="detailResource()"
+      [canWrite]="canWrite()"
+      [canReadApus]="canReadApus()"
+      [canWriteApus]="canWriteApus()"
+      (editRequested)="openEdit($event)"
+      (copyRequested)="openCopy()"
+      (changed)="onDetailChanged()"
+      (failed)="onDetailFailed($event)"
+    />
+
+    <app-resource-copy-dialog
+      [(visible)]="copyVisible"
+      [projectId]="projectId ?? ''"
+      (copyRequested)="onCopied($event)"
+      (failed)="onDetailFailed($event)"
+    />
+
+    <app-quotation-dialog
+      [(visible)]="quotationVisible"
+      [projectId]="projectId ?? ''"
+      [selection]="selectedIds()"
+      [filter]="quotationFilter()"
+      (completed)="onQuotationCompleted()"
+      (failed)="onDetailFailed($event)"
+    />
+
+    <app-conflict-dialog
+      [(visible)]="alertVisible"
+      [title]="alert().title"
+      [message]="alert().message"
+      [canRefresh]="alert().refresh"
+      [technicalCode]="alert().code"
+      [traceId]="alert().traceId"
+      (refreshRequested)="onAlertRefresh()"
+    />
+  </div>
+}

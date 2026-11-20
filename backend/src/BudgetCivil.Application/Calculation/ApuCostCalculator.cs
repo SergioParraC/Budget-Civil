@@ -14,6 +14,7 @@ public static class ApuCostCalculator
         "EQUIPMENT",
         "AUXILIARY",
         "WORK",
+        "TRANSPORT",
         "MATRIX"
     ];
 
@@ -55,6 +56,7 @@ public static class ApuCostCalculator
                 line.Description,
                 line.Unit,
                 unitPrice,
+                line.Consumption,
                 quantity,
                 line.WastePercentage,
                 subtotal,
@@ -106,6 +108,7 @@ public static class ApuCostCalculator
                 component.Description,
                 component.Unit,
                 component.UnitPrice,
+                component.Consumption,
                 quantity,
                 component.WastePercentage,
                 subtotal,

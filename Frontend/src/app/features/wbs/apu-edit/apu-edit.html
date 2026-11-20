@@ -1,0 +1,205 @@
+@if (projectContext.unavailable()) {
+  <app-project-unavailable (retry)="projectContext.goToList()" />
+} @else {
+  <div class="apu-edit">
+    <div class="apu-edit__header">
+      <div>
+        <h2>Editar APU</h2>
+        <p class="apu-edit__subtitle">
+          Ítem {{ node()?.code ?? '—' }} del EDT. La ubicación se cambia desde el árbol con “Mover a…”.
+        </p>
+      </div>
+      <div class="apu-edit__actions">
+        <p-button label="Volver al EDT" icon="pi pi-arrow-left" [text]="true" (onClick)="goToEdt()" />
+        @if (editable()) {
+          <p-button
+            label="Descartar cambios"
+            icon="pi pi-undo"
+            [outlined]="true"
+            (onClick)="discardChanges()"
+          />
+          <p-button
+            label="Guardar"
+            icon="pi pi-check"
+            [loading]="saving()"
+            [disabled]="saving()"
+            (onClick)="submit()"
+          />
+        }
+      </div>
+    </div>
+
+    @if (createdNotice()) {
+      <p-message
+        severity="success"
+        text="El APU quedó guardado."
+        [closable]="true"
+        [life]="6000"
+        (onClose)="createdNotice.set(false)"
+      />
+    }
+
+    @if (loading()) {
+      <p-message severity="info" text="Cargando el APU del ítem…" />
+    } @else if (loadError()) {
+      <p-message severity="error" text="No se pudo cargar el APU del ítem." />
+      <p-button label="Reintentar" icon="pi pi-refresh" (onClick)="onAlertRefresh()" />
+    } @else if (itemWithoutApu()) {
+      <p-message severity="warn" text="Este ítem no tiene APU." />
+      <p-button label="Crear APU" icon="pi pi-plus" (onClick)="goToCreate()" />
+    } @else if (detail(); as apu) {
+      @if (!editable()) {
+        <p-message
+          severity="info"
+          text="No tienes permisos para modificar el APU. La página se muestra en solo lectura."
+        />
+      }
+
+      <form [formGroup]="form" class="apu-edit__form" (ngSubmit)="submit()">
+        <h3 class="apu-edit__section">Ítem del EDT</h3>
+        <div class="apu-edit__grid">
+          <div class="apu-edit__field">
+            <label for="apuEditCode">Código</label>
+            <input
+              id="apuEditCode"
+              pInputText
+              formControlName="code"
+              maxlength="10"
+              autocomplete="off"
+              [readonly]="!editable()"
+              (blur)="onCodeBlur()"
+            />
+            <small class="apu-edit__hint">Obligatorio, único en el proyecto y sin renumeración.</small>
+            @if (
+              form.controls.code.touched &&
+              (form.controls.code.invalid || !form.controls.code.value.trim())
+            ) {
+              <small class="apu-edit__error">El código es obligatorio.</small>
+            } @else if (codeState() === 'checking') {
+              <small class="apu-edit__hint">Verificando disponibilidad del código…</small>
+            } @else if (codeState() === 'invalid' && codeMessage()) {
+              <small class="apu-edit__error">{{ codeMessage() }}</small>
+            } @else if (codeState() === 'valid') {
+              <small class="apu-edit__ok">Código disponible.</small>
+            }
+          </div>
+          <div class="apu-edit__field">
+            <label for="apuEditQuantity">Cantidad de obra</label>
+            <p-inputNumber
+              inputId="apuEditQuantity"
+              formControlName="quantityWork"
+              [min]="0"
+              [maxFractionDigits]="6"
+              [useGrouping]="false"
+              [disabled]="!editable()"
+            />
+            @if (form.controls.quantityWork.invalid && form.controls.quantityWork.touched) {
+              <small class="apu-edit__error">La cantidad de obra no puede ser negativa.</small>
+            } @else if (form.controls.quantityWork.value === 0) {
+              <small class="apu-edit__error">La cantidad de obra es 0; podrás completarla después.</small>
+            }
+          </div>
+          <div class="apu-edit__field">
+            <label for="apuEditStatus">Estado</label>
+            <div>
+              <p-tag
+                [value]="apu.status"
+                [severity]="apu.status === 'COMPLETO' ? 'success' : 'warn'"
+              />
+            </div>
+          </div>
+        </div>
+
+        <h3 class="apu-edit__section">Datos del APU</h3>
+        <div class="apu-edit__grid">
+          <div class="apu-edit__field">
+            <label for="apuEditDescription">Descripción</label>
+            <textarea
+              id="apuEditDescription"
+              pTextarea
+              formControlName="description"
+              rows="2"
+              maxlength="255"
+              [readonly]="!editable()"
+            ></textarea>
+            @if (form.controls.description.invalid && form.controls.description.touched) {
+              <small class="apu-edit__error">La descripción es obligatoria.</small>
+            }
+          </div>
+          <div class="apu-edit__field">
+            <label for="apuEditUnit">Unidad</label>
+            <div class="apu-edit__unit-row">
+              <p-select
+                inputId="apuEditUnit"
+                formControlName="unit"
+                [options]="unitOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [editable]="true"
+                [filter]="true"
+                filterBy="label"
+                filterPlaceholder="Buscar unidad"
+                [disabled]="!editable()"
+                appendTo="body"
+              />
+              @if (canCreateUnit && editable()) {
+                <p-button
+                  label="Nueva unidad"
+                  icon="pi pi-plus"
+                  [text]="true"
+                  (onClick)="unitDialogVisible.set(true)"
+                />
+              }
+            </div>
+          </div>
+        </div>
+
+        <app-composition-editor
+          [projectId]="projectId ?? ''"
+          [apuUnit]="form.controls.unit.value"
+          [editable]="editable()"
+          [(lines)]="lines"
+          [(materialWaste)]="materialWaste"
+          [(laborToolsPercent)]="laborToolsPercent"
+          [aiuAdminPercent]="projectContext.project()?.aiuAdminPercent ?? 0"
+          [aiuUnforeseenPercent]="projectContext.project()?.aiuUnforeseenPercent ?? 0"
+          [aiuProfitPercent]="projectContext.project()?.aiuProfitPercent ?? 0"
+          (dirty)="onCompositionDirty()"
+        />
+
+        @if (showMissingLaborTools()) {
+          <div class="apu-edit__labor-tools">
+            <p-message
+              severity="info"
+              text="Este APU no tiene herramienta menor guardada. Ingresa el porcentaje en Mano de obra y guarda para incluirlo en el costo oficial."
+            />
+            @if (rememberedLaborToolsPercent() > 0) {
+              <p-button
+                [label]="'Aplicar ' + rememberedLaborToolsPercent() + ' % recordado'"
+                icon="pi pi-check"
+                [outlined]="true"
+                (onClick)="applyRememberedLaborTools()"
+              />
+            }
+          </div>
+        }
+
+        @if (errorMessage()) {
+          <p-message severity="error" [text]="errorMessage() ?? ''" />
+        }
+      </form>
+    }
+
+    <app-unit-create-dialog [(visible)]="unitDialogVisible" (created)="onUnitCreated($event)" />
+
+    <app-conflict-dialog
+      [(visible)]="alertVisible"
+      [title]="alert().title"
+      [message]="alert().message"
+      [canRefresh]="alert().refresh"
+      [technicalCode]="alert().code"
+      [traceId]="alert().traceId"
+      (refreshRequested)="onAlertRefresh()"
+    />
+  </div>
+}

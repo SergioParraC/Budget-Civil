@@ -47,12 +47,6 @@ public sealed class WbsItemApuResponse
     public string Unit { get; init; } = string.Empty;
 
     public IReadOnlyList<ApuResourceGroupDto> Resources { get; init; } = [];
-
-    public decimal? DirectCost { get; init; }
-
-    public IndirectCostsDto IndirectCosts { get; init; } = new();
-
-    public decimal? Total { get; init; }
 }
 
 public static class WbsItemApuMapper
@@ -80,10 +74,7 @@ public static class WbsItemApuMapper
             ApuLastModifiedAt = apu.LastModifiedAt,
             Description = apu.Description,
             Unit = apu.Unit,
-            Resources = apu.Resources,
-            DirectCost = apu.DirectCost,
-            IndirectCosts = apu.IndirectCosts,
-            Total = apu.Total
+            Resources = apu.Resources
         };
     }
 }

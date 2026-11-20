@@ -12,6 +12,32 @@
       />
     }
 
+    @if (canOpenEdt || canOpenResources) {
+      <div class="proyecto-detalle__modules">
+        <h3 class="proyecto-detalle__modules-title">Módulos del proyecto</h3>
+        <div class="proyecto-detalle__modules-grid">
+          @if (canOpenEdt) {
+            <a class="proyecto-detalle__module" [routerLink]="['/proyectos', projectId, 'edt']">
+              <i class="pi pi-sitemap"></i>
+              <span class="proyecto-detalle__module-text">
+                <strong>EDT</strong>
+                <small>Capítulos, ítems y APUs del proyecto</small>
+              </span>
+            </a>
+          }
+          @if (canOpenResources) {
+            <a class="proyecto-detalle__module" [routerLink]="['/proyectos', projectId, 'insumos']">
+              <i class="pi pi-box"></i>
+              <span class="proyecto-detalle__module-text">
+                <strong>Insumos</strong>
+                <small>Materiales, mano de obra, equipos y Matrices</small>
+              </span>
+            </a>
+          }
+        </div>
+      </div>
+    }
+
     <p-tabs value="0">
       <p-tablist>
         <p-tab value="0">Datos generales</p-tab>

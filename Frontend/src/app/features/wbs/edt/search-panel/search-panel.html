@@ -1,0 +1,73 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  header="Buscar en el EDT"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '48rem', maxWidth: '95vw' }"
+>
+  <div class="search-panel">
+    <div class="search-panel__row">
+      <input
+        pInputText
+        class="search-panel__input"
+        placeholder="Código o nombre del capítulo"
+        aria-label="Buscar en el EDT"
+        [ngModel]="term()"
+        (ngModelChange)="term.set($event)"
+        (keyup.enter)="search(1)"
+      />
+      <p-button label="Buscar" icon="pi pi-search" (onClick)="search(1)" />
+    </div>
+
+    @if (errorMessage()) {
+      <p-message severity="error" [text]="errorMessage() ?? ''" />
+    }
+
+    <p-table
+      [value]="items()"
+      [lazy]="true"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 50, 100]"
+      [totalRecords]="totalRecords()"
+      [loading]="loading()"
+      dataKey="nodeId"
+      (onLazyLoad)="load($event)"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Código</th>
+          <th>Tipo</th>
+          <th>Nombre</th>
+          <th>Cantidad de obra</th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-item>
+        <tr>
+          <td>{{ item.code }}</td>
+          <td>{{ item.nodeType === 'CHAPTER' ? 'Capítulo' : 'Ítem' }}</td>
+          <td>{{ item.name ?? '—' }}</td>
+          <td>{{ item.quantityWork ?? '—' }}</td>
+          <td>
+            <p-button
+              label="Ir al nodo"
+              icon="pi pi-arrow-right"
+              [text]="true"
+              (onClick)="choose(item)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5">Sin coincidencias para la búsqueda.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    <p class="search-panel__hint">Los resultados no incluyen costos; el nodo elegido se resalta en el árbol.</p>
+  </div>
+</p-dialog>

@@ -1,0 +1,35 @@
+<p-card class="activity-card">
+  <ng-template pTemplate="title">{{ title() }}</ng-template>
+
+  @if (hidden()) {
+    <p-message
+      severity="info"
+      text="La actividad no está disponible para tu rol. El árbol y sus acciones siguen funcionando."
+    />
+  } @else if (loading()) {
+    <p class="activity-card__muted">Cargando actividad…</p>
+  } @else if (activity(); as info) {
+    <p class="activity-card__label">Última modificación</p>
+    @if (info.lastActivity; as last) {
+      <p class="activity-card__value">
+        {{ last.userName }} · {{ last.lastModifiedAt | date: 'dd/MM/yyyy HH:mm' }}
+      </p>
+    } @else {
+      <p class="activity-card__muted">El proyecto aún no tiene actividad registrada.</p>
+    }
+
+    <p class="activity-card__label">Participantes</p>
+    @if (info.participants.length > 0) {
+      <ul class="activity-card__participants">
+        @for (participant of info.participants; track participant.userId) {
+          <li>
+            <span>{{ participant.userName }}</span>
+            <small>{{ participant.lastModifiedAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="activity-card__muted">Sin participantes registrados.</p>
+    }
+  }
+</p-card>

@@ -42,10 +42,15 @@ public sealed class BootstrapRequestValidator : AbstractValidator<BootstrapReque
 
         RuleFor(request => request.AdminProfile.Password)
             .NotEmpty()
+            .WithMessage("La contraseña es obligatoria.")
             .MinimumLength(8)
-            .Matches("[A-Z]").WithMessage("Password must include at least one uppercase letter.")
-            .Matches("[0-9]").WithMessage("Password must include at least one number.")
-            .Matches("[^a-zA-Z0-9]").WithMessage("Password must include at least one special character.");
+            .WithMessage("La contraseña debe tener al menos 8 caracteres.")
+            .Matches(@"\p{Lu}")
+            .WithMessage("La contraseña debe incluir al menos una mayúscula.")
+            .Matches(@"\p{Nd}")
+            .WithMessage("La contraseña debe incluir al menos un número.")
+            .Matches(@"[^\p{L}\p{N}\s]")
+            .WithMessage("La contraseña debe incluir al menos un símbolo.");
 
         // La residencia es opcional, pero si se informa debe venir completa y ser coherente.
         RuleFor(request => request.AdminProfile)

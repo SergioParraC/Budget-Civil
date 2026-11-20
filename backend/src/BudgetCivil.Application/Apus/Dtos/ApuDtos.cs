@@ -26,11 +26,10 @@ public sealed class ApuResourceItemDto
 
     public decimal? UnitPrice { get; init; }
 
-    public decimal Quantity { get; init; }
+    /// <summary>Cantidad base de la línea, sin desperdicio ni herramienta menor.</summary>
+    public decimal Consumption { get; init; }
 
     public decimal WastePercentage { get; init; }
-
-    public decimal? Subtotal { get; init; }
 
     /// <summary>Identificador de la Matriz cuando la línea la referencia (`SC-APUS-88`).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -42,24 +41,6 @@ public sealed class ApuResourceGroupDto
     public string ResourceType { get; init; } = string.Empty;
 
     public IReadOnlyList<ApuResourceItemDto> Items { get; init; } = [];
-}
-
-public sealed class AiuComponentDto
-{
-    public decimal Percent { get; init; }
-
-    public decimal? Amount { get; init; }
-}
-
-public sealed class IndirectCostsDto
-{
-    public AiuComponentDto Administration { get; init; } = new();
-
-    public AiuComponentDto Unforeseen { get; init; } = new();
-
-    public AiuComponentDto Profit { get; init; } = new();
-
-    public decimal? Total { get; init; }
 }
 
 public sealed class ApuDetailResponse
@@ -75,12 +56,6 @@ public sealed class ApuDetailResponse
     public WbsItemReferenceDto? WbsItem { get; init; }
 
     public IReadOnlyList<ApuResourceGroupDto> Resources { get; init; } = [];
-
-    public decimal? DirectCost { get; init; }
-
-    public IndirectCostsDto IndirectCosts { get; init; } = new();
-
-    public decimal? Total { get; init; }
 
     public string RowVersion { get; init; } = string.Empty;
 

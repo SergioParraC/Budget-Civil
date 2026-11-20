@@ -1,0 +1,88 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  header="Agregar insumo"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '52rem', maxWidth: '95vw' }"
+>
+  <div class="resource-picker">
+    <div class="resource-picker__filters">
+      <input
+        pInputText
+        class="resource-picker__search"
+        placeholder="Buscar por descripción"
+        aria-label="Buscar insumo"
+        [ngModel]="term()"
+        (ngModelChange)="term.set($event)"
+        (keyup.enter)="search()"
+      />
+      <p-select
+        class="resource-picker__type"
+        ariaLabel="Filtrar por tipo"
+        [options]="types()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Todos los tipos"
+        appendTo="body"
+        [ngModel]="typeId()"
+        (ngModelChange)="typeId.set($event)"
+        [showClear]="true"
+      />
+      <p-button label="Buscar" icon="pi pi-search" (onClick)="search()" />
+    </div>
+
+    <label class="resource-picker__toggle">
+      <p-toggleSwitch
+        [ngModel]="onlySameUnit()"
+        (ngModelChange)="onlySameUnit.set($event)"
+        [disabled]="!initialUnit()"
+      />
+      <span>Solo insumos con la unidad del APU ({{ initialUnit() || 'sin unidad' }})</span>
+    </label>
+
+    @if (errorMessage()) {
+      <p-message severity="error" [text]="errorMessage() ?? ''" />
+    }
+
+    <p-table
+      [value]="items()"
+      [loading]="loading()"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 50, 100]"
+      dataKey="resourceId"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Descripción</th>
+          <th>Tipo</th>
+          <th>Unidad</th>
+          <th>Precio unitario</th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-resource>
+        <tr>
+          <td>{{ resource.description }}</td>
+          <td>{{ resource.resourceTypeName }}</td>
+          <td>{{ resource.unit ?? '—' }}</td>
+          <td>{{ resource.unitPrice !== null ? (resource.unitPrice | number: '1.0-2') : '—' }}</td>
+          <td>
+            <p-button label="Agregar" icon="pi pi-plus" [text]="true" (onClick)="choose(resource)" />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5">No hay insumos que coincidan con el filtro.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    <p class="resource-picker__hint">
+      Solo se muestran insumos de este proyecto. Los precios son los del servidor.
+    </p>
+  </div>
+</p-dialog>

@@ -1,0 +1,40 @@
+.item-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__subject {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  &__section {
+    margin: 0;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--p-text-muted-color, #6b7280);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  &__hint {
+    color: var(--p-text-muted-color, #6b7280);
+    font-size: 0.75rem;
+  }
+
+  &__error {
+    color: #dc2626;
+    font-size: 0.75rem;
+  }
+}

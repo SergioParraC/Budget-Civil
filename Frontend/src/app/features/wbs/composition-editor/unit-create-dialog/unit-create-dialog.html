@@ -1,0 +1,40 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  header="Nueva unidad"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '26rem', maxWidth: '95vw' }"
+>
+  <form [formGroup]="form" class="unit-form" (ngSubmit)="submit()">
+    <div class="unit-form__field">
+      <label for="unitShort">Sigla</label>
+      <input id="unitShort" pInputText formControlName="shortUnit" maxlength="10" />
+      @if (form.controls.shortUnit.invalid && form.controls.shortUnit.touched) {
+        <small class="unit-form__error">La sigla es obligatoria y admite hasta 10 caracteres.</small>
+      }
+    </div>
+
+    <div class="unit-form__field">
+      <label for="unitName">Nombre</label>
+      <input id="unitName" pInputText formControlName="unit" maxlength="100" />
+      @if (form.controls.unit.invalid && form.controls.unit.touched) {
+        <small class="unit-form__error">El nombre es obligatorio y admite hasta 100 caracteres.</small>
+      }
+    </div>
+
+    @if (errorMessage()) {
+      <p-message severity="error" [text]="errorMessage() ?? ''" />
+    }
+
+    <small class="unit-form__hint">
+      La unidad creada se agrega al catálogo global y queda seleccionada en el formulario.
+    </small>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" [text]="true" (onClick)="visible.set(false)" />
+    <p-button label="Crear" icon="pi pi-check" [loading]="saving()" (onClick)="submit()" />
+  </ng-template>
+</p-dialog>

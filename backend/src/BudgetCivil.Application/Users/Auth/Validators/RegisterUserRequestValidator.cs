@@ -46,10 +46,15 @@ public sealed class RegisterUserRequestValidator : AbstractValidator<RegisterUse
 
         RuleFor(request => request.Password)
             .NotEmpty()
+            .WithMessage("La contraseña es obligatoria.")
             .MinimumLength(8)
-            .Matches("[A-Z]").WithMessage("Password must include at least one uppercase letter.")
-            .Matches("[0-9]").WithMessage("Password must include at least one number.")
-            .Matches("[^a-zA-Z0-9]").WithMessage("Password must include at least one special character.");
+            .WithMessage("La contraseña debe tener al menos 8 caracteres.")
+            .Matches(@"\p{Lu}")
+            .WithMessage("La contraseña debe incluir al menos una mayúscula.")
+            .Matches(@"\p{Nd}")
+            .WithMessage("La contraseña debe incluir al menos un número.")
+            .Matches(@"[^\p{L}\p{N}\s]")
+            .WithMessage("La contraseña debe incluir al menos un símbolo.");
 
         RuleFor(request => request.DocumentType)
             .NotEmpty()
