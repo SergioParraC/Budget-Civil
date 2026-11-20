@@ -7,7 +7,7 @@ namespace BudgetCivil.Domain.Apus;
 /// </summary>
 public sealed class Apu
 {
-    public const int UnitMaxLength = 5;
+    public const int UnitMaxLength = 10;
 
     private readonly List<ApuResource> _lines = [];
 
@@ -174,7 +174,7 @@ public sealed class Apu
         return normalized;
     }
 
-    /// <summary>La unidad tiene entre 1 y 5 caracteres (`D2`, `REQ-APUS-02`).</summary>
+    /// <summary>La unidad tiene entre 1 y 10 caracteres (`D5`, `REQ-APUS-02`, `SC-APUS-109`).</summary>
     public static string NormalizeUnit(string? unit)
     {
         var normalized = unit?.Trim() ?? string.Empty;

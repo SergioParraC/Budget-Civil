@@ -29,6 +29,8 @@ public sealed class BudgetCivilDbContext(DbContextOptions<BudgetCivilDbContext> 
 
     public DbSet<BaseCurrency> BaseCurrencies => Set<BaseCurrency>();
 
+    public DbSet<MeasurementUnit> MeasurementUnits => Set<MeasurementUnit>();
+
     public DbSet<Company> Companies => Set<Company>();
 
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();

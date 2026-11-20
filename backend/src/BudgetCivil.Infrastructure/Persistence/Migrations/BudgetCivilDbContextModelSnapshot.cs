@@ -61,9 +61,9 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Unit")
                         .IsRequired()
-                        .HasMaxLength(5)
+                        .HasMaxLength(10)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(5)")
+                        .HasColumnType("varchar(10)")
                         .HasColumnName("unit");
 
                     b.HasKey("Id")
@@ -311,6 +311,44 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("UQ_dbo_document_types_code");
 
                     b.ToTable("document_types", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetCivil.Domain.Catalogs.MeasurementUnit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ShortUnit")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("short_unit");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("unit");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo_measurement_units");
+
+                    b.HasIndex("ShortUnit")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_dbo_measurement_units_short_unit");
+
+                    b.ToTable("measurement_units", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_measurement_units_short_unit_not_empty", "LEN(LTRIM(RTRIM(short_unit))) > 0");
+
+                            t.HasCheckConstraint("CK_measurement_units_unit_not_empty", "LEN(LTRIM(RTRIM(unit))) > 0");
+                        });
                 });
 
             modelBuilder.Entity("BudgetCivil.Domain.Catalogs.Municipality", b =>

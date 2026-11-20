@@ -91,6 +91,12 @@ public sealed class SeedIdempotencyTests(DatabaseFixture fixture) : IClassFixtur
         Assert.Contains("WBS_WRITE", estimatorPermissions);
         Assert.Contains("WBS_READ", auditorPermissions);
         Assert.DoesNotContain("WBS_WRITE", auditorPermissions);
+
+        // REQ-UNIDADES-04 (seed v9): Administrador, Director y Presupuestador crean unidades; el Auditor solo lee.
+        Assert.Contains("CATALOGS_WRITE", administratorPermissions);
+        Assert.Contains("CATALOGS_WRITE", directorPermissions);
+        Assert.Contains("CATALOGS_WRITE", estimatorPermissions);
+        Assert.DoesNotContain("CATALOGS_WRITE", auditorPermissions);
     }
 
     /// <summary>

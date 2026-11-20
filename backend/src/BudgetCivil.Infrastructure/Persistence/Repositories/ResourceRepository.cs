@@ -1,6 +1,7 @@
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Resources.Repositories;
 using BudgetCivil.Domain.Resources;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetCivil.Infrastructure.Persistence.Repositories;
@@ -135,6 +136,65 @@ public sealed class ResourceRepository(BudgetCivilDbContext dbContext) : IResour
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Resource>> ListByUnitAsync(
+        Guid projectId,
+        string shortUnit,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = shortUnit.Trim().ToUpperInvariant();
+
+        return await WithSupplier(DbContext.Resources.Include(resource => resource.ResourceType))
+            .AsNoTracking()
+            .Where(resource =>
+                resource.ProjectId == projectId &&
+                resource.Unit != null &&
+                resource.Unit.ToUpper() == normalized)
+            .OrderBy(resource => resource.Description)
+            .ThenBy(resource => resource.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> HasReferencesAsync(
+        Guid resourceId,
+        CancellationToken cancellationToken = default)
+    {
+        if (await DbContext.ApuResources.AnyAsync(
+                line => line.ResourceId == resourceId,
+                cancellationToken))
+        {
+            return true;
+        }
+
+        if (await DbContext.MatrixComponents.AnyAsync(
+                component => component.ComponentResourceId == resourceId,
+                cancellationToken))
+        {
+            return true;
+        }
+
+        return await DbContext.Resources
+            .IgnoreQueryFilters()
+            .AnyAsync(resource => resource.OriginResourceId == resourceId, cancellationToken);
+    }
+
+    public async Task DeleteAsync(Resource resource, CancellationToken cancellationToken = default)
+    {
+        DbContext.Resources.Remove(resource);
+
+        try
+        {
+            await DbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (IsForeignKeyViolation(exception))
+        {
+            // Una referencia creada entre la verificación y el borrado se traduce al mismo conflicto
+            // de negocio (`REQ-INSUMOS-19`, `SC-INSUMOS-72`).
+            throw new ConflictAppException(
+                "Resource is in use and cannot be deleted.",
+                "RESOURCE_IN_USE");
+        }
+    }
+
     private IQueryable<Resource> BuildFilterQuery(ResourceFilter filter)
     {
         var query = WithSupplier(DbContext.Resources.Include(resource => resource.ResourceType))
@@ -200,5 +260,10 @@ public sealed class ResourceRepository(BudgetCivilDbContext dbContext) : IResour
         };
 
         return ordered.ThenBy(resource => resource.Id);
+    }
+
+    private static bool IsForeignKeyViolation(DbUpdateException exception)
+    {
+        return exception.InnerException is SqlException sqlException && sqlException.Number == 547;
     }
 }

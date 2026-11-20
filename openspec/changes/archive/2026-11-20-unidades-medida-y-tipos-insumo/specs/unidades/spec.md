@@ -125,3 +125,28 @@ creación solo al Administrador, al Director y al Presupuestador con `CATALOGS_W
 - **Dado** un usuario autenticado sin el permiso `CATALOGS_WRITE`
 - **Cuando** intenta crear una unidad
 - **Entonces** el sistema responde `403`
+
+### Requirement: REQ-UNIDADES-05 La unidad no catalogada permanece en el APU o insumo
+
+El sistema NO DEBE (MUST NOT) insertar ni actualizar registros de `measurement_units` cuando se registra un
+APU o un insumo con una unidad que no existe en el catálogo; en ese caso el valor textual DEBE (MUST)
+guardarse únicamente en el atributo `unit` del APU o del insumo que se crea. Citas: RF-05, RF-07; D-16,
+D-31; `05 §3`.
+
+#### Scenario: SC-UNIDADES-16 Unidad del APU fuera del catálogo
+
+- **Dado** un catálogo que solo contiene `M2`
+- **Cuando** un usuario autorizado registra un APU con la unidad `GL`
+- **Entonces** el APU queda guardado con `unit = GL` y el catálogo sigue conteniendo solo `M2`
+
+#### Scenario: SC-UNIDADES-17 Unidad del insumo fuera del catálogo
+
+- **Dado** un catálogo que solo contiene `M2`
+- **Cuando** un usuario autorizado registra un insumo con la unidad `GL`
+- **Entonces** el insumo queda guardado con `unit = GL` y no se crea la unidad `GL` en el catálogo
+
+#### Scenario: SC-UNIDADES-18 Alta explícita de la unidad usada
+
+- **Dado** un proyecto con un insumo cuya unidad `GL` no está en el catálogo
+- **Cuando** se consulta el catálogo y después se crea `GL` con `POST /api/v1/catalogs/units`
+- **Entonces** `GL` no aparece antes del alta y aparece únicamente después de crearla explícitamente

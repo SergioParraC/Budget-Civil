@@ -4,6 +4,7 @@ using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Resources.Commands.ChangeResourceQuotationStatus;
 using BudgetCivil.Application.Resources.Commands.CopyResource;
 using BudgetCivil.Application.Resources.Commands.CreateResource;
+using BudgetCivil.Application.Resources.Commands.DeleteResource;
 using BudgetCivil.Application.Resources.Commands.UpdateResource;
 using BudgetCivil.Application.Resources.Dtos;
 using BudgetCivil.Application.Resources.Queries;
@@ -19,9 +20,11 @@ public sealed class ResourcesController(
     UpdateResourceCommandHandler updateResourceCommandHandler,
     CopyResourceCommandHandler copyResourceCommandHandler,
     ChangeResourceQuotationStatusCommandHandler changeResourceQuotationStatusCommandHandler,
+    DeleteResourceCommandHandler deleteResourceCommandHandler,
     GetResourcesQueryHandler getResourcesQueryHandler,
     GetResourceByIdQueryHandler getResourceByIdQueryHandler,
-    GetResourceSuggestionsQueryHandler getResourceSuggestionsQueryHandler) : ControllerBase
+    GetResourceSuggestionsQueryHandler getResourceSuggestionsQueryHandler,
+    GetResourcesByUnitQueryHandler getResourcesByUnitQueryHandler) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = AuthorizationPolicies.ResourcesRead)]
@@ -80,6 +83,42 @@ public sealed class ResourcesController(
             cancellationToken);
 
         return Ok(response);
+    }
+
+    [HttpGet("by-unit/{shortUnit}")]
+    [Authorize(Policy = AuthorizationPolicies.ResourcesRead)]
+    [ProducesResponseType(typeof(IReadOnlyList<ResourceDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ResourceDto>>> GetResourcesByUnit(
+        [FromRoute] Guid projectId,
+        [FromRoute] string shortUnit,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        var response = await getResourcesByUnitQueryHandler.ExecuteAsync(
+            actorUserId,
+            projectId,
+            shortUnit,
+            cancellationToken);
+
+        return Ok(response);
+    }
+
+    [HttpDelete("{resourceId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.ResourcesWrite)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteResource(
+        [FromRoute] Guid projectId,
+        [FromRoute] Guid resourceId,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        await deleteResourceCommandHandler.ExecuteAsync(
+            actorUserId,
+            projectId,
+            resourceId,
+            cancellationToken);
+
+        return NoContent();
     }
 
     [HttpPost]

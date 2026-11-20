@@ -91,7 +91,9 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | EDT | Consultar el árbol y buscar | `WBS_READ` | Sí | Sí (proyectos de su compañía) | Sí (proyectos asignados) | Sí (proyectos asignados) |
 | EDT | Consultar actividad y participantes | `WBS_READ` | Sí | Sí (proyectos de su compañía) | Sí (proyectos asignados) | No |
 | Insumos | Crear, editar y copiar | `RESOURCES_WRITE` | No (lectura) | Sí | Sí | No (lectura) |
+| Insumos | Eliminar (baja física) | `RESOURCES_WRITE` | No (lectura) | Sí | Sí | No (lectura) |
 | Insumos | Consultar y filtrar | `RESOURCES_READ` | Sí | Sí | Sí (asignados) | Sí (asignados) |
+| Insumos | Consultar por sigla de unidad | `RESOURCES_READ` | Sí | Sí | Sí (asignados) | Sí (asignados) |
 | Proveedores | Crear, editar, dar de baja y reactivar | `SUPPLIERS_WRITE` | No (lectura) | Sí (su compañía) | Sí (su compañía) | No (lectura) |
 | Proveedores | Consultar el directorio y el selector | `SUPPLIERS_READ` | Sí (cualquier compañía) | Sí (su compañía) | Sí (su compañía) | Sí (su compañía) |
 | APUs y matrices | Crear, editar, componer y copiar | `APUS_WRITE` | No (lectura) | Sí (con `ProjectMember`) | Sí (con `ProjectMember`) | No (lectura) |
@@ -102,6 +104,8 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | Cierre | Transición a `FINALIZADO` | `PROJECTS_STATUS_CHANGE` | No | Sí | No | No |
 | Perfil | Leer y editar el perfil propio | `PROFILE_READ_SELF`, `PROFILE_UPDATE_SELF` | Sí | Sí | Sí | Sí |
 | Catálogo | Consultar | `APU_PUBLIC_READ` | Sí | Sí | Sí | Sí (también anónimo) |
+| Catálogo | Consultar unidades de medida | `CATALOGS_READ` | Sí | Sí | Sí | Sí |
+| Catálogo | Crear unidades de medida | `CATALOGS_WRITE` | Sí | Sí | Sí | No |
 | Autoría | Ver último modificador | — | Sí (lectura) | Sí | Sí | Sí (lectura) |
 
 ## 5. Reglas de validación
@@ -126,6 +130,10 @@ El control efectivo es el `permission_key` activo del rol (`D-82`); la matriz `1
 | `POST /projects/{id}/wbs/chapters` | `name` no vacío y ≤ 255; `code` obligatorio de 1–10 caracteres del conjunto de `R-19`, con mayúsculas y minúsculas; `parentChapterId` del mismo proyecto; código único por proyecto sin distinguir mayúsculas (`BR-015`); sin numeración automática ni respaldo (`D-117`); requiere `WBS_WRITE` |
 | `PUT /projects/{id}/wbs/chapters/{chapterId}` | `rowVersion` obligatorio; cambia solo el nombre y el código del capítulo y no reescribe a los descendientes (`D-117`); requiere `WBS_WRITE` |
 | `DELETE /projects/{id}/wbs/chapters/{chapterId}?rowVersion=...` | `rowVersion` obligatorio; solo se elimina un capítulo vacío; con APUs en el subárbol responde `409 WBS_CHAPTER_HAS_APU` y, si no hay APUs pero sí subcapítulos o ítems, `409 WBS_NODE_HAS_CHILDREN`; no existe `cascade` (`D-114`, `D-119`); requiere `WBS_WRITE` |
+| `GET /catalogs/units` | Devuelve `[{ id, shortUnit, unit }]` ordenado por `shortUnit`; requiere `CATALOGS_READ` (`REQ-UNIDADES-03`) |
+| `POST /catalogs/units` | `shortUnit` de 1–10 caracteres y `unit` de 1–100, recortados; `shortUnit` único sin distinguir mayúsculas; `400 UNIT_VALIDATION_ERROR` y `409 UNIT_ALREADY_EXISTS`; requiere `CATALOGS_WRITE` (`REQ-UNIDADES-02`) |
+| `GET /projects/{id}/resources/by-unit/{shortUnit}` | Sigla recortada de 1–20 caracteres; coincidencia exacta sin distinguir mayúsculas; no exige que la sigla exista en `measurement_units`; devuelve una colección vacía si no hay insumos; requiere `RESOURCES_READ` con alcance del proyecto (`REQ-INSUMOS-17`) |
+| `DELETE /projects/{id}/resources/{resourceId}` | Baja física con `204`; no usa `is_active` ni `deleted_at`; `409 RESOURCE_IN_USE` si el insumo es línea de APU, componente de Matriz u origen de una copia; `404 RESOURCE_NOT_FOUND` en una segunda baja; requiere `RESOURCES_WRITE` (`REQ-INSUMOS-18`…`REQ-INSUMOS-22`) |
 | `POST /projects/{id}/wbs/items` | Alta unificada de ítem + APU: `code` obligatorio de 1–10 caracteres del conjunto de `R-19`; `wbsChapterId` opcional; `quantityWork` > 0; bloque `apu` obligatorio con `description`, `unit` de 1–5 y `resources` opcional; requiere `WBS_WRITE` + `APUS_WRITE` (`REQ-EDT-22`, `REQ-APUS-21`) |
 | `PUT /projects/{id}/wbs/items/{itemId}` | Edición unificada: `rowVersion` obligatorio; `quantityWork` > 0; `code` opcional; bloque `apu` opcional con `apuRowVersion` y `resources` como reemplazo completo; requiere `WBS_WRITE` + `APUS_WRITE` |
 | `DELETE /projects/{id}/wbs/items/{itemId}?rowVersion=...` | `rowVersion` obligatorio; elimina el ítem y su código; si tiene APU, elimina también el APU y sus líneas y conserva los insumos del proyecto (`D-119`); requiere `WBS_WRITE` |

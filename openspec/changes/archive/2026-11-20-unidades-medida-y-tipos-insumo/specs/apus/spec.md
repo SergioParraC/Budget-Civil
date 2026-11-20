@@ -48,4 +48,5 @@ el cliente. Citas: RF-07; BR-016; D-31; `02 §5`; `05 §3`.
 
 - **Dado** un actor autorizado que envía una unidad que no existe en `measurement_units`
 - **Cuando** confirma el alta del APU
-- **Entonces** el sistema acepta el valor textual y no exige que la unidad esté en el catálogo
+- **Entonces** el sistema acepta el valor textual, lo guarda en el APU y no inserta ni modifica la unidad en
+  `measurement_units`

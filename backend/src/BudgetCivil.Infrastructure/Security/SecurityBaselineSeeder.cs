@@ -9,7 +9,7 @@ public sealed class SecurityBaselineSeeder(
     BudgetCivilDbContext dbContext,
     ILogger<SecurityBaselineSeeder> logger) : ISecurityBaselineSeeder
 {
-    private const string SeedVersion = "v8";
+    private const string SeedVersion = "v9";
 
     private static readonly string[] PermissionKeys =
     {
@@ -17,6 +17,7 @@ public sealed class SecurityBaselineSeeder(
         "APUS_READ",
         "APUS_WRITE",
         "CATALOGS_READ",
+        "CATALOGS_WRITE",
         "USERS_CREATE",
         "USERS_UPDATE",
         "USERS_DEACTIVATE",
@@ -71,6 +72,7 @@ public sealed class SecurityBaselineSeeder(
             "USERS_COMPANY_CHANGE",
             "USERS_READ",
             "CATALOGS_READ",
+            "CATALOGS_WRITE",
             "COMPANIES_CREATE",
             "COMPANIES_UPDATE",
             "COMPANIES_DEACTIVATE",
@@ -94,6 +96,7 @@ public sealed class SecurityBaselineSeeder(
         [
             "APU_PUBLIC_READ",
             "CATALOGS_READ",
+            "CATALOGS_WRITE",
             "USERS_ROLE_CHANGE",
             "USERS_COMPANY_CHANGE",
             "USERS_READ",
@@ -126,6 +129,7 @@ public sealed class SecurityBaselineSeeder(
         [
             "APU_PUBLIC_READ",
             "CATALOGS_READ",
+            "CATALOGS_WRITE",
             "USERS_READ",
             "COMPANY_PROFILE_READ_SELF",
             "COMPANY_LEAVE_SELF",

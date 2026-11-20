@@ -1,5 +1,7 @@
 using BudgetCivil.Api.Auth;
 using BudgetCivil.Api.Middleware;
+using BudgetCivil.Application.Catalogs.Commands.CreateUnit;
+using BudgetCivil.Application.Catalogs.Dtos;
 using BudgetCivil.Application.Catalogs.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +11,10 @@ namespace BudgetCivil.Api.Controllers;
 [ApiController]
 [Route("api/v1/catalogs")]
 [AllowWithoutCompanyContext]
-public sealed class CatalogsController(GetCatalogItemsQueryHandler getCatalogItemsQueryHandler) : ControllerBase
+public sealed class CatalogsController(
+    GetCatalogItemsQueryHandler getCatalogItemsQueryHandler,
+    GetUnitsQueryHandler getUnitsQueryHandler,
+    CreateUnitCommandHandler createUnitCommandHandler) : ControllerBase
 {
     // Anónimo: el autorregistro público selecciona la residencia sin sesión.
     [AllowAnonymous]
@@ -119,5 +124,25 @@ public sealed class CatalogsController(GetCatalogItemsQueryHandler getCatalogIte
             cancellationToken);
 
         return Ok(response);
+    }
+
+    [HttpGet("units")]
+    [Authorize(Policy = AuthorizationPolicies.CatalogsRead)]
+    [ProducesResponseType(typeof(IReadOnlyList<UnitDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<UnitDto>>> GetUnits(CancellationToken cancellationToken)
+    {
+        var response = await getUnitsQueryHandler.ExecuteAsync(cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpPost("units")]
+    [Authorize(Policy = AuthorizationPolicies.CatalogsWrite)]
+    [ProducesResponseType(typeof(UnitDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<UnitDto>> CreateUnit(
+        [FromBody] CreateUnitCommand command,
+        CancellationToken cancellationToken)
+    {
+        var response = await createUnitCommandHandler.ExecuteAsync(command, cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, response);
     }
 }

@@ -144,6 +144,12 @@ builder.Services.AddAuthorization(options =>
             .RequirePermission("CATALOGS_READ"));
 
     options.AddPolicy(
+        AuthorizationPolicies.CatalogsWrite,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequirePermission("CATALOGS_WRITE"));
+
+    options.AddPolicy(
         AuthorizationPolicies.UsersCreate,
         policy => policy
             .RequireAuthenticatedUser()

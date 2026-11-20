@@ -52,10 +52,10 @@ especificado sin implementar; `RESOURCES_WRITE`, `ResourceAccessService` y `Reso
 
 ## 2. Persistencia de lectura y registro
 
-- [ ] 2.1 Implementar `ProjectCostReader.GetProjectAsync` con consultas set-based por `project_id` para
+- [x] 2.1 Implementar `ProjectCostReader.GetProjectAsync` con consultas set-based por `project_id` para
   ítems, APUs, líneas, componentes de Matriz, unidad de Matriz, configuración, divisa y tope; verificar con
   `T-I-46` que no hay N+1 y que los totales coinciden con los del detalle del APU.
-- [ ] 2.2 Implementar `CalculationProjectAccessReader` sobre `projects` y `project_members`; verificar con
+- [x] 2.2 Implementar `CalculationProjectAccessReader` sobre `projects` y `project_members`; verificar con
   `T-S-20` que otra compañía responde `403` y un proyecto inexistente `404`.
 - [x] 2.3 Registrar los lectores, el servicio y el handler en `Infrastructure/DependencyInjection.cs` y
   `Application/DependencyInjection.cs`; verificar con `dotnet build` y un arranque local de la API.
@@ -79,12 +79,12 @@ especificado sin implementar; `RESOURCES_WRITE`, `ResourceAccessService` y `Reso
 
 ## 4. Endpoint de presupuesto y alerta
 
-- [ ] 4.1 Conectar `GetProjectBudgetQueryHandler` al `ProjectCostReader` y al `ApuCostService` y verificar
+- [x] 4.1 Conectar `GetProjectBudgetQueryHandler` al `ProjectCostReader` y al `ApuCostService` y verificar
   con `T-I-46` que el `directCost` del presupuesto coincide con la suma de los costos directos del árbol,
   incluidos los ítems raíz.
 - [x] 4.2 Verificar la alerta de tope con `T-U-09` y `T-I-16`: total mayor, igual y menor que el tope; sin
   tope; total nulo por presupuesto incompleto; `budgetLimit` y `isOverBudget` en la respuesta.
-- [ ] 4.3 Verificar con `T-S-20` que el Administrador consulta cualquier proyecto, el Director su compañía,
+- [x] 4.3 Verificar con `T-S-20` que el Administrador consulta cualquier proyecto, el Director su compañía,
   el Presupuestador y el Auditor solo los asignados, y que otra compañía responde `403
   WBS_READ_FORBIDDEN`.
 - [x] 4.4 Actualizar `docs/02` (ruta, campos y permisos), `docs/05` (fórmulas y orden de redondeo) y
@@ -96,7 +96,7 @@ especificado sin implementar; `RESOURCES_WRITE`, `ResourceAccessService` y `Reso
 - [x] 5.1 Crear `ChangeResourceQuotationStatusCommand` con `scope` discriminado (`SELECTION`, `FILTER`,
   `ALL`), su validador y la respuesta con `requested`, `updated`, `alreadyQuoted`, `skipped`,
   `pendingResources` y `allQuoted`; verificar con `T-U-06` y `T-U-28`.
-- [ ] 5.2 Implementar `ResourceQuotationRepository` con la resolución set-based de candidatos por filtro, la
+- [x] 5.2 Implementar `ResourceQuotationRepository` con la resolución set-based de candidatos por filtro, la
   relectura de `Resource.IsComplete` dentro de la transacción y el `UPDATE` que solo toca las filas que
   cambian de estado; verificar con `T-I-10` que el conteo coincide con el listado filtrado.
 - [x] 5.3 Omitir los insumos en `FALTA_INFORMACION`, incluidas las Matrices sin componentes, sin escribir
@@ -112,14 +112,14 @@ especificado sin implementar; `RESOURCES_WRITE`, `ResourceAccessService` y `Reso
   `COTIZADO`; verificar con `T-U-29` y `T-I-47`.
 - [x] 5.7 Documentar en `IMPACTO_FRONTEND.md` los tres alcances, el refresco del listado y del presupuesto
   tras cotizar, el `pendingResources` como habilitador de la transición y el `409` de la transición.
-- [ ] 5.8 Verificar con `T-S-21` que el Administrador y el Auditor reciben `403`, que el Presupuestador sin
+- [x] 5.8 Verificar con `T-S-21` que el Administrador y el Auditor reciben `403`, que el Presupuestador sin
   membresía recibe `403 RESOURCES_WRITE_FORBIDDEN` y que otra compañía no revela insumos.
 
 ## 6. Integración, documentación del plan y cierre
 
 - [x] 6.1 Ejecutar `dotnet build` y `dotnet test` de las suites unitaria, de contrato y de arquitectura;
   verificar que `T-U-05`, `T-U-06`, `T-U-09`, `T-U-25`…`T-U-29`, `T-C-06`, `T-C-07` y `T-A-05` pasan.
-- [ ] 6.2 Ejecutar la verificación manual contra SQL Server local (`T-I-46` y `T-I-47`): crear proyecto con
+- [x] 6.2 Ejecutar la verificación manual contra SQL Server local (`T-I-46` y `T-I-47`): crear proyecto con
   AIU, capítulos anidados, ítems con APU y precios, consultar `GET /wbs` y `GET /budget`, mover un capítulo,
   volver a consultar y comprobar que ningún ítem se cuenta dos veces y que el total no cambió por el
   movimiento; cotizar trescientos insumos con al menos seis incompletos, comprobar el resumen y que la

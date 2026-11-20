@@ -99,7 +99,7 @@ Prefijos de identificadores: `P` problema, `H` hipótesis, `N` necesidad, `ACT` 
 | D-46 | La integración continua se ejecuta con GitHub Actions. | Calidad, despliegue | CONFIRMADO (Q-38 = A) |
 | D-47 | Las consultas de conteo de uso y de catálogo público se implementan como proyecciones de EF Core en `Application`, sin duplicar la fórmula del APU. | Consultas, rendimiento | CONFIRMADO (Q-29 = A) |
 | D-48 | La composición de una Matriz se almacena en `MatrixComponent` (matriz, insumo, consumo, desperdicio), sin FK polimórfica. | Persistencia, matrices | CONFIRMADO (Q-40 = A) |
-| D-49 | Borrado lógico (`is_active`/`deleted_at`) en `Project` y `Resource`, con `RESTRICT` en registros referenciados. El `Apu` se elimina **físicamente** con el ítem del EDT (`D-119`) y sus líneas caen en cascada. | Persistencia, integridad | CONFIRMADO (Q-42 = A); MODIFICADO por `D-119` (`I-3b`) |
+| D-49 | Borrado lógico (`is_active`/`deleted_at`) en `Project` y `Resource`, con `RESTRICT` en registros referenciados. El `Apu` se elimina **físicamente** con el ítem del EDT (`D-119`) y sus líneas caen en cascada. **Revisada por `unidades-medida-y-tipos-insumo`:** el insumo se elimina físicamente con `DELETE /projects/{id}/resources/{resourceId}`; `is_active` y `deleted_at` se conservan sin uso en ese flujo. | Persistencia, integridad | CONFIRMADO (Q-42 = A); MODIFICADO por `D-119` (`I-3b`) y por el cambio de unidades |
 | D-50 | Control de concurrencia optimista con `rowversion` en `Project`, `WbsChapter`, `WbsItem`, `Apu` y `Resource`; la API responde `409 Conflict`. | Persistencia, concurrencia | CONFIRMADO (Q-43 = A) |
 | D-51 | El EDT se modela con `WbsChapter` y `WbsItem` separados y una tabla `WbsCode` (`project_id`, `code`, `node_type`) con índice único (`project_id`, `code`) que garantiza la unicidad entre capítulos e ítems. | EDT, persistencia | CONFIRMADO (Q-39 = B) |
 | D-52 | Aprobación única por APU: un registro por APU con el último usuario que aprobó, su rol, fecha, modo y evidencia capturada. No se conserva historial por usuario ni se valida la aprobación de múltiples auditores; el modo 3 se limita a una aprobación por APU. | Aprobaciones, alcance | CONFIRMADO (Q-41 = C); MODIFICADO por `D-91` (la evidencia se persiste en `UserSignature`) |
@@ -1945,6 +1945,18 @@ El capítulo 1 mantiene `RT-01` a `RT-12`. Este capítulo agrega los riesgos de 
 | T-I-08 | Reconciliación y copia transaccional de insumos simples | Integración manual |
 | T-I-09 | Persistencia y copia de Matrices sin validación | Integración manual |
 | T-I-20 | Conteo de uso contra datos reales | Integración manual |
+| T-U-28 | Validación, recorte, unicidad y consulta del catálogo de unidades (`REQ-UNIDADES-02`, `REQ-UNIDADES-03`; `D-16`) | Unitaria |
+| T-U-29 | Tipos activos, orden del catálogo y exclusión de inactivos (`REQ-INSUMOS-16`; `D-16`) | Unitaria |
+| T-U-30 | APU acepta unidad de 10, rechaza 11 y no inserta la unidad en el catálogo (`REQ-UNIDADES-05`, `REQ-APUS-02`; `D-16`, `D-31`) | Unitaria |
+| T-U-31 | Consulta de insumos por `shortUnit`: coincidencia exacta, sin distinguir mayúsculas, vacía y sin catálogo (`REQ-INSUMOS-17`; `D-16`) | Unitaria |
+| T-U-32 | Baja física: elimina la fila, `404` repetido, `409` por uso y Matriz con componentes (`REQ-INSUMOS-18`…`REQ-INSUMOS-20`; `D-49` revisada) | Unitaria |
+| T-I-47 | Migración `measurement_units`, índice único y `apus.unit` de 10 (`REQ-UNIDADES-01`, `REQ-APUS-02`; `D-107`) | Integración manual |
+| T-I-48 | FKs `RESTRICT`/`CASCADE` que sostienen la baja física (`REQ-INSUMOS-19`, `REQ-INSUMOS-20`; `D-49` revisada) | Integración manual |
+| T-S-21 | Permisos de unidades, aislamiento y alcance de tipos (`REQ-UNIDADES-04`, `REQ-INSUMOS-16`; `D-82`) | Seguridad manual |
+| T-S-22 | Permisos y aislamiento de la consulta por unidad y de la baja física (`REQ-INSUMOS-17`, `REQ-INSUMOS-21`, `REQ-INSUMOS-22`; `D-82`) | Seguridad manual |
+| T-C-07 | Contrato de `GET/POST /catalogs/units` y `GET /resource-types` (`D-99`, `D-100`) | Contrato en CI |
+| T-C-08 | Contrato de `GET /resources/by-unit/{shortUnit}` y `DELETE /resources/{resourceId}` (`D-99`, `D-100`) | Contrato en CI |
+| T-A-06 | `Application/Catalogs` no depende de APU/insumos; APU e insumos no dependen del catálogo; `Application/Resources` no depende de APU (`D-54`, `D-105`) | Arquitectura en CI |
 
 Las verificaciones nuevas de `E-4a` se registran en `§5.6.9`.
 
