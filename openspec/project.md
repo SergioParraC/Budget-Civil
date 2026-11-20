@@ -117,14 +117,16 @@ etapas siguientes **añadan** capacidades sin reestructurar el árbol.
 | Insumos | `openspec/specs/insumos/spec.md` | RF-05, RF-06, RF-16, RF-20 | M-04 | E-3a | Vigente (`2026-11-13-e3a-rf05-insumos-proyecto`) |
 | Proveedores | `openspec/specs/proveedores/spec.md` | RF-05, RF-06 | M-04 | E-3a | Vigente (`2026-11-13-e3a-rf05-proveedores`) |
 | APUs | `openspec/specs/apus/spec.md` | RF-07, RF-08, RF-09, RF-22 | M-05 | E-3b | Prevista |
-| Cálculo | `openspec/specs/calculo/spec.md` | RF-10 | M-06 | E-4a | Prevista |
-| Aprobaciones | `openspec/specs/aprobaciones/spec.md` | RF-11, RF-12, RF-13, RF-14, RF-21 | M-07 | E-4b | Prevista |
+| Cálculo | `openspec/specs/calculo/spec.md` | RF-10 | M-06 | E-4a | En implementación (`e-4a-calculo-y-cotizacion`); se incorpora al archivar |
+| Cotización | `openspec/specs/cotizacion/spec.md` | RF-11 | M-07 | E-4a | En implementación (`e-4a-calculo-y-cotizacion`); se incorpora al archivar |
+| Aprobaciones | `openspec/specs/aprobaciones/spec.md` | RF-12, RF-13, RF-14, RF-21 | M-07 | E-4b | Prevista |
 | Catálogo | `openspec/specs/catalogo/spec.md` | RF-15 | M-08 | E-5 | Prevista |
 | Alertas | `openspec/specs/alertas/spec.md` | RF-17 | M-09 | E-4a | Prevista |
 
 **Regla de crecimiento:** una capacidad nueva se crea con su propio `spec.md` y su fila en esta tabla;
 no se renombran ni se mueven las capacidades existentes. `E-2b` añadió `edt` y completó `proyectos`; `E-3b`
-añade `apus` y modifica `edt`, `insumos` y `proyectos` sin reorganizar el índice.
+añade `apus` y modifica `edt`, `insumos` y `proyectos` sin reorganizar el índice. `E-4a` añade `cotizacion`
+(mueve `RF-11` desde `aprobaciones`) y modifica `edt` y `calculo`.
 
 ## 9. Alcance vigente
 

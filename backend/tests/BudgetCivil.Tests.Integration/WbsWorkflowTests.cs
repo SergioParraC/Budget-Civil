@@ -1,3 +1,4 @@
+using BudgetCivil.Application.Calculation.Services;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Common.Pagination;
 using BudgetCivil.Application.Apus.Commands.WbsItemApu;
@@ -69,7 +70,11 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
             repository,
             apuGateway,
             new DeleteWbsChapterCommandValidator());
-        var getTree = new GetWbsTreeQueryHandler(accessService, repository, apuGateway);
+        var getTree = new GetWbsTreeQueryHandler(
+            accessService,
+            repository,
+            apuGateway,
+            new ApuCostService(new ProjectCostReader(context)));
         var deleteItem = new DeleteWbsItemCommandHandler(
             accessService,
             repository,
@@ -202,7 +207,11 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
             repository,
             apuGateway,
             new DeleteWbsChapterCommandValidator());
-        var getTree = new GetWbsTreeQueryHandler(accessService, repository, apuGateway);
+        var getTree = new GetWbsTreeQueryHandler(
+            accessService,
+            repository,
+            apuGateway,
+            new ApuCostService(new ProjectCostReader(context)));
 
         var root = await createChapter.ExecuteAsync(
             data.Director.Id,
@@ -262,7 +271,11 @@ public sealed class WbsWorkflowTests(DatabaseFixture fixture) : IClassFixture<Da
             new WbsProjectAccessReader(context));
         var repository = new WbsRepository(context);
         var apuGateway = new WbsApuGateway(context);
-        var getTree = new GetWbsTreeQueryHandler(accessService, repository, apuGateway);
+        var getTree = new GetWbsTreeQueryHandler(
+            accessService,
+            repository,
+            apuGateway,
+            new ApuCostService(new ProjectCostReader(context)));
         var createChapter = new CreateWbsChapterCommandHandler(
             accessService,
             repository,

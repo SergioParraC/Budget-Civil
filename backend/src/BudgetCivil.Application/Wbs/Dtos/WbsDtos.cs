@@ -34,6 +34,15 @@ public sealed class WbsNodeDto
     /// <summary>Referencia del APU del ítem o nula si no tiene (`REQ-EDT-20`, `D7`).</summary>
     public WbsApuReferenceDto? Apu { get; init; }
 
+    /// <summary>Costo directo unitario del APU; nulo si no hay APU o está incompleto (`REQ-EDT-23`).</summary>
+    public decimal? UnitCost { get; init; }
+
+    /// <summary>
+    /// Costo directo del ítem: `ROUND(cantidad de obra × unitCost, roundingDecimals)`; nulo si `unitCost`
+    /// es nulo. En un capítulo es el acumulado de ítems de su subárbol (`D2`, `REQ-EDT-23`).
+    /// </summary>
+    public decimal? DirectCost { get; init; }
+
     public IReadOnlyList<WbsNodeDto> Children { get; init; } = [];
 }
 
@@ -47,8 +56,11 @@ public sealed class WbsApuReferenceDto
 
     public string Unit { get; init; } = string.Empty;
 
-    /// <summary>Precio unitario reservado para `E-4a`; en `E-3b` siempre es `0` (`D-121`, `RF-10`).</summary>
-    public decimal UnitPrice { get; init; }
+    /// <summary>
+    /// Costo directo unitario del APU, sin AIU (`REQ-EDT-23`, `D-121`). Es nulo cuando el APU no está
+    /// completo y el cliente no debe interpretarlo como un precio cotizado.
+    /// </summary>
+    public decimal? UnitPrice { get; init; }
 
     /// <summary>Versión del APU para la edición unificada (`REQ-APUS-21`).</summary>
     public string RowVersion { get; init; } = string.Empty;
@@ -145,7 +157,8 @@ public static class WbsMapper
 {
     public static WbsNodeDto ToChapterNode(
         WbsChapter chapter,
-        IReadOnlyList<WbsNodeDto>? children = null) => new()
+        IReadOnlyList<WbsNodeDto>? children = null,
+        decimal? directCost = null) => new()
     {
         Id = chapter.Id,
         ProjectId = chapter.ProjectId,
@@ -154,6 +167,7 @@ public static class WbsMapper
         ParentChapterId = chapter.ParentChapterId,
         Name = chapter.Name,
         QuantityWork = null,
+        DirectCost = directCost,
         OrderIndex = chapter.OrderIndex,
         RowVersion = Convert.ToBase64String(chapter.RowVersion),
         LastModifiedBy = chapter.LastModifiedByUserId,
@@ -161,7 +175,11 @@ public static class WbsMapper
         Children = children ?? []
     };
 
-    public static WbsNodeDto ToItemNode(WbsItem item, ApuSummary? apu = null) => new()
+    public static WbsNodeDto ToItemNode(
+        WbsItem item,
+        ApuSummary? apu = null,
+        decimal? unitCost = null,
+        decimal? directCost = null) => new()
     {
         Id = item.Id,
         ProjectId = item.ProjectId,
@@ -170,6 +188,8 @@ public static class WbsMapper
         ParentChapterId = item.WbsChapterId,
         Name = null,
         QuantityWork = item.QuantityWork,
+        UnitCost = unitCost,
+        DirectCost = directCost,
         OrderIndex = item.OrderIndex,
         RowVersion = Convert.ToBase64String(item.RowVersion),
         LastModifiedBy = item.LastModifiedByUserId,
@@ -182,7 +202,7 @@ public static class WbsMapper
                 Status = apu.Status,
                 Description = apu.Description,
                 Unit = apu.Unit,
-                UnitPrice = 0m,
+                UnitPrice = unitCost,
                 RowVersion = apu.RowVersion
             },
         Children = []

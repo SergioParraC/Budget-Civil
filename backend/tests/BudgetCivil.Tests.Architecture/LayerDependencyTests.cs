@@ -147,6 +147,42 @@ public sealed class LayerDependencyTests
             $"el dominio Wbs no debe depender de otros módulos: {string.Join(", ", result.FailingTypeNames ?? [])}");
     }
 
+    [Fact]
+    public void El_modulo_Calculation_no_depende_de_los_modulos_de_negocio()
+    {
+        // T-A-05: el motor compartido no depende de `Apus`, `Wbs`, `Resources` ni `Projects`.
+        var result = Types.InAssembly(ApplicationAssembly)
+            .That()
+            .ResideInNamespaceStartingWith("BudgetCivil.Application.Calculation")
+            .ShouldNot()
+            .HaveDependencyOnAny(
+                "BudgetCivil.Application.Apus",
+                "BudgetCivil.Application.Wbs",
+                "BudgetCivil.Application.Resources",
+                "BudgetCivil.Application.Projects")
+            .GetResult();
+
+        Assert.True(
+            result.IsSuccessful,
+            $"el módulo Calculation no debe depender de otros módulos: {string.Join(", ", result.FailingTypeNames ?? [])}");
+    }
+
+    [Fact]
+    public void El_modulo_Wbs_no_depende_de_Apus()
+    {
+        // T-A-05: el árbol usa `Application/Calculation` y no `Application/Apus`.
+        var result = Types.InAssembly(ApplicationAssembly)
+            .That()
+            .ResideInNamespaceStartingWith("BudgetCivil.Application.Wbs")
+            .ShouldNot()
+            .HaveDependencyOnAny("BudgetCivil.Application.Apus")
+            .GetResult();
+
+        Assert.True(
+            result.IsSuccessful,
+            $"el módulo Wbs no debe depender de Apus: {string.Join(", ", result.FailingTypeNames ?? [])}");
+    }
+
     private static void AssertNoDependency(Assembly assembly, params string[] dependencies)
     {
         var result = Types.InAssembly(assembly)

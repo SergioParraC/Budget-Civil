@@ -1,3 +1,5 @@
+using BudgetCivil.Application.Calculation.Repositories;
+using BudgetCivil.Application.Calculation.Services;
 using BudgetCivil.Application.Common.Security;
 using BudgetCivil.Application.Wbs.Repositories;
 using BudgetCivil.Application.Wbs.Services;
@@ -141,6 +143,19 @@ internal static class WbsTestSupport
             .ReturnsAsync(new Dictionary<Guid, ApuSummary>());
 
         return reader;
+    }
+
+    /// <summary>Servicio de costo sin lectura de proyecto para las pruebas que no evalúan costos.</summary>
+    public static ApuCostService EmptyCostService()
+    {
+        var reader = new Mock<IApuCostReader>();
+        reader
+            .Setup(instance => instance.GetProjectAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProjectCostData?)null);
+
+        return new ApuCostService(reader.Object);
     }
 
     private static void Set(object target, string property, object value)

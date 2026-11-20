@@ -1,3 +1,6 @@
+using BudgetCivil.Application.Calculation;
+using BudgetCivil.Application.Calculation.Repositories;
+using BudgetCivil.Application.Calculation.Services;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Common.Pagination;
 using BudgetCivil.Application.Listings.Queries;
@@ -120,13 +123,145 @@ public sealed class WbsQueryHandlersTests
         var handler = new GetWbsTreeQueryHandler(
             WbsTestSupport.AccessService(),
             repository.Object,
-            WbsTestSupport.EmptyApuSummaries().Object);
+            WbsTestSupport.EmptyApuSummaries().Object,
+            WbsTestSupport.EmptyCostService());
 
         var response = await handler.ExecuteAsync(WbsTestSupport.ActorId, WbsTestSupport.ProjectId);
 
         response.Nodes.Select(node => node.Code).Should().ContainInOrder("1", "CIM.1", "2");
         response.Nodes[0].Children.Should().ContainSingle()
             .Which.Code.Should().Be("1.1");
+    }
+
+    [Fact]
+    public async Task El_arbol_expone_costo_unitario_y_directo_por_item_y_capitulo()
+    {
+        // SC-EDT-89, SC-EDT-92 y SC-EDT-93 (T-U-26).
+        var chapterId = Guid.NewGuid();
+        var childChapterId = Guid.NewGuid();
+        var itemId = Guid.NewGuid();
+        var childItemId = Guid.NewGuid();
+
+        var chapter = WbsTestSupport.Chapter(chapterId, code: "1");
+        var childChapter = WbsTestSupport.Chapter(childChapterId, parentChapterId: chapterId, code: "1.1");
+        var item = WbsTestSupport.Item(itemId, chapterId, "1.2", 10m);
+        var childItem = WbsTestSupport.Item(childItemId, childChapterId, "1.1.1", 2m);
+
+        var apuId = Guid.NewGuid();
+        item.LinkApu(apuId);
+        childItem.LinkApu(apuId);
+
+        var repository = new Mock<IWbsRepository>();
+        repository
+            .Setup(repo => repo.GetChaptersAsync(WbsTestSupport.ProjectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([chapter, childChapter]);
+        repository
+            .Setup(repo => repo.GetItemsAsync(WbsTestSupport.ProjectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([item, childItem]);
+
+        var summaries = new Mock<IApuSummaryReader>();
+        summaries
+            .Setup(reader => reader.GetByProjectAsync(
+                WbsTestSupport.ProjectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, ApuSummary>
+            {
+                [apuId] = new(apuId, "COMPLETO", "Concreto", "M3", "AQ==")
+            });
+
+        var costReader = new Mock<IApuCostReader>();
+        costReader
+            .Setup(reader => reader.GetProjectAsync(
+                WbsTestSupport.ProjectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProjectCostData(
+                WbsTestSupport.ProjectId,
+                WbsTestSupport.CompanyId,
+                new CostSettings(2, 2, 10m, 5m, 8m),
+                BudgetLimit: null,
+                BaseCurrency: null,
+                [
+                    new ProjectCostItem(itemId, apuId, 10m, chapterId, 0),
+                    new ProjectCostItem(childItemId, apuId, 2m, childChapterId, 0)
+                ],
+                new Dictionary<Guid, IReadOnlyList<ApuCostLineInput>>
+                {
+                    [apuId] =
+                    [
+                        new ApuCostLineInput(
+                            Guid.NewGuid(),
+                            Guid.NewGuid(),
+                            "MATERIAL",
+                            "Cemento",
+                            "kg",
+                            100m,
+                            1m,
+                            0m)
+                    ]
+                }));
+
+        var handler = new GetWbsTreeQueryHandler(
+            WbsTestSupport.AccessService(),
+            repository.Object,
+            summaries.Object,
+            new ApuCostService(costReader.Object));
+
+        var response = await handler.ExecuteAsync(WbsTestSupport.ActorId, WbsTestSupport.ProjectId);
+
+        var root = response.Nodes.Single(node => node.Id == chapterId);
+        var child = root.Children.Single(node => node.Id == childChapterId);
+        var directItem = root.Children.Single(node => node.Id == itemId);
+
+        directItem.UnitCost.Should().Be(100m);
+        directItem.DirectCost.Should().Be(1000m);
+        directItem.Apu!.UnitPrice.Should().Be(100m);
+        child.Children.Single().DirectCost.Should().Be(200m);
+        child.DirectCost.Should().Be(200m);
+        root.DirectCost.Should().Be(1200m);
+    }
+
+    [Fact]
+    public async Task Un_item_sin_apu_devuelve_apu_y_costos_nulos()
+    {
+        // SC-EDT-90.
+        var chapterId = Guid.NewGuid();
+        var itemId = Guid.NewGuid();
+        var item = WbsTestSupport.Item(itemId, chapterId, "1.1", 5m);
+
+        var repository = new Mock<IWbsRepository>();
+        repository
+            .Setup(repo => repo.GetChaptersAsync(WbsTestSupport.ProjectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([WbsTestSupport.Chapter(chapterId, code: "1")]);
+        repository
+            .Setup(repo => repo.GetItemsAsync(WbsTestSupport.ProjectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([item]);
+
+        var costReader = new Mock<IApuCostReader>();
+        costReader
+            .Setup(reader => reader.GetProjectAsync(
+                WbsTestSupport.ProjectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProjectCostData(
+                WbsTestSupport.ProjectId,
+                WbsTestSupport.CompanyId,
+                new CostSettings(2, 2, 0m, 0m, 0m),
+                BudgetLimit: null,
+                BaseCurrency: null,
+                [new ProjectCostItem(itemId, null, 5m, chapterId, 0)],
+                new Dictionary<Guid, IReadOnlyList<ApuCostLineInput>>()));
+
+        var handler = new GetWbsTreeQueryHandler(
+            WbsTestSupport.AccessService(),
+            repository.Object,
+            WbsTestSupport.EmptyApuSummaries().Object,
+            new ApuCostService(costReader.Object));
+
+        var response = await handler.ExecuteAsync(WbsTestSupport.ActorId, WbsTestSupport.ProjectId);
+
+        var root = response.Nodes.Single();
+        var node = root.Children.Single();
+
+        node.Apu.Should().BeNull();
+        node.UnitCost.Should().BeNull();
+        node.DirectCost.Should().BeNull();
+        root.DirectCost.Should().BeNull();
     }
 
     [Fact]

@@ -89,10 +89,12 @@ public sealed class ApuContractTests
 
         json.Should().Contain("\"apu\"");
         json.Should().Contain("\"status\":\"COMPLETO\"");
-        json.Should().Contain("\"unitPrice\":0");
+        json.Should().Contain("\"unitPrice\":null");
         json.Should().Contain("\"rowVersion\":\"AQ==\"");
         json.Should().Contain("\"description\"");
         json.Should().Contain("\"unit\":\"m3\"");
+        json.Should().Contain("\"unitCost\":null");
+        json.Should().Contain("\"directCost\":null");
     }
 
     [Fact]

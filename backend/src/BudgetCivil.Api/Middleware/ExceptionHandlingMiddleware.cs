@@ -14,7 +14,12 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         }
         catch (AppException appException)
         {
-            await WriteProblemDetailsAsync(httpContext, appException.StatusCode, appException.Message, appException.Code);
+            await WriteProblemDetailsAsync(
+                httpContext,
+                appException.StatusCode,
+                appException.Message,
+                appException.Code,
+                appException.Extensions);
         }
         catch (SecurityTokenException securityTokenException)
         {
@@ -31,7 +36,12 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         }
     }
 
-    private static Task WriteProblemDetailsAsync(HttpContext httpContext, int statusCode, string detail, string? code)
+    private static Task WriteProblemDetailsAsync(
+        HttpContext httpContext,
+        int statusCode,
+        string detail,
+        string? code,
+        IReadOnlyDictionary<string, object?>? extensions = null)
     {
         var normalizedCode = NormalizeErrorCode(statusCode, code);
 
@@ -46,6 +56,14 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
 
         problemDetails.Extensions["code"] = normalizedCode;
         problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
+
+        if (extensions is not null)
+        {
+            foreach (var extension in extensions)
+            {
+                problemDetails.Extensions[extension.Key] = extension.Value;
+            }
+        }
 
         httpContext.Response.StatusCode = statusCode;
         return httpContext.Response.WriteAsJsonAsync(problemDetails);

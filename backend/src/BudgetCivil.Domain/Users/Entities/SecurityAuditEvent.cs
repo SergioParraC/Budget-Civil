@@ -9,7 +9,8 @@ public enum SecurityAuditEventType
     UserAdministration = 5,
     CompanyAdministration = 6,
     PasswordRecovery = 7,
-    ProjectAdministration = 8
+    ProjectAdministration = 8,
+    ResourceAdministration = 9
 }
 
 public enum SecurityAuditResult
