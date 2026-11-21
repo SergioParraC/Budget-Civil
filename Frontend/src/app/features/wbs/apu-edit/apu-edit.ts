@@ -383,7 +383,7 @@ export class ApuEdit {
     }
 
     const lines = this.lines();
-    const invalidLine = lines.some((line) => !(line.consumption > 0));
+    const invalidLine = lines.some((line) => !((line.consumption ?? 0) > 0));
 
     if (invalidLine) {
       this.errorMessage.set('Revisa los insumos: la cantidad debe ser mayor que cero.');
@@ -407,7 +407,7 @@ export class ApuEdit {
                 resources: lines.map((line) => ({
                   lineId: line.lineId,
                   resourceId: line.resourceId,
-                  consumption: Number(line.consumption),
+                  consumption: Number(line.consumption ?? 0),
                   wastePercentage:
                     line.resourceTypeCode === MATERIAL_RESOURCE_TYPE_CODE
                       ? this.materialWaste()
@@ -489,6 +489,48 @@ export class ApuEdit {
   }
 
   onAlertRefresh(): void {
+    const code = this.alert().code;
+
+    if (code === 'WBS_CONCURRENCY_CONFLICT' || code === 'APU_CONCURRENCY_CONFLICT') {
+      this.refreshVersions();
+      return;
+    }
+
     this.load();
+  }
+
+  /**
+   * Tras un conflicto de concurrencia conserva lo escrito y solo refresca las versiones del ítem y del APU
+   * para que el usuario pueda reintentar el guardado sin volver a capturar sus cambios.
+   */
+  private refreshVersions(): void {
+    const projectId = this.projectId;
+    const itemId = this.itemId;
+
+    if (!projectId || !itemId) {
+      this.load();
+      return;
+    }
+
+    this.wbsService.getTree(projectId).subscribe({
+      next: (response) => {
+        const node = this.findNode(response.nodes, itemId);
+
+        if (!node || !node.apu) {
+          this.load();
+          return;
+        }
+
+        this.node.set(node);
+        this.itemRowVersion.set(node.rowVersion);
+        this.apuRowVersion.set(node.apu.rowVersion);
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Versiones actualizadas',
+          detail: 'Revisa tus cambios y pulsa Guardar de nuevo.'
+        });
+      },
+      error: () => this.load()
+    });
   }
 }

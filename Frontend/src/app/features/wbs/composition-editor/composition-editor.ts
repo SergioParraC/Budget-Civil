@@ -61,9 +61,14 @@ export class CompositionEditor {
 
   readonly pickerVisible = signal(false);
 
+  private pendingQuantityFocusKey: string | null = null;
+
+  /** Identificador estable del cuadro de cantidad de cada línea. */
+  readonly quantityInputId = (key: string): string => `apu-quantity-${key}`;
+
   /** Total de la línea: únicamente precio unitario × cantidad, sin factores adicionales. */
   readonly lineTotal = (line: CompositionLine): number =>
-    roundCurrency((line.unitPrice ?? 0) * line.consumption);
+    roundCurrency((line.unitPrice ?? 0) * (line.consumption ?? 0));
 
   /** Costo directo preliminar: líneas del APU más los valores de desperdicio y herramienta menor. */
   readonly directCost = computed(() =>
@@ -158,11 +163,12 @@ export class CompositionEditor {
 
   addLine(resource: Resource): void {
     const resourceTypeCode = normalizeType(resource.resourceTypeCode);
+    const key = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
     this.lines.update((lines) => [
       ...lines,
       {
-        key: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        key,
         lineId: null,
         resourceId: resource.resourceId,
         description: resource.description,
@@ -171,15 +177,27 @@ export class CompositionEditor {
         resourceType: resource.resourceTypeName,
         resourceTypeCode,
         matrixResourceId: resourceTypeCode === 'MATRIX' ? resource.resourceId : null,
-        consumption: 1,
+        consumption: null,
         wastePercentage: 0
       }
     ]);
+    this.pendingQuantityFocusKey = key;
     this.dirty.emit();
   }
 
+  /** El diálogo ya se cerró: lleva el cursor a la cantidad de la línea recién agregada. */
+  onPickerClosed(): void {
+    const key = this.pendingQuantityFocusKey;
+    if (!key) {
+      return;
+    }
+
+    this.pendingQuantityFocusKey = null;
+    document.getElementById(this.quantityInputId(key))?.focus();
+  }
+
   updateConsumption(line: CompositionLine, value: number | null): void {
-    this.patch(line, { consumption: value ?? 0 });
+    this.patch(line, { consumption: value ?? null });
   }
 
   onWasteChange(value: number | null): void {

@@ -41,6 +41,13 @@ public interface IApuRepository
 
     Task AddAsync(Apu apu, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Registra una línea nueva de la composición. Es obligatorio cuando el APU ya existe y está
+    /// rastreado: una entidad con clave generada que se descubre en la navegación se marcaría como
+    /// modificación y el `UPDATE` afectaría cero filas (`REQ-APUS-21`).
+    /// </summary>
+    void AddLine(ApuResource line);
+
     /// <summary>Marca el retiro físico de una línea (`D4`).</summary>
     void RemoveLine(ApuResource line);
 

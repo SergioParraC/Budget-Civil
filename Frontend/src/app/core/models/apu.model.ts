@@ -113,7 +113,8 @@ export interface CompositionLine {
   /** Código del catálogo (p. ej. `MATERIAL`), usado para agrupar y aplicar el desperdicio. */
   resourceTypeCode: string;
   matrixResourceId?: string | null;
-  consumption: number;
+  /** `null` mientras la línea recién agregada espera que el usuario escriba la cantidad. */
+  consumption: number | null;
   wastePercentage: number;
 }
 

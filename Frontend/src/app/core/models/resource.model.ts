@@ -24,6 +24,25 @@ export interface CreateSupplierRequest {
   observations?: string | null;
 }
 
+/** `PUT /suppliers/{supplierId}`: exige `rowVersion` y conserva la ubicación del proveedor. */
+export interface UpdateSupplierRequest extends CreateSupplierRequest {
+  countryId?: string | null;
+  departmentId?: string | null;
+  municipalityId?: string | null;
+  rowVersion: string;
+}
+
+/** Detalle completo del proveedor (`SupplierDto`). */
+export interface SupplierDetail extends SupplierSummary {
+  companyId: string;
+  observations: string | null;
+  rowVersion: string;
+  createdBy: string;
+  createdAt: string;
+  lastModifiedBy: string;
+  lastModifiedAt: string;
+}
+
 export interface SupplierSummary {
   supplierId: string;
   businessName: string;

@@ -129,8 +129,8 @@
 | `base_currency_id` | UUID | No | FK `BaseCurrency` |
 | `budget_limit` | DECIMAL(18,2) | Sí | Tope mayor que cero cuando se informa |
 | `aiu_admin`, `aiu_unforeseen`, `aiu_profit` | DECIMAL(5,2) | Sí | 0–100 |
-| `rounding_decimals` | INT | No | 0–10; default 2; redondeo de la vista previa de costo (`D-121`) |
-| `quantity_decimals` | INT | No | 0–10; default 2; decimales de la cantidad efectiva (`D-121`) |
+| `rounding_decimals` | INT | No | 0–10; default 7; redondeo de la vista previa de costo (`D-121`) |
+| `quantity_decimals` | INT | No | 0–10; default 7; decimales de la cantidad efectiva (`D-121`) |
 | `signature_mode` | VARCHAR(50) | No | `SIN_FIRMA`, `UNICA_POR_PRESUPUESTADOR_ASIGNADO` o `INDEPENDIENTE_POR_PROFESIONAL_RESPONSABLE` |
 | `signer_user_id` | UUID | Sí | Firmante designado |
 | `requires_auditor` | BOOLEAN | No | Default `false`. Es independiente de `signature_mode`: con el check activo el proyecto admite auditores en cualquier modo. Desactivarlo conserva los `project_members` de rol `AUDITOR` (`D-112`) |
@@ -351,7 +351,7 @@ mismo registro se reutiliza en todos los proyectos de la compañía.
 | Total del presupuesto | `ROUND(costo directo + costo indirecto, rounding_decimals)` |
 | Tope presupuestal | `isOverBudget` solo con total calculable y `total > budget_limit`; sin tope, total nulo o total igual al tope es `false` (`RF-17`, `D-94`) |
 | Conteo de uso | `Σ (consumo × cantidad de obra)` por ítem, para todos los tipos (`D-33`) |
-| Redondeo | `MidpointRounding.AwayFromZero` con `rounding_decimals` (default 2) en valores monetarios y `quantity_decimals` (default 2) en cantidades; la cantidad efectiva se redondea antes de multiplicar por el precio (`D-121`) |
+| Redondeo | `MidpointRounding.AwayFromZero` con `rounding_decimals` (default 7) en valores monetarios y `quantity_decimals` (default 7) en cantidades; la cantidad efectiva se redondea antes de multiplicar por el precio (`D-121`) |
 | Orden del cálculo | 1) cantidad efectiva; 2) costo directo del APU; 3) `unitCost` del ítem; 4) costo directo del ítem; 5) subtotal del capítulo; 6) costo directo del proyecto; 7) AIU del proyecto; 8) total |
 | Divisa | Una por proyecto, sin conversión (`BR-020`) |
 
@@ -411,7 +411,7 @@ por ítem en el presupuesto. Los costos no se persisten: se recalculan en cada l
   `matrix_components` con sus `CHECK`, FKs e índices; `ALTER` de `wbs_items.quantity_work`,
   `apu_resources.consumption` y `matrix_components.consumption` a `DECIMAL(18,10)`; FK
   `FK_dbo_wbs_items_apus_apu_id` (`RESTRICT`); columnas `rounding_decimals` y `quantity_decimals` en
-  `project_configurations` con `CHECK` 0–10 y default 2; sin migración de datos (`D-40`, `D-107`,
+  `project_configurations` con `CHECK` 0–10 y default 7; sin migración de datos (`D-40`, `D-107`,
   `D-113`, `D-121`). El `Down` revierte el `ALTER`, las columnas y la FK.
 - Migración `20261114065800_wbs_add_i2b` (aplicada el 14/11/2026): tablas `wbs_codes`, `wbs_chapters`,
   `wbs_items` y `wbs_project_activity` con sus índices, `CHECK` y FKs `RESTRICT`,

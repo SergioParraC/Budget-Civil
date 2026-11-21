@@ -2,7 +2,13 @@
   <div class="composition__header">
     <h3 class="composition__title">Insumos</h3>
     @if (editable()) {
-      <p-button label="Agregar insumo" icon="pi pi-plus" [outlined]="true" (onClick)="openPicker()" />
+      <p-button
+        type="button"
+        label="Agregar insumo"
+        icon="pi pi-plus"
+        [outlined]="true"
+        (onClick)="openPicker()"
+      />
     }
   </div>
 
@@ -74,6 +80,7 @@
               <td>
                 @if (editable()) {
                   <p-inputNumber
+                    [inputId]="quantityInputId(line.key)"
                     styleClass="composition__quantity-input"
                     [ngModel]="line.consumption"
                     (ngModelChange)="updateConsumption(line, $event)"
@@ -82,7 +89,7 @@
                     [useGrouping]="false"
                     ariaLabel="Cantidad"
                   />
-                  @if (!(line.consumption > 0)) {
+                  @if (line.consumption !== null && !(line.consumption > 0)) {
                     <small class="composition__error">La cantidad debe ser mayor que cero.</small>
                   }
                 } @else {
@@ -93,6 +100,7 @@
               @if (editable()) {
                 <td>
                   <p-button
+                    type="button"
                     icon="pi pi-trash"
                     severity="danger"
                     [text]="true"
@@ -152,5 +160,6 @@
     [projectId]="projectId()"
     [initialUnit]="apuUnit()"
     (picked)="addLine($event)"
+    (closed)="onPickerClosed()"
   />
 </div>

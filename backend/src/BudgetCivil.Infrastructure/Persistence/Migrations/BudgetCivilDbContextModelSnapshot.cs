@@ -630,7 +630,7 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.Property<int>("QuantityDecimals")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasDefaultValue(2)
+                        .HasDefaultValue(7)
                         .HasColumnName("quantity_decimals");
 
                     b.Property<bool>("RequiresAuditor")
@@ -642,7 +642,7 @@ namespace BudgetCivil.Infrastructure.Persistence.Migrations
                     b.Property<int>("RoundingDecimals")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasDefaultValue(2)
+                        .HasDefaultValue(7)
                         .HasColumnName("rounding_decimals");
 
                     b.Property<byte[]>("RowVersion")

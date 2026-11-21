@@ -4,7 +4,17 @@
   <div class="resource-list">
     <div class="resource-list__header">
       <div>
-        <h2>Insumos del proyecto</h2>
+        <div class="app-title-row">
+          <p-button
+            label="⚙️"
+            icon="pi pi-arrow-left"
+            [text]="true"
+            ariaLabel="Volver a la configuración del proyecto"
+            pTooltip="Volver a la configuración del proyecto"
+            (onClick)="backToProject()"
+          />
+          <h2>Insumos del proyecto</h2>
+        </div>
         <p class="resource-list__subtitle">{{ project()?.name }}</p>
       </div>
 
@@ -24,99 +34,112 @@
     </div>
 
     <div class="resource-list__filters">
-      <div class="resource-list__field">
-        <label for="resourceSearch">Buscar</label>
-        <input
-          id="resourceSearch"
-          pInputText
-          placeholder="Descripción o clave"
-          [ngModel]="search()"
-          (ngModelChange)="search.set($event)"
-          (keyup.enter)="applyFilters()"
-        />
-      </div>
+      <div class="resource-list__filter-fields">
+        <div class="resource-list__field">
+          <label for="resourceSearch">Buscar</label>
+          <input
+            id="resourceSearch"
+            pInputText
+            placeholder="Descripción o clave"
+            [fluid]="true"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+            (keyup.enter)="applyFilters()"
+          />
+        </div>
 
-      <div class="resource-list__field">
-        <label for="resourceTypeFilter">Tipo</label>
-        <p-select
-          inputId="resourceTypeFilter"
-          [options]="types()"
-          optionLabel="name"
-          optionValue="id"
-          placeholder="Todos"
-          appendTo="body"
-          [showClear]="true"
-          [ngModel]="typeId()"
-          (ngModelChange)="typeId.set($event ?? '')"
-        />
-      </div>
+        <div class="resource-list__field">
+          <label for="resourceTypeFilter">Tipo</label>
+          <p-select
+            inputId="resourceTypeFilter"
+            [options]="types()"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Todos"
+            appendTo="body"
+            [showClear]="true"
+            [fluid]="true"
+            [ngModel]="typeId()"
+            (ngModelChange)="typeId.set($event ?? '')"
+          />
+        </div>
 
-      <div class="resource-list__field">
-        <label for="resourceStatusFilter">Estado</label>
-        <p-select
-          inputId="resourceStatusFilter"
-          [options]="statusOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Todos"
-          appendTo="body"
-          [showClear]="true"
-          [ngModel]="quotationStatus()"
-          (ngModelChange)="quotationStatus.set($event ?? '')"
-        />
-      </div>
+        <div class="resource-list__field">
+          <label for="resourceStatusFilter">Estado</label>
+          <p-select
+            inputId="resourceStatusFilter"
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todos"
+            appendTo="body"
+            [showClear]="true"
+            [fluid]="true"
+            [ngModel]="quotationStatus()"
+            (ngModelChange)="quotationStatus.set($event ?? '')"
+          />
+        </div>
 
-      <div class="resource-list__field">
-        <label for="resourceBrandFilter">Marca</label>
-        <input
-          id="resourceBrandFilter"
-          pInputText
-          [ngModel]="brand()"
-          (ngModelChange)="brand.set($event)"
-          (keyup.enter)="applyFilters()"
-        />
-      </div>
+        <div class="resource-list__field">
+          <label for="resourceBrandFilter">Marca</label>
+          <input
+            id="resourceBrandFilter"
+            pInputText
+            [fluid]="true"
+            [ngModel]="brand()"
+            (ngModelChange)="brand.set($event)"
+            (keyup.enter)="applyFilters()"
+          />
+        </div>
 
-      <div class="resource-list__field">
-        <label for="resourceMunicipalityFilter">Municipio</label>
-        <p-select
-          inputId="resourceMunicipalityFilter"
-          [options]="municipalities()"
-          optionLabel="name"
-          optionValue="id"
-          placeholder="Todos"
-          appendTo="body"
-          [showClear]="true"
-          [ngModel]="municipalityId()"
-          (ngModelChange)="municipalityId.set($event ?? '')"
-        />
-      </div>
+        <div class="resource-list__field">
+          <label for="resourceMunicipalityFilter">Municipio</label>
+          <p-select
+            inputId="resourceMunicipalityFilter"
+            [options]="municipalities()"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Todos"
+            appendTo="body"
+            [showClear]="true"
+            [fluid]="true"
+            [ngModel]="municipalityId()"
+            (ngModelChange)="municipalityId.set($event ?? '')"
+          />
+        </div>
 
-      <div class="resource-list__field">
-        <label for="resourceMinPrice">Precio mínimo</label>
-        <p-inputNumber
-          inputId="resourceMinPrice"
-          [min]="0"
-          [maxFractionDigits]="2"
-          [ngModel]="minPrice()"
-          (ngModelChange)="minPrice.set($event)"
-        />
-      </div>
+        <div class="resource-list__price-fields">
+          <div class="resource-list__field">
+            <label for="resourceMinPrice">Precio mínimo</label>
+            <p-inputNumber
+              inputId="resourceMinPrice"
+              placeholder="Mínimo"
+              [min]="0"
+              [maxFractionDigits]="2"
+              [fluid]="true"
+              [ngModel]="minPrice()"
+              (ngModelChange)="minPrice.set($event)"
+            />
+          </div>
 
-      <div class="resource-list__field">
-        <label for="resourceMaxPrice">Precio máximo</label>
-        <p-inputNumber
-          inputId="resourceMaxPrice"
-          [min]="0"
-          [maxFractionDigits]="2"
-          [ngModel]="maxPrice()"
-          (ngModelChange)="maxPrice.set($event)"
-        />
+          <div class="resource-list__field">
+            <label for="resourceMaxPrice">Precio máximo</label>
+            <p-inputNumber
+              inputId="resourceMaxPrice"
+              placeholder="Máximo"
+              [min]="0"
+              [maxFractionDigits]="2"
+              [fluid]="true"
+              [ngModel]="maxPrice()"
+              (ngModelChange)="maxPrice.set($event)"
+            />
+          </div>
+        </div>
       </div>
 
       <div class="resource-list__filter-actions">
-        <p-button label="Aplicar filtros" icon="pi pi-filter" (onClick)="applyFilters()" />
         <p-button label="Limpiar" icon="pi pi-filter-slash" [text]="true" (onClick)="clearFilters()" />
+        <p-button label="Aplicar filtros" icon="pi pi-filter" (onClick)="applyFilters()" />
       </div>
     </div>
 
@@ -146,15 +169,17 @@
               <p-tableHeaderCheckbox />
             </th>
           }
+          <th pSortableColumn="quotationStatus" class="resource-list__col-status">
+            <span class="resource-list__sr-only">Estado</span>
+            <p-sortIcon field="quotationStatus" />
+          </th>
+          <th>Código</th>
           <th pSortableColumn="description">Descripción <p-sortIcon field="description" /></th>
           <th>Tipo</th>
           <th>Unidad</th>
           <th pSortableColumn="unitPrice">Precio unitario <p-sortIcon field="unitPrice" /></th>
           <th>Marca</th>
           <th>Proveedor</th>
-          <th>Municipio</th>
-          <th pSortableColumn="quotationStatus">Estado <p-sortIcon field="quotationStatus" /></th>
-          <th pSortableColumn="lastModifiedAt">Última modificación <p-sortIcon field="lastModifiedAt" /></th>
           <th></th>
         </tr>
       </ng-template>
@@ -166,21 +191,33 @@
               <p-tableCheckbox [value]="resource" />
             </td>
           }
+          <td class="resource-list__col-status">
+            <span
+              class="resource-list__status"
+              role="img"
+              [attr.aria-label]="quotationStatusLabel(resource.quotationStatus)"
+              [pTooltip]="quotationStatusLabel(resource.quotationStatus)"
+            >
+              {{ quotationStatusIcon(resource.quotationStatus) }}
+            </span>
+          </td>
+          <td>{{ resource.userKey ?? '—' }}</td>
           <td>{{ resource.description }}</td>
           <td>{{ resource.resourceTypeName }}</td>
           <td>{{ resource.unit ?? '—' }}</td>
           <td>{{ resource.unitPrice !== null ? (resource.unitPrice | number: '1.0-2') : '—' }}</td>
           <td>{{ resource.brand ?? '—' }}</td>
           <td>{{ resource.supplier?.businessName ?? '—' }}</td>
-          <td>{{ resource.supplier?.municipalityName ?? '—' }}</td>
-          <td>
-            <p-tag
-              [value]="resource.quotationStatus"
-              [severity]="resource.quotationStatus === 'COTIZADO' ? 'success' : 'warn'"
-            />
-          </td>
-          <td>{{ resource.lastModifiedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td class="resource-list__col-actions">
+            @if (canWrite()) {
+              <p-button
+                label="✏️"
+                [text]="true"
+                ariaLabel="Editar insumo"
+                pTooltip="Editar insumo"
+                (onClick)="openEdit(resource)"
+              />
+            }
             <p-menu #rowMenu [popup]="true" [model]="rowMenuItems(resource)" appendTo="body" />
             <p-button
               icon="pi pi-ellipsis-v"
@@ -194,7 +231,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td [attr.colspan]="canWrite() ? 11 : 10">
+          <td [attr.colspan]="canWrite() ? 10 : 9">
             <div class="resource-list__empty">
               <span>Aún no hay insumos en este proyecto.</span>
               @if (canWrite()) {

@@ -5,7 +5,17 @@
     <div class="edt__header">
       <div class="edt__title">
         <div>
-          <h2>Presupuesto</h2>
+          <div class="app-title-row">
+            <p-button
+              label="⚙️"
+              icon="pi pi-arrow-left"
+              [text]="true"
+              ariaLabel="Volver a la configuración del proyecto"
+              pTooltip="Volver a la configuración del proyecto"
+              (onClick)="backToProject()"
+            />
+            <h2>Presupuesto</h2>
+          </div>
           <p class="edt__subtitle">{{ projectContext.project()?.name }}</p>
         </div>
         <div
@@ -64,7 +74,7 @@
             (onClick)="goToNewApu(selectedChapterId())"
           />
         }
-        @if (saving()) {
+        @if (saving() || savingQuantityId()) {
           <p-tag value="Guardando…" severity="warn" />
         }
       </div>
@@ -221,7 +231,24 @@
                   "
                 >
                   @if (rowData.nodeType !== 'CHAPTER') {
-                    {{ rowData.quantityWork ?? '—' }}
+                    @if (canEditQuantity() && rowData.apu) {
+                      <p-inputNumber
+                        [inputId]="'edt-quantity-' + rowData.id"
+                        styleClass="edt__quantity-input"
+                        [ngModel]="quantityValue(rowData)"
+                        (ngModelChange)="onQuantityChange(rowData, $event)"
+                        (onBlur)="onQuantityBlur(rowData)"
+                        (onKeyDown)="onQuantityKeyDown($event, rowData)"
+                        [min]="0"
+                        [maxFractionDigits]="quantityDecimals()"
+                        [useGrouping]="false"
+                        [disabled]="savingQuantityId() !== null"
+                        ariaLabel="Cantidad de obra"
+                        (click)="$event.stopPropagation()"
+                      />
+                    } @else {
+                      {{ rowData.quantityWork ?? '—' }}
+                    }
                   }
                 </td>
                 <td class="edt__col-unit">

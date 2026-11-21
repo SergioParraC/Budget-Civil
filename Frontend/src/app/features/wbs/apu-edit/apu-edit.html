@@ -55,7 +55,7 @@
         />
       }
 
-      <form [formGroup]="form" class="apu-edit__form" (ngSubmit)="submit()">
+      <form [formGroup]="form" class="apu-edit__form">
         <h3 class="apu-edit__section">Ítem del EDT</h3>
         <div class="apu-edit__grid">
           <div class="apu-edit__field">
@@ -144,6 +144,7 @@
               />
               @if (canCreateUnit && editable()) {
                 <p-button
+                  type="button"
                   label="Nueva unidad"
                   icon="pi pi-plus"
                   [text]="true"
@@ -175,6 +176,7 @@
             />
             @if (rememberedLaborToolsPercent() > 0) {
               <p-button
+                type="button"
                 [label]="'Aplicar ' + rememberedLaborToolsPercent() + ' % recordado'"
                 icon="pi pi-check"
                 [outlined]="true"

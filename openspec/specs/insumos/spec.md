@@ -168,11 +168,11 @@ sugerencia, no una restricción técnica. Citas: RF-16; Q-09; D-16.
 - **Cuando** se registra la nueva coincidencia
 - **Entonces** el insumo existente conserva sus datos, su precio y su estado
 
-### Requirement: REQ-INSUMOS-06 Búsqueda por descripción
+### Requirement: REQ-INSUMOS-06 Búsqueda por descripción o clave de usuario
 
-El sistema DEBE (MUST) buscar insumos del proyecto por coincidencia parcial de descripción, sin
-distinguir mayúsculas de minúsculas, y DEBE (MUST) devolver una lista vacía cuando no haya coincidencias.
-Citas: RF-16, RF-20.
+El sistema DEBE (MUST) buscar insumos del proyecto por coincidencia parcial de la descripción o de la
+clave de usuario (`user_key`), sin distinguir mayúsculas de minúsculas, y DEBE (MUST) devolver una lista
+vacía cuando no haya coincidencias. Citas: RF-16, RF-20.
 
 #### Scenario: SC-INSUMOS-18 Coincidencia parcial
 

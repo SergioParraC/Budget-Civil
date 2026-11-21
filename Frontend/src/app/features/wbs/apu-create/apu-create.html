@@ -22,7 +22,7 @@
         <p-message severity="error" text="No se pudieron cargar los capítulos del proyecto." />
       }
 
-      <form [formGroup]="form" class="apu-create__form" (ngSubmit)="submit()">
+      <form [formGroup]="form" class="apu-create__form">
         <h3 class="apu-create__section">Ítem del EDT</h3>
         <div class="apu-create__grid">
           <div class="apu-create__field">
@@ -102,6 +102,7 @@
               />
               @if (canCreateUnit) {
                 <p-button
+                  type="button"
                   label="Nueva unidad"
                   icon="pi pi-plus"
                   [text]="true"
@@ -131,13 +132,14 @@
         }
 
         <div class="apu-create__actions">
-          <p-button label="Cancelar" [text]="true" (onClick)="goToEdt()" />
+          <p-button type="button" label="Cancelar" [text]="true" (onClick)="goToEdt()" />
           <p-button
+            type="button"
             label="Crear APU"
             icon="pi pi-check"
-            type="submit"
             [loading]="saving()"
             [disabled]="saving() || codeState() === 'checking'"
+            (onClick)="submit()"
           />
         </div>
       </form>

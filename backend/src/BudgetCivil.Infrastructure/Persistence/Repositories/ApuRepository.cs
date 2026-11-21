@@ -211,6 +211,11 @@ public sealed class ApuRepository(BudgetCivilDbContext dbContext) : IApuReposito
         await DbContext.Apus.AddAsync(apu, cancellationToken);
     }
 
+    public void AddLine(ApuResource line)
+    {
+        DbContext.ApuResources.Add(line);
+    }
+
     public void RemoveLine(ApuResource line)
     {
         DbContext.ApuResources.Remove(line);

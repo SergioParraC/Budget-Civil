@@ -7,7 +7,7 @@
   [resizable]="false"
   [style]="{ width: '46rem', maxWidth: '95vw' }"
 >
-  <form [formGroup]="form" class="resource-form" (ngSubmit)="submit()">
+  <form [formGroup]="form" class="resource-form">
     <h3 class="resource-form__section">Identificación</h3>
     <div class="resource-form__grid">
       <div class="resource-form__field">
@@ -19,9 +19,48 @@
           optionLabel="name"
           optionValue="id"
           appendTo="body"
+          [fluid]="true"
         />
         @if (form.controls.resourceTypeId.invalid && form.controls.resourceTypeId.touched) {
           <small class="resource-form__error">El tipo de insumo es obligatorio.</small>
+        }
+      </div>
+
+      <div class="resource-form__field">
+        <label for="resourceUserKey">Código</label>
+        <input
+          id="resourceUserKey"
+          pInputText
+          formControlName="userKey"
+          maxlength="50"
+          [fluid]="true"
+          (blur)="checkSuggestions()"
+        />
+      </div>
+
+      <div class="resource-form__field">
+        <label for="resourceUnit">Unidad</label>
+        <p-select
+          inputId="resourceUnit"
+          formControlName="unit"
+          [options]="unitOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [editable]="true"
+          [filter]="true"
+          filterPlaceholder="Buscar unidad"
+          appendTo="body"
+          placeholder="Código"
+          [fluid]="true"
+        />
+        @if (canCreateUnit) {
+          <p-button
+            type="button"
+            label="Nueva unidad"
+            icon="pi pi-plus"
+            [text]="true"
+            (onClick)="unitDialogVisible.set(true)"
+          />
         }
       </div>
 
@@ -32,35 +71,12 @@
           pInputText
           formControlName="description"
           maxlength="255"
+          [fluid]="true"
           (blur)="checkSuggestions()"
         />
         @if (form.controls.description.invalid && form.controls.description.touched) {
           <small class="resource-form__error">La descripción es obligatoria.</small>
         }
-      </div>
-
-      <div class="resource-form__field">
-        <label for="resourceUnit">Unidad</label>
-        <div class="resource-form__unit-row">
-          <p-select
-            inputId="resourceUnit"
-            formControlName="unit"
-            [options]="unitOptions()"
-            [editable]="true"
-            [filter]="true"
-            filterPlaceholder="Buscar unidad"
-            appendTo="body"
-            placeholder="Sigla"
-          />
-          @if (canCreateUnit) {
-            <p-button
-              label="Nueva unidad"
-              icon="pi pi-plus"
-              [text]="true"
-              (onClick)="unitDialogVisible.set(true)"
-            />
-          }
-        </div>
       </div>
     </div>
 
@@ -72,7 +88,7 @@
             <li>
               <span>{{ suggestion.description }}</span>
               <small>
-                {{ suggestion.userKey ? 'Clave ' + suggestion.userKey + ' · ' : '' }}
+                {{ suggestion.userKey ? 'Código ' + suggestion.userKey + ' · ' : '' }}
                 {{ suggestion.quotationStatus }}
               </small>
             </li>
@@ -81,37 +97,6 @@
         <small class="resource-form__hint">La coincidencia no bloquea el guardado.</small>
       </div>
     }
-
-    <div class="resource-form__grid">
-      <div class="resource-form__field">
-        <label for="resourceDepartment">Departamento</label>
-        <p-select
-          inputId="resourceDepartment"
-          formControlName="departmentId"
-          [options]="departments()"
-          optionLabel="name"
-          optionValue="id"
-          appendTo="body"
-          [showClear]="true"
-          (onChange)="onDepartmentChange($event.value)"
-        />
-      </div>
-
-      <div class="resource-form__field">
-        <label for="resourceMunicipality">Municipio</label>
-        <p-select
-          inputId="resourceMunicipality"
-          formControlName="municipalityId"
-          [options]="municipalities()"
-          optionLabel="name"
-          optionValue="id"
-          appendTo="body"
-        />
-        @if (form.controls.municipalityId.invalid && form.controls.municipalityId.touched) {
-          <small class="resource-form__error">El municipio es obligatorio.</small>
-        }
-      </div>
-    </div>
 
     <h3 class="resource-form__section">Costo y abastecimiento</h3>
     <div class="resource-form__grid">
@@ -123,76 +108,92 @@
           [min]="0"
           [maxFractionDigits]="2"
           [minFractionDigits]="0"
+          [fluid]="true"
         />
-        <small class="resource-form__hint">Sin precio, el insumo queda en FALTA_INFORMACION.</small>
       </div>
 
       <div class="resource-form__field">
         <label for="resourceBrand">Marca</label>
-        <input id="resourceBrand" pInputText formControlName="brand" maxlength="100" />
-      </div>
-
-      <div class="resource-form__field">
-        <label for="resourceDistributor">Distribuidor</label>
-        <input id="resourceDistributor" pInputText formControlName="distributor" maxlength="150" />
+        <input id="resourceBrand" pInputText formControlName="brand" maxlength="100" [fluid]="true" />
       </div>
 
       @if (canUseSuppliers) {
         <div class="resource-form__field">
           <label for="resourceSupplier">Proveedor</label>
-          <div class="resource-form__unit-row">
-            <p-select
-              inputId="resourceSupplier"
-              formControlName="supplierId"
-              [options]="suppliers()"
-              optionLabel="businessName"
-              optionValue="supplierId"
-              [filter]="true"
-              filterBy="businessName"
-              filterPlaceholder="Buscar proveedor"
-              appendTo="body"
-              [showClear]="true"
+          <p-select
+            inputId="resourceSupplier"
+            formControlName="supplierId"
+            [options]="suppliers()"
+            optionLabel="businessName"
+            optionValue="supplierId"
+            [filter]="true"
+            filterBy="businessName"
+            filterPlaceholder="Buscar proveedor"
+            appendTo="body"
+            [showClear]="true"
+            [fluid]="true"
+          />
+          @if (canCreateSupplier) {
+            <p-button
+              type="button"
+              [label]="supplierActionLabel()"
+              [icon]="form.controls.supplierId.value ? 'pi pi-pencil' : 'pi pi-plus'"
+              [outlined]="true"
+              [fluid]="true"
+              (onClick)="openSupplierDialog()"
             />
-            @if (canCreateSupplier) {
-              <p-button
-                label="Nuevo proveedor"
-                icon="pi pi-plus"
-                [text]="true"
-                (onClick)="supplierDialogVisible.set(true)"
-              />
-            }
-          </div>
+          }
         </div>
       }
-
-      <div class="resource-form__field">
-        <label for="resourceContact">Contacto</label>
-        <input id="resourceContact" pInputText formControlName="contactNumber" maxlength="50" />
-      </div>
-
-      <div class="resource-form__field">
-        <label for="resourceUserKey">Clave de usuario</label>
-        <input
-          id="resourceUserKey"
-          pInputText
-          formControlName="userKey"
-          maxlength="50"
-          (blur)="checkSuggestions()"
-        />
-      </div>
     </div>
 
     <h3 class="resource-form__section">Detalles</h3>
-    <div class="resource-form__field">
-      <label for="resourceDetails">Observaciones</label>
-      <textarea id="resourceDetails" pTextarea formControlName="details" rows="3"></textarea>
+    <div class="resource-form__grid">
+      <div class="resource-form__field resource-form__field--wide">
+        <label for="resourceDetails">Observaciones</label>
+        <textarea
+          id="resourceDetails"
+          pTextarea
+          formControlName="details"
+          rows="3"
+          [fluid]="true"
+        ></textarea>
+      </div>
     </div>
 
-    @if (isEdit()) {
-      <p class="resource-form__hint">
-        El estado de cotización lo calcula el servidor según la completitud del insumo y no se edita aquí.
-      </p>
-    }
+    <h3 class="resource-form__section">Ubicación</h3>
+    <div class="resource-form__grid">
+      <div class="resource-form__field resource-form__field--half">
+        <label for="resourceDepartment">Departamento</label>
+        <p-select
+          inputId="resourceDepartment"
+          formControlName="departmentId"
+          [options]="departments()"
+          optionLabel="name"
+          optionValue="id"
+          appendTo="body"
+          [showClear]="true"
+          [fluid]="true"
+          (onChange)="onDepartmentChange($event.value)"
+        />
+      </div>
+
+      <div class="resource-form__field resource-form__field--half">
+        <label for="resourceMunicipality">Municipio</label>
+        <p-select
+          inputId="resourceMunicipality"
+          formControlName="municipalityId"
+          [options]="municipalities()"
+          optionLabel="name"
+          optionValue="id"
+          appendTo="body"
+          [fluid]="true"
+        />
+        @if (form.controls.municipalityId.invalid && form.controls.municipalityId.touched) {
+          <small class="resource-form__error">El municipio es obligatorio.</small>
+        }
+      </div>
+    </div>
 
     @if (errorMessage()) {
       <p-message severity="error" [text]="errorMessage() ?? ''" />
@@ -200,8 +201,9 @@
   </form>
 
   <ng-template pTemplate="footer">
-    <p-button label="Cancelar" [text]="true" (onClick)="visible.set(false)" />
+    <p-button type="button" label="Cancelar" [text]="true" (onClick)="visible.set(false)" />
     <p-button
+      type="button"
       label="Guardar"
       icon="pi pi-check"
       [loading]="saving()"
@@ -212,4 +214,8 @@
 </p-dialog>
 
 <app-unit-create-dialog [(visible)]="unitDialogVisible" (created)="onUnitCreated($event)" />
-<app-supplier-create-dialog [(visible)]="supplierDialogVisible" (created)="onSupplierCreated($event)" />
+<app-supplier-create-dialog
+  [(visible)]="supplierDialogVisible"
+  [supplierId]="supplierDialogSupplierId()"
+  (saved)="onSupplierSaved($event)"
+/>

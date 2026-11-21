@@ -880,7 +880,9 @@ llamada a `POST /wbs/items`, porque no existe alta individual de APU. Citas: RF-
 ### Requirement: REQ-APUS-24 Composición editable en la página de alta
 
 El cliente DEBE (MUST) permitir agregar, editar y quitar líneas de composición con insumos del proyecto, consumo
-mayor que cero y desperdicio entre 0 y 100 con valor inicial 0, sin calcular subtotales. Citas: RF-07; `REQ-APUS-04`.
+mayor que cero y desperdicio entre 0 y 100 con valor inicial 0, sin calcular subtotales. Al agregar una línea, el
+consumo queda vacío y el foco se ubica en su campo de cantidad para que el usuario lo escriba. Citas: RF-07;
+`REQ-APUS-04`.
 
 #### Scenario: SC-APUS-117 Selección de insumos del proyecto
 

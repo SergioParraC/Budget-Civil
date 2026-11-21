@@ -1,7 +1,7 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -10,7 +10,6 @@ import { MenuModule } from 'primeng/menu';
 import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -44,6 +43,13 @@ interface Option {
   name: string;
 }
 
+/** Emoji con el que la tabla representa cada estado de cotización del insumo. */
+const QUOTATION_STATUS_ICONS: Record<string, string> = {
+  FALTA_INFORMACION: '⚠️',
+  POR_COTIZAR: '⏳',
+  COTIZADO: '✅'
+};
+
 /**
  * Listado de insumos del proyecto (`REQ-INSUMOS-23`): filtros, orden y paginación en servidor; todas las
  * demás operaciones se resuelven en modales.
@@ -59,10 +65,8 @@ interface Option {
     SelectModule,
     MenuModule,
     MessageModule,
-    TagModule,
     TooltipModule,
     DecimalPipe,
-    DatePipe,
     ProjectUnavailable,
     ResourceFormDialog,
     ResourceDetailDialog,
@@ -75,6 +79,7 @@ interface Option {
 })
 export class ResourceList {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly resourceService = inject(ResourceService);
   private readonly catalogService = inject(CatalogService);
@@ -243,6 +248,14 @@ export class ResourceList {
     this.fetch(Math.floor((event.first ?? 0) / size) + 1);
   }
 
+  /** Vuelve a la ficha del proyecto (`/proyectos/:id`), donde están los accesos a los módulos. */
+  backToProject(): void {
+    const projectId = this.projectId;
+    if (projectId) {
+      void this.router.navigate(['/proyectos', projectId]);
+    }
+  }
+
   applyFilters(): void {
     this.fetch(1);
   }
@@ -256,6 +269,16 @@ export class ResourceList {
     this.minPrice.set(null);
     this.maxPrice.set(null);
     this.fetch(1);
+  }
+
+  /** Emoji del estado de cotización; se muestra sin encabezado y con la etiqueta como tooltip. */
+  quotationStatusIcon(status: string): string {
+    return QUOTATION_STATUS_ICONS[status] ?? '❔';
+  }
+
+  /** Etiqueta legible del estado, usada en el tooltip y en el `aria-label` del emoji. */
+  quotationStatusLabel(status: string): string {
+    return this.statusOptions.find((option) => option.value === status)?.label ?? status;
   }
 
   openCreate(): void {
