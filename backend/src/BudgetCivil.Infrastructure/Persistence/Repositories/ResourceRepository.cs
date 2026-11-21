@@ -204,7 +204,9 @@ public sealed class ResourceRepository(BudgetCivilDbContext dbContext) : IResour
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var search = filter.Search.Trim();
-            query = query.Where(resource => resource.Description.Contains(search));
+            query = query.Where(resource =>
+                resource.Description.Contains(search) ||
+                (resource.UserKey != null && resource.UserKey.Contains(search)));
         }
 
         if (filter.ResourceTypeId.HasValue)

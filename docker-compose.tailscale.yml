@@ -1,0 +1,15 @@
+# Capa para publicar con Tailscale Funnel.
+# Caddy deja de publicar 80/443 y solo escucha en loopback: Tailscale Funnel
+# termina TLS y reenvía a http://127.0.0.1:8088.
+services:
+  caddy:
+    ports: !override
+      - "127.0.0.1:8088:80"
+    environment:
+      DOMINIO: "localhost"
+      CORREO_TLS: ""
+    volumes:
+      - ./deploy/Caddyfile.tunnel:/etc/caddy/Caddyfile:ro
+      - ./dist:/srv:ro
+      - caddy-datos:/data
+      - caddy-config:/config

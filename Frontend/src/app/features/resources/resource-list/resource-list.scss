@@ -29,19 +29,26 @@
   }
 
   &__filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid var(--p-content-border-color, #e5e7eb);
+    border-radius: 0.5rem;
+  }
+
+  &__filter-fields {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 0.75rem;
     align-items: end;
-    padding: 0.75rem;
-    border: 1px solid var(--p-content-border-color, #e5e7eb);
-    border-radius: 0.5rem;
   }
 
   &__field {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    min-width: 0;
 
     label {
       font-size: 0.75rem;
@@ -49,20 +56,58 @@
     }
   }
 
+  &__price-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    grid-column: span 2;
+
+    @media (max-width: 768px) {
+      grid-column: 1 / -1;
+    }
+  }
+
   &__filter-actions {
     display: flex;
-    gap: 0.5rem;
+    justify-content: flex-end;
     align-items: center;
+    gap: 0.5rem;
     flex-wrap: wrap;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--p-content-border-color, #e5e7eb);
   }
 
   &__col-select {
     width: 3rem;
   }
 
-  &__col-actions {
+  &__col-status {
     width: 3.5rem;
+    text-align: center;
+  }
+
+  &__status {
+    font-size: 1.125rem;
+    line-height: 1;
+    cursor: default;
+  }
+
+  &__sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  &__col-actions {
+    width: 6.5rem;
     text-align: right;
+    white-space: nowrap;
   }
 
   &__empty {

@@ -118,12 +118,21 @@ public sealed class UpdateWbsItemCommandHandler(
         var item = await wbsRepository.GetItemAsync(projectId, itemId, cancellationToken)
             ?? throw new NotFoundAppException("El ítem no existe en el proyecto.", "WBS_NOT_FOUND");
 
-        WbsRules.EnsureCurrentRowVersion(item.RowVersion, requestedRowVersion);
-        wbsRepository.SetOriginalRowVersion(item, requestedRowVersion);
+        var codeChanged = requestedCode is not null &&
+            !string.Equals(requestedCode, item.Code.Code, StringComparison.Ordinal);
+        var quantityChanged = item.QuantityWork != quantityWork;
 
-        if (requestedCode is not null &&
-            !string.Equals(requestedCode, item.Code.Code, StringComparison.Ordinal) &&
-            await wbsRepository.CodeExistsAsync(projectId, requestedCode, item.CodeId, cancellationToken))
+        // La edición que solo toca el APU no exige ni modifica la versión del ítem: un cambio ajeno en
+        // el nodo (mover, reordenar, editar desde otra pestaña) no debe bloquear el guardado de un APU
+        // cuyos datos y composición no cambiaron. El APU conserva su propia concurrencia optimista.
+        if (codeChanged || quantityChanged)
+        {
+            WbsRules.EnsureCurrentRowVersion(item.RowVersion, requestedRowVersion);
+            wbsRepository.SetOriginalRowVersion(item, requestedRowVersion);
+        }
+
+        if (codeChanged &&
+            await wbsRepository.CodeExistsAsync(projectId, requestedCode!, item.CodeId, cancellationToken))
         {
             throw new ConflictAppException(
                 "El código ya existe en el proyecto.",
@@ -135,14 +144,20 @@ public sealed class UpdateWbsItemCommandHandler(
 
         try
         {
-            if (requestedCode is not null &&
-                !string.Equals(requestedCode, item.Code.Code, StringComparison.Ordinal))
+            if (codeChanged)
             {
-                item.Code.ChangeCode(requestedCode);
+                item.Code.ChangeCode(requestedCode!);
             }
 
-            item.ChangeQuantity(quantityWork);
-            item.TouchAuthor(actorUserId, utcNow);
+            if (quantityChanged)
+            {
+                item.ChangeQuantity(quantityWork);
+            }
+
+            if (codeChanged || quantityChanged)
+            {
+                item.TouchAuthor(actorUserId, utcNow);
+            }
 
             if (command.Apu is not null)
             {
@@ -272,7 +287,13 @@ public sealed class UpdateWbsItemCommandHandler(
                 {
                     apu.RemoveLine(lineId, actorUserId, utcNow);
                     apuRepository.RemoveLine(line);
-                    apu.AddLine(draft.ResourceId, draft.Consumption, draft.WastePercentage, actorUserId, utcNow);
+                    var replacement = apu.AddLine(
+                        draft.ResourceId,
+                        draft.Consumption,
+                        draft.WastePercentage,
+                        actorUserId,
+                        utcNow);
+                    apuRepository.AddLine(replacement);
                     continue;
                 }
 
@@ -281,7 +302,13 @@ public sealed class UpdateWbsItemCommandHandler(
                 continue;
             }
 
-            apu.AddLine(draft.ResourceId, draft.Consumption, draft.WastePercentage, actorUserId, utcNow);
+            var addedLine = apu.AddLine(
+                draft.ResourceId,
+                draft.Consumption,
+                draft.WastePercentage,
+                actorUserId,
+                utcNow);
+            apuRepository.AddLine(addedLine);
         }
 
         foreach (var line in existingLines.Values.Where(line => !retainedLineIds.Contains(line.Id)))

@@ -1,4 +1,6 @@
+using BudgetCivil.Application.Resources.Repositories;
 using BudgetCivil.Domain.Resources;
+using BudgetCivil.Infrastructure.Persistence.Repositories;
 using BudgetCivil.Tests.Integration.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -101,5 +103,70 @@ public sealed class ResourcePersistenceTests(DatabaseFixture fixture) : IClassFi
         await using var verificationContext = SqlServerTestDatabase.CreateContext(fixture.ConnectionString);
         var storedSource = await verificationContext.Resources.SingleAsync(resource => resource.Id == sourceId);
         Assert.Equal(10m, storedSource.UnitPrice);
+    }
+
+    [Fact]
+    public async Task La_busqueda_del_listado_coincide_por_descripcion_o_por_clave_de_usuario()
+    {
+        await using var context = SqlServerTestDatabase.CreateContext(fixture.ConnectionString);
+
+        var data = await TestDataFactory.CreateCompanyWithDirectorAsync(context);
+        var project = TestDataFactory.CreateProject(data);
+        context.Projects.Add(project);
+        await context.SaveChangesAsync();
+
+        var resourceType = await context.ResourceTypes.SingleAsync(type => type.Code == ResourceTypeCatalog.Material);
+
+        var byKey = Resource.Create(
+            project.Id,
+            resourceType.Id,
+            data.Municipality.Id,
+            "Acero corrugado",
+            "kg",
+            7500m,
+            "Paz del rio",
+            null,
+            "ACE-001",
+            null,
+            null,
+            null,
+            data.Director.Id,
+            DateTime.UtcNow);
+
+        var byDescription = Resource.Create(
+            project.Id,
+            resourceType.Id,
+            data.Municipality.Id,
+            "Cemento gris",
+            "bulto",
+            22500m,
+            "Holcim",
+            null,
+            null,
+            null,
+            null,
+            null,
+            data.Director.Id,
+            DateTime.UtcNow);
+
+        context.Resources.AddRange(byKey, byDescription);
+        await context.SaveChangesAsync();
+
+        var repository = new ResourceRepository(context);
+        var sort = new ResourceSort(ResourceSortField.Description, false);
+
+        var keyMatches = await repository.ListAsync(
+            new ResourceFilter(project.Id, "ACE-001", null, null, null, null, null, null),
+            sort,
+            1,
+            10);
+        Assert.Equal([byKey.Id], keyMatches.Select(resource => resource.Id));
+
+        var descriptionMatches = await repository.ListAsync(
+            new ResourceFilter(project.Id, "cemento", null, null, null, null, null, null),
+            sort,
+            1,
+            10);
+        Assert.Equal([byDescription.Id], descriptionMatches.Select(resource => resource.Id));
     }
 }

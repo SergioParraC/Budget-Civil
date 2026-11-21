@@ -457,11 +457,26 @@ public sealed class WbsRepository(BudgetCivilDbContext dbContext) : IWbsReposito
         {
             await DbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateConcurrencyException exception)
         {
-            throw new ConflictAppException(
-                "El nodo fue modificado por otro usuario; refresca el árbol y reintenta.",
-                "WBS_CONCURRENCY_CONFLICT");
+            // Un solo guardado puede tocar varias filas con `rowversion`: se informa la entidad real
+            // en lugar de atribuir siempre el conflicto al nodo del EDT.
+            var entityName = exception.Entries.FirstOrDefault()?.Metadata.ClrType.Name;
+
+            var (code, message) = entityName switch
+            {
+                "Apu" or "ApuResource" => (
+                    "APU_CONCURRENCY_CONFLICT",
+                    "El APU fue modificado por otro usuario; refresca y reintenta."),
+                "Resource" => (
+                    "RESOURCE_CONCURRENCY_CONFLICT",
+                    "El insumo fue modificado por otro usuario; refresca y reintenta."),
+                _ => (
+                    "WBS_CONCURRENCY_CONFLICT",
+                    "El nodo fue modificado por otro usuario; refresca el árbol y reintenta.")
+            };
+
+            throw new ConflictAppException(message, code);
         }
         catch (DbUpdateException exception) when (IsUniqueViolation(exception))
         {

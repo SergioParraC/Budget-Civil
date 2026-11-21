@@ -2,6 +2,7 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDrag, CdkDragDrop, CdkDropList, DragDropModule } from '@angular/cdk/drag-drop';
+import { FormsModule } from '@angular/forms';
 import {
   ApiError,
   alertTitleFor,
@@ -11,6 +12,7 @@ import {
 import { ConfirmationService, MenuItem, MessageService, TreeNode } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { MenuModule } from 'primeng/menu';
 import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -58,8 +60,10 @@ interface ConflictAlert {
   selector: 'app-edt',
   imports: [
     DragDropModule,
+    FormsModule,
     TableModule,
     TreeTableModule,
+    InputNumberModule,
     TagModule,
     ButtonModule,
     DialogModule,
@@ -113,6 +117,16 @@ export class Edt {
   readonly canWrite = computed(() => this.authService.can(Permission.wbsWrite));
   readonly canWriteApu = computed(() => this.authService.can(Permission.apusWrite));
   readonly canCreateApu = computed(() => this.canWrite() && this.canWriteApu());
+  /** La edición en línea usa el `PUT` unificado, que exige ambos permisos. */
+  readonly canEditQuantity = computed(() => this.canWrite() && this.canWriteApu());
+  readonly quantityDecimals = computed(
+    () => this.budget()?.quantityDecimals ?? 7
+  );
+
+  /** Borradores de cantidad por ítem mientras el usuario escribe. */
+  readonly quantityDrafts = signal<Record<string, number | null>>({});
+  /** Ítem cuya cantidad se está guardando; bloquea su input y evita envíos dobles. */
+  readonly savingQuantityId = signal<string | null>(null);
 
   readonly chapterDialogVisible = signal(false);
   readonly chapterToEdit = signal<WbsNode | null>(null);
@@ -240,7 +254,7 @@ export class Edt {
     });
   }
 
-  loadTree(onDone?: () => void): void {
+  loadTree(onDone?: () => void, onError?: () => void, preserveExpansion = false): void {
     const projectId = this.projectId;
     if (!projectId) {
       return;
@@ -252,7 +266,9 @@ export class Edt {
     this.wbsService.getTree(projectId).subscribe({
       next: (response) => {
         this.nodes.set(response.nodes);
-        this.expandedIds.set(this.chapterIds(response.nodes));
+        if (!preserveExpansion) {
+          this.expandedIds.set(this.chapterIds(response.nodes));
+        }
         this.loading.set(false);
         onDone?.();
       },
@@ -260,6 +276,7 @@ export class Edt {
         this.nodes.set([]);
         this.loading.set(false);
         this.loadError.set(true);
+        onError?.();
       }
     });
   }
@@ -762,6 +779,141 @@ export class Edt {
     this.loadActivity();
     this.loadBudget();
     this.loadTree(() => this.revealNode(response.id));
+  }
+
+  /** Valor visible en la celda: el borrador local mientras se escribe o el vigente del servidor. */
+  quantityValue(node: WbsNode): number | null {
+    const drafts = this.quantityDrafts();
+
+    return Object.prototype.hasOwnProperty.call(drafts, node.id)
+      ? drafts[node.id]
+      : node.quantityWork;
+  }
+
+  onQuantityChange(node: WbsNode, value: number | null): void {
+    this.quantityDrafts.update((drafts) => ({ ...drafts, [node.id]: value ?? null }));
+  }
+
+  onQuantityBlur(node: WbsNode): void {
+    this.commitQuantity(node);
+  }
+
+  onQuantityKeyDown(event: KeyboardEvent, node: WbsNode): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.commitQuantity(node);
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.cancelQuantity(node);
+    }
+  }
+
+  /**
+   * Guarda la cantidad editada en línea. Envía solo `quantityWork` y `rowVersion` (sin bloque `apu`) y,
+   * al confirmar el servidor, refresca el presupuesto y el árbol para recibir los costos recalculados.
+   */
+  private commitQuantity(node: WbsNode): void {
+    if (!this.canEditQuantity() || node.nodeType !== 'ITEM' || !node.apu) {
+      return;
+    }
+
+    if (this.savingQuantityId() !== null) {
+      return;
+    }
+
+    const drafts = this.quantityDrafts();
+    if (!Object.prototype.hasOwnProperty.call(drafts, node.id)) {
+      return;
+    }
+
+    const draft = drafts[node.id];
+
+    if (draft === null) {
+      this.clearQuantityDraft(node.id);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Cantidad obligatoria',
+        detail: 'La cantidad de obra no puede estar vacía.'
+      });
+      return;
+    }
+
+    if (draft < 0) {
+      this.clearQuantityDraft(node.id);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Cantidad inválida',
+        detail: 'La cantidad de obra no puede ser negativa.'
+      });
+      return;
+    }
+
+    if (draft === node.quantityWork) {
+      this.clearQuantityDraft(node.id);
+      return;
+    }
+
+    const projectId = this.projectId;
+    if (!projectId) {
+      this.clearQuantityDraft(node.id);
+      return;
+    }
+
+    this.savingQuantityId.set(node.id);
+    this.wbsService
+      .updateItem(projectId, node.id, {
+        quantityWork: draft,
+        rowVersion: node.rowVersion
+      })
+      .subscribe({
+        next: (response) => {
+          // La respuesta trae la versión nueva: evita un segundo guardado con datos obsoletos.
+          this.clearQuantityDraft(node.id);
+          node.quantityWork = response.quantityWork;
+          node.rowVersion = response.rowVersion;
+          this.nodes.set([...this.nodes()]);
+          this.loadBudget();
+          this.loadTree(
+            () => this.savingQuantityId.set(null),
+            () => this.savingQuantityId.set(null),
+            true
+          );
+        },
+        error: (error: unknown) => {
+          this.clearQuantityDraft(node.id);
+          this.savingQuantityId.set(null);
+          this.handleFailure(resolveApiError(error));
+        }
+      });
+  }
+
+  private cancelQuantity(node: WbsNode): void {
+    this.clearQuantityDraft(node.id);
+  }
+
+  private clearQuantityDraft(nodeId: string): void {
+    const drafts = { ...this.quantityDrafts() };
+    if (!Object.prototype.hasOwnProperty.call(drafts, nodeId)) {
+      return;
+    }
+
+    delete drafts[nodeId];
+    this.quantityDrafts.set(drafts);
+  }
+
+  /** Vuelve a la ficha del proyecto (`/proyectos/:id`), donde están los accesos a los módulos. */
+  backToProject(): void {
+    const projectId = this.projectId;
+    if (!projectId) {
+      return;
+    }
+
+    void this.router.navigate(['/proyectos', projectId]);
   }
 
   goToNewApu(chapterId?: string | null): void {

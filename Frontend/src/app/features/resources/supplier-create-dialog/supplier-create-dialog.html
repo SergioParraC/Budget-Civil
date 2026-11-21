@@ -2,7 +2,7 @@
   [visible]="visible()"
   (visibleChange)="visible.set($event)"
   (onShow)="prepare()"
-  header="Nuevo proveedor"
+  [header]="isEdit() ? 'Editar proveedor' : 'Nuevo proveedor'"
   [modal]="true"
   [draggable]="false"
   [resizable]="false"
@@ -47,6 +47,10 @@
       <textarea id="supplierObservations" pTextarea formControlName="observations" rows="2" maxlength="1000"></textarea>
     </div>
 
+    @if (loading()) {
+      <p-message severity="info" text="Cargando proveedor…" />
+    }
+
     @if (errorMessage()) {
       <p-message severity="error" [text]="errorMessage() ?? ''" />
     }
@@ -54,6 +58,12 @@
 
   <ng-template pTemplate="footer">
     <p-button label="Cancelar" [text]="true" (onClick)="visible.set(false)" />
-    <p-button label="Guardar proveedor" icon="pi pi-check" [loading]="saving()" (onClick)="submit()" />
+    <p-button
+      [label]="isEdit() ? 'Guardar cambios' : 'Guardar proveedor'"
+      icon="pi pi-check"
+      [loading]="saving()"
+      [disabled]="loading()"
+      (onClick)="submit()"
+    />
   </ng-template>
 </p-dialog>

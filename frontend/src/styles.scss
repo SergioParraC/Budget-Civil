@@ -6,3 +6,26 @@ body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
+
+/* Título de pantalla con una acción compacta al lado (ej. volver a la configuración del proyecto). */
+.app-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Cantidad editable en la celda del EDT (`REQ-EDT-31`, `SC-EDT-148`). */
+.edt__quantity-input {
+  display: inline-block;
+  width: 6.5rem;
+
+  .p-inputnumber,
+  .p-inputnumber-input {
+    width: 100%;
+  }
+}
+
+.edt__quantity--zero .p-inputnumber-input {
+  color: var(--p-red-500, #ef4444);
+  font-weight: 600;
+}

@@ -173,7 +173,7 @@ El sistema DEBE (MUST) insertar un registro independiente por cada cambio de vis
 
 El sistema DEBE (MUST) mantener exactamente una configuración por proyecto, con divisa base, componentes del
 AIU, decimales de redondeo y de cantidades (`rounding_decimals` y `quantity_decimals`, entre 0 y 10, por
-defecto 2), modo de firma y requisito de auditor. Solo el Director de proyectos puede modificar esos
+defecto 7), modo de firma y requisito de auditor. Solo el Director de proyectos puede modificar esos
 parámetros (`D-112`). Citas: RF-03; D-90, D-93, D-94, D-112.
 
 #### Scenario: SC-PROYECTOS-22 Configuración única del proyecto

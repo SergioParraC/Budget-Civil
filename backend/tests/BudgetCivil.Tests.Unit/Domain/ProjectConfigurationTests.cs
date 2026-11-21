@@ -43,6 +43,16 @@ public sealed class ProjectConfigurationTests
     }
 
     [Fact]
+    public void La_configuracion_nueva_usa_siete_decimales_por_defecto()
+    {
+        var configuration = new ProjectConfiguration();
+
+        configuration.RoundingDecimals.Should().Be(7);
+        configuration.QuantityDecimals.Should().Be(7);
+        ProjectConfiguration.NormalizeDecimals(null).Should().Be(7);
+    }
+
+    [Fact]
     public void La_configuracion_nueva_no_exige_tope_ni_auditor()
     {
         var configuration = new ProjectConfiguration();

@@ -3,6 +3,7 @@ using BudgetCivil.Application.Apus.Repositories;
 using BudgetCivil.Application.Apus.Services;
 using BudgetCivil.Application.Common.Exceptions;
 using BudgetCivil.Application.Wbs.Repositories;
+using BudgetCivil.Application.Wbs.Services;
 using BudgetCivil.Domain.Apus;
 using BudgetCivil.Domain.Resources;
 using BudgetCivil.Domain.Wbs;
@@ -126,6 +127,187 @@ public sealed class WbsItemApuCommandHandlersTests
 
         response.QuantityWork.Should().Be(15m);
         response.Description.Should().Be("Excavación");
+    }
+
+    [Fact]
+    public async Task La_edicion_que_solo_cambia_el_apu_ignora_una_version_de_item_desactualizada()
+    {
+        var apu = Apu.Create(ProjectId, "Excavación", "m3", ActorId, DateTime.UtcNow);
+        Set(apu, nameof(Apu.RowVersion), new byte[] { 4, 5, 6 });
+        var item = CreateItem(apu.Id);
+        var apuRepository = CreateApuRepository(apu);
+        var wbsRepository = CreateWbsRepository(item);
+        var itemReader = new Mock<IWbsItemReader>();
+        itemReader
+            .Setup(reader => reader.GetItemByApuAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WbsItemInfo(item.Id, ProjectId, "1.1", 10m, apu.Id));
+
+        var handler = new UpdateWbsItemCommandHandler(
+            WbsTestSupport.AccessService(),
+            wbsRepository.Object,
+            apuRepository.Object,
+            new ApuDetailService(apuRepository.Object, itemReader.Object),
+            new UpdateWbsItemCommandValidator());
+
+        // El cliente conserva una versión del ítem anterior, pero no cambia código ni cantidad de obra:
+        // el guardado del APU no debe fallar por un cambio ajeno en el nodo.
+        var response = await handler.ExecuteAsync(
+            ActorId,
+            ProjectId,
+            item.Id,
+            new UpdateWbsItemCommand
+            {
+                QuantityWork = 10m,
+                RowVersion = Convert.ToBase64String([9, 9, 9]),
+                Apu = new UpdateWbsItemApuDraft
+                {
+                    Description = "Excavación actualizada",
+                    Unit = "m3",
+                    ApuRowVersion = Convert.ToBase64String(apu.RowVersion)
+                }
+            });
+
+        response.Description.Should().Be("Excavación actualizada");
+        response.QuantityWork.Should().Be(10m);
+        wbsRepository.Verify(
+            repo => repo.SetOriginalRowVersion(It.IsAny<WbsItem>(), It.IsAny<byte[]>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task La_edicion_que_agrega_un_insumo_registra_la_linea_como_nueva()
+    {
+        var apu = Apu.Create(ProjectId, "Excavación", "m3", ActorId, DateTime.UtcNow);
+        Set(apu, nameof(Apu.RowVersion), new byte[] { 4, 5, 6 });
+        var item = CreateItem(apu.Id);
+        var apuRepository = CreateApuRepository(apu);
+        var wbsRepository = CreateWbsRepository(item);
+        var itemReader = new Mock<IWbsItemReader>();
+        itemReader
+            .Setup(reader => reader.GetItemByApuAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WbsItemInfo(item.Id, ProjectId, "1.1", 10m, apu.Id));
+
+        var handler = new UpdateWbsItemCommandHandler(
+            WbsTestSupport.AccessService(),
+            wbsRepository.Object,
+            apuRepository.Object,
+            new ApuDetailService(apuRepository.Object, itemReader.Object),
+            new UpdateWbsItemCommandValidator());
+
+        await handler.ExecuteAsync(
+            ActorId,
+            ProjectId,
+            item.Id,
+            new UpdateWbsItemCommand
+            {
+                QuantityWork = 10m,
+                RowVersion = Convert.ToBase64String(item.RowVersion),
+                Apu = new UpdateWbsItemApuDraft
+                {
+                    Description = "Excavación",
+                    Unit = "m3",
+                    ApuRowVersion = Convert.ToBase64String(apu.RowVersion),
+                    Resources =
+                    [
+                        new WbsItemApuResourceUpdateDraft
+                        {
+                            ResourceId = Guid.NewGuid(),
+                            Consumption = 2m,
+                            WastePercentage = 0m
+                        }
+                    ]
+                }
+            });
+
+        apuRepository.Verify(
+            repo => repo.AddLine(It.IsAny<ApuResource>()),
+            Times.Once);
+        apuRepository.Verify(
+            repo => repo.RemoveLine(It.IsAny<ApuResource>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task La_edicion_que_cambia_el_insumo_de_una_linea_reemplaza_la_linea_y_registra_la_nueva()
+    {
+        var apu = Apu.Create(ProjectId, "Excavación", "m3", ActorId, DateTime.UtcNow);
+        Set(apu, nameof(Apu.RowVersion), new byte[] { 4, 5, 6 });
+        var line = apu.AddLine(Guid.NewGuid(), 1m, 0m, ActorId, DateTime.UtcNow);
+        var item = CreateItem(apu.Id);
+        var apuRepository = CreateApuRepository(apu);
+        var wbsRepository = CreateWbsRepository(item);
+        var itemReader = new Mock<IWbsItemReader>();
+        itemReader
+            .Setup(reader => reader.GetItemByApuAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WbsItemInfo(item.Id, ProjectId, "1.1", 10m, apu.Id));
+
+        var handler = new UpdateWbsItemCommandHandler(
+            WbsTestSupport.AccessService(),
+            wbsRepository.Object,
+            apuRepository.Object,
+            new ApuDetailService(apuRepository.Object, itemReader.Object),
+            new UpdateWbsItemCommandValidator());
+
+        await handler.ExecuteAsync(
+            ActorId,
+            ProjectId,
+            item.Id,
+            new UpdateWbsItemCommand
+            {
+                QuantityWork = 10m,
+                RowVersion = Convert.ToBase64String(item.RowVersion),
+                Apu = new UpdateWbsItemApuDraft
+                {
+                    Description = "Excavación",
+                    Unit = "m3",
+                    ApuRowVersion = Convert.ToBase64String(apu.RowVersion),
+                    Resources =
+                    [
+                        new WbsItemApuResourceUpdateDraft
+                        {
+                            LineId = line.Id,
+                            ResourceId = Guid.NewGuid(),
+                            Consumption = 2m,
+                            WastePercentage = 0m
+                        }
+                    ]
+                }
+            });
+
+        apuRepository.Verify(repo => repo.RemoveLine(line), Times.Once);
+        apuRepository.Verify(
+            repo => repo.AddLine(It.Is<ApuResource>(added => added.ResourceId != line.ResourceId)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task La_edicion_del_item_con_version_desactualizada_responde_conflicto()
+    {
+        var apu = Apu.Create(ProjectId, "Excavación", "m3", ActorId, DateTime.UtcNow);
+        Set(apu, nameof(Apu.RowVersion), new byte[] { 1, 2, 3 });
+        var item = CreateItem(apu.Id);
+        var apuRepository = CreateApuRepository(apu);
+        var wbsRepository = CreateWbsRepository(item);
+
+        var handler = new UpdateWbsItemCommandHandler(
+            WbsTestSupport.AccessService(),
+            wbsRepository.Object,
+            apuRepository.Object,
+            new ApuDetailService(apuRepository.Object, new Mock<IWbsItemReader>().Object),
+            new UpdateWbsItemCommandValidator());
+
+        var action = () => handler.ExecuteAsync(
+            ActorId,
+            ProjectId,
+            item.Id,
+            new UpdateWbsItemCommand
+            {
+                QuantityWork = 15m,
+                RowVersion = Convert.ToBase64String([9, 9, 9])
+            });
+
+        var exception = await action.Should().ThrowAsync<ConflictAppException>();
+        exception.Which.Code.Should().Be(WbsRules.ConcurrencyConflict);
     }
 
     [Fact]

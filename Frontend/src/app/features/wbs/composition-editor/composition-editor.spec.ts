@@ -4,6 +4,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 
 import { CompositionLine } from '../../../core/models/apu.model';
+import { Resource } from '../../../core/models/resource.model';
 import { ApuPreviewDefaultsService } from '../../../core/services/apu-preview-defaults.service';
 import { ResourceService } from '../../../core/services/resource.service';
 import { CompositionEditor } from './composition-editor';
@@ -98,6 +99,37 @@ describe('CompositionEditor', () => {
 
     expect(document.activeElement).toBe(input);
     expect(host.contains(input)).toBeTrue();
+  });
+
+  it('deja vacía la cantidad y enfoca el campo al agregar un insumo', () => {
+    const fixture = TestBed.createComponent(CompositionEditor);
+    fixture.componentRef.setInput('projectId', 'project-1');
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    const resource = {
+      resourceId: 'new-resource',
+      description: 'Insumo nuevo',
+      unit: 'UND',
+      unitPrice: 25,
+      resourceTypeCode: 'MATERIAL',
+      resourceTypeName: 'Materiales'
+    } as Resource;
+
+    component.addLine(resource);
+    fixture.detectChanges();
+
+    const input = (fixture.nativeElement as HTMLElement).querySelector(
+      'input[aria-label="Cantidad"]'
+    ) as HTMLInputElement;
+
+    expect(component.lines()[0].consumption).toBeNull();
+    expect(input.value).toBe('');
+
+    component.onPickerClosed();
+
+    expect(document.activeElement).toBe(input);
+    expect(input.id).toBe(component.quantityInputId(component.lines()[0].key));
   });
 
   it('muestra herramienta menor solo para mano de obra y calcula los totales preliminares', () => {

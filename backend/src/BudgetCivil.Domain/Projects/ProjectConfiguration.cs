@@ -8,7 +8,7 @@ namespace BudgetCivil.Domain.Projects;
 /// </summary>
 public sealed class ProjectConfiguration
 {
-    public const int DefaultDecimals = 2;
+    public const int DefaultDecimals = 7;
     public const int MinDecimals = 0;
     public const int MaxDecimals = 10;
 
@@ -69,7 +69,7 @@ public sealed class ProjectConfiguration
     }
 
     /// <summary>
-    /// Normaliza los decimales de redondeo y cantidades al rango 0–10 y aplica 2 por defecto
+    /// Normaliza los decimales de redondeo y cantidades al rango 0–10 y aplica 7 por defecto
     /// (`REQ-PROYECTOS-10`, `D-121`).
     /// </summary>
     public static int NormalizeDecimals(int? decimals, int defaultValue = DefaultDecimals)

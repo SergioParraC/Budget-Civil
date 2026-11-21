@@ -1,5 +1,6 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, effect, inject, input, model, output, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -8,6 +9,7 @@ import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { resolveApiError } from '../../../../core/http/api-error';
 import {
@@ -45,6 +47,8 @@ export class ResourcePickerDialog {
   readonly onlySimple = input(false);
   readonly initialUnit = input<string | null>(null);
   readonly picked = output<Resource>();
+  /** Se emite cuando el diálogo terminó de cerrarse, con o sin selección. */
+  readonly closed = output<void>();
 
   readonly term = signal('');
   readonly types = signal<ResourceTypeOption[]>([]);
@@ -53,8 +57,21 @@ export class ResourcePickerDialog {
   readonly items = signal<Resource[]>([]);
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  /** Página de la tabla; se reinicia en cada búsqueda para no quedar en una página vacía. */
+  readonly first = signal(0);
+
+  /** Texto de búsqueda con retardo: la búsqueda se dispara sola mientras se escribe. */
+  private readonly termChanges = new Subject<string>();
 
   constructor() {
+    this.termChanges
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.visible()) {
+          this.search();
+        }
+      });
+
     effect(() => {
       if (!this.visible()) {
         return;
@@ -70,6 +87,22 @@ export class ResourcePickerDialog {
     });
   }
 
+  /** Búsqueda automática por ID o descripción mientras se escribe (sin botón “Buscar”). */
+  onTermChange(value: string): void {
+    this.term.set(value);
+    this.termChanges.next(value.trim());
+  }
+
+  onTypeChange(typeId: string | null): void {
+    this.typeId.set(typeId ?? '');
+    this.search();
+  }
+
+  onOnlySameUnitChange(enabled: boolean): void {
+    this.onlySameUnit.set(enabled);
+    this.search();
+  }
+
   private loadTypes(): void {
     if (this.types().length > 0) {
       return;
@@ -82,6 +115,7 @@ export class ResourcePickerDialog {
   }
 
   search(): void {
+    this.first.set(0);
     this.loading.set(true);
     this.errorMessage.set(null);
 
@@ -90,7 +124,7 @@ export class ResourcePickerDialog {
     if (this.onlySameUnit() && unit) {
       this.resourceService.byUnit(this.projectId(), unit).subscribe({
         next: (resources) => {
-          this.items.set(this.filterEligible(resources));
+          this.items.set(this.filterByUnitResults(resources));
           this.loading.set(false);
         },
         error: (error: unknown) => {
@@ -131,5 +165,26 @@ export class ResourcePickerDialog {
     return resources.filter(
       (resource) => !this.onlySimple() || resource.resourceTypeCode !== MATRIX_RESOURCE_TYPE_CODE
     );
+  }
+
+  /** `by-unit` no acepta texto ni tipo: se filtran en el cliente para que la búsqueda siga siendo automática. */
+  private filterByUnitResults(resources: Resource[]): Resource[] {
+    const term = this.term().trim().toLowerCase();
+    const typeId = this.typeId();
+
+    return this.filterEligible(resources).filter((resource) => {
+      if (typeId && resource.resourceTypeId !== typeId) {
+        return false;
+      }
+
+      if (!term) {
+        return true;
+      }
+
+      return (
+        resource.description.toLowerCase().includes(term) ||
+        (resource.userKey?.toLowerCase().includes(term) ?? false)
+      );
+    });
   }
 }

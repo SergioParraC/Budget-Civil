@@ -960,10 +960,13 @@ D-50, D-118.
 - **Cuando** el cliente recibe la respuesta
 - **Entonces** vuelve a consultar `GET /wbs` antes de mostrar los costos de los capítulos de origen y destino
 
-### Requirement: REQ-EDT-31 Edición de ítem en modal desde el EDT
+### Requirement: REQ-EDT-31 Edición de ítem desde el EDT
 
-El cliente DEBE (MUST) editar un ítem desde un modal con cantidad de obra obligatoria, código opcional y bloque APU
-opcional, enviando siempre `rowVersion` y `apuRowVersion`. Citas: RF-04, RF-07; D-50, D-118; `REQ-EDT-22`.
+El cliente DEBE (MUST) permitir editar la cantidad de obra directamente en la celda del árbol para los ítems con
+APU y DEBE (MUST) ofrecer el modal con cantidad de obra obligatoria, código opcional y bloque APU opcional. La
+edición en línea envía `quantityWork` y `rowVersion`, no modifica el APU y refresca el árbol y el presupuesto. La
+edición desde el modal envía `rowVersion` y `apuRowVersion` cuando incluye el bloque APU. Citas: RF-04, RF-07;
+D-50, D-118; `REQ-EDT-22`.
 
 #### Scenario: SC-EDT-130 Edición de la cantidad de obra
 
@@ -989,6 +992,13 @@ opcional, enviando siempre `rowVersion` y `apuRowVersion`. Citas: RF-04, RF-07; 
 - **Dado** un usuario con `WBS_WRITE` y sin `APUS_WRITE`
 - **Cuando** abre el modal de edición de un ítem
 - **Entonces** el bloque APU no se muestra y el cliente no envía el objeto `apu`
+
+#### Scenario: SC-EDT-148 Edición en línea de la cantidad de obra
+
+- **Dado** un usuario con `WBS_WRITE` y `APUS_WRITE` y un ítem con APU
+- **Cuando** cambia la cantidad en la celda y confirma con `Enter` o sale del campo
+- **Entonces** el cliente envía `PUT /wbs/items/{itemId}` con `quantityWork` y `rowVersion`, sin bloque `apu`, y
+  refresca el árbol y el presupuesto para mostrar los costos recalculados por el servidor
 
 ### Requirement: REQ-EDT-32 Baja controlada de nodos desde la interfaz
 

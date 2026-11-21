@@ -66,6 +66,7 @@ o desde la terminal con el comando `dotnet ef database update` mostrado en el me
 | `20261115092848_apus_add_e3b` | Tablas `apus`, `apu_resources` y `matrix_components` con `CHECK`, FKs e índices; FK `wbs_items.apu_id → apus` (`RESTRICT`); cantidades a `DECIMAL(18,10)`; `rounding_decimals` y `quantity_decimals` (0–10, default 2); sin migración de datos (`D-113`, `D-121`) | 15/11/2026 |
 | `20261115230025_apus_remove_yield` | Elimina `CK_apus_yield` y la columna `apus.yield`; `Down` la recrea con default `1` (`D-123`, `REQ-APUS-22`) | 15/11/2026 |
 | `20261120125801_units_add_catalog` | Crea `measurement_units` (`id` `INT IDENTITY`, `short_unit` `VARCHAR(10)`, `unit` `VARCHAR(100)`) con índice único sin distinguir mayúsculas y `CHECK` de no vacío; amplía `apus.unit` de `VARCHAR(5)` a `VARCHAR(10)`; sin migración de datos (`REQ-UNIDADES-01`, `REQ-APUS-02`, `D-16`, `D-107`) | 20/11/2026 |
+| `20261121011556_project_decimals_default_seven` | Cambia el `DEFAULT` de `rounding_decimals` y `quantity_decimals` de 2 a 7; sin migración de datos y sin alterar los valores guardados por proyecto (`D-121`) | 21/11/2026 |
 
 
 La baseline se aplica sobre una base **vacía**. No existen migraciones intermedias: la cadena anterior se
@@ -122,6 +123,12 @@ el respaldo del paso 1 (`D-123`).
 `measurement_units` con su índice y `CHECK`. El `ALTER` puede fallar si existen unidades de 6–10 caracteres:
 el runbook exige respaldo, revisión previa y limpieza o acortamiento manual; no se trunca automáticamente.
 El permiso `CATALOGS_WRITE` del `seed` `v9` se deja inactivo, no se borra (`D-82`).
+
+### 4.6 Reversión de `project_decimals_default_seven`
+
+`Down` de `20261121011556_project_decimals_default_seven` devuelve el `DEFAULT` de `rounding_decimals` y
+`quantity_decimals` a 2. No modifica los valores ya guardados en cada `project_configurations` ni pierde
+datos: solo cambia el valor que la base aplicaría si una inserción no informara la columna (`D-121`).
 
 
 ## 5. Crear la base vacía (desarrollo)

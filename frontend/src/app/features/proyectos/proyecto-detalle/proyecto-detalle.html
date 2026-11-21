@@ -20,8 +20,8 @@
             <a class="proyecto-detalle__module" [routerLink]="['/proyectos', projectId, 'edt']">
               <i class="pi pi-sitemap"></i>
               <span class="proyecto-detalle__module-text">
-                <strong>EDT</strong>
-                <small>Capítulos, ítems y APUs del proyecto</small>
+                <strong>Presupuesto</strong>
+                <small>Administra el presupuesto del proyecto</small>
               </span>
             </a>
           }
@@ -229,6 +229,7 @@
                 <div class="config-form__label-row">
                   <label for="signingMode">Modo de firma</label>
                   <p-button
+                    type="button"
                     icon="pi pi-info-circle"
                     severity="secondary"
                     [text]="true"
@@ -261,6 +262,7 @@
                     </span>
                     @if (canConfigureProject()) {
                       <p-button
+                        type="button"
                         label="Buscar"
                         icon="pi pi-search"
                         size="small"
@@ -269,6 +271,7 @@
                       />
                       @if (configForm.controls.signerUserId.value) {
                         <p-button
+                          type="button"
                           icon="pi pi-times"
                           severity="secondary"
                           [text]="true"

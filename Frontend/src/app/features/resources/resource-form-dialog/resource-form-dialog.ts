@@ -87,9 +87,17 @@ export class ResourceFormDialog {
   readonly errorMessage = signal<string | null>(null);
   readonly unitDialogVisible = signal(false);
   readonly supplierDialogVisible = signal(false);
+  /** Proveedor que se editará en el modal; `null` cuando se va a crear uno nuevo. */
+  readonly supplierDialogSupplierId = signal<string | null>(null);
 
   readonly isEdit = computed(() => this.resource() !== null);
-  readonly unitOptions = computed(() => this.units().map((unit) => unit.shortUnit));
+  /** El selector muestra “código - descripción” y guarda el código de la unidad. */
+  readonly unitOptions = computed(() =>
+    this.units().map((unit) => ({
+      value: unit.shortUnit,
+      label: `${unit.shortUnit} - ${unit.unit}`
+    }))
+  );
 
   readonly form = this.fb.nonNullable.group({
     resourceTypeId: ['', [Validators.required]],
@@ -99,6 +107,8 @@ export class ResourceFormDialog {
     municipalityId: ['', [Validators.required]],
     unitPrice: this.fb.control<number | null>(null, [Validators.min(0)]),
     brand: ['', [Validators.maxLength(100)]],
+    // Campos heredados de la tabla `resources` marcados como obsoletos: no se editan aquí porque su
+    // fuente es el proveedor; se conservan para reenviar el valor almacenado y no perderlo.
     distributor: ['', [Validators.maxLength(150)]],
     supplierId: [''],
     contactNumber: ['', [Validators.maxLength(50)]],
@@ -244,18 +254,30 @@ export class ResourceFormDialog {
     this.form.controls.unit.setValue(unit.shortUnit);
   }
 
-  onSupplierCreated(supplier: SupplierSummary): void {
+  onSupplierSaved(supplier: SupplierSummary): void {
+    const exists = this.suppliers().some((candidate) => candidate.supplierId === supplier.supplierId);
+
     this.suppliers.update((suppliers) =>
-      suppliers.some((candidate) => candidate.supplierId === supplier.supplierId)
-        ? suppliers
+      exists
+        ? suppliers.map((candidate) =>
+            candidate.supplierId === supplier.supplierId
+              ? { supplierId: supplier.supplierId, businessName: supplier.businessName }
+              : candidate
+          )
         : [...suppliers, { supplierId: supplier.supplierId, businessName: supplier.businessName }]
     );
-    this.form.controls.supplierId.setValue(supplier.supplierId);
 
-    const contact = this.form.controls.contactNumber;
-    if (!contact.value && supplier.contactPhone) {
-      contact.setValue(supplier.contactPhone);
-    }
+    this.form.controls.supplierId.setValue(supplier.supplierId);
+  }
+
+  /** Texto del botón junto al selector: el mismo botón crea o edita según la selección. */
+  supplierActionLabel(): string {
+    return this.form.controls.supplierId.value ? 'Editar proveedor' : 'Nuevo proveedor';
+  }
+
+  openSupplierDialog(): void {
+    this.supplierDialogSupplierId.set(this.form.controls.supplierId.value || null);
+    this.supplierDialogVisible.set(true);
   }
 
   checkSuggestions(): void {

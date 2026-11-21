@@ -205,7 +205,7 @@ export class ApuCreate {
     }
 
     const lines = this.lines();
-    const invalidLine = lines.some((line) => !(line.consumption > 0));
+    const invalidLine = lines.some((line) => !((line.consumption ?? 0) > 0));
 
     if (invalidLine) {
       this.errorMessage.set('Revisa los insumos: la cantidad debe ser mayor que cero.');
@@ -226,7 +226,7 @@ export class ApuCreate {
           unit: raw.unit.trim(),
           resources: lines.map((line) => ({
             resourceId: line.resourceId,
-            consumption: Number(line.consumption),
+            consumption: Number(line.consumption ?? 0),
             wastePercentage:
               line.resourceTypeCode === MATERIAL_RESOURCE_TYPE_CODE
                 ? this.materialWaste()
