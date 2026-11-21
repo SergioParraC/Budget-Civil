@@ -1,0 +1,76 @@
+name: budget-civil
+
+# Entorno público: mssql NO publica puertos; la API solo es alcanzable por Caddy.
+# Uso: docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: budget-mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "${MSSQL_PID:-Express}"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?define MSSQL_SA_PASSWORD en .env.prod}"
+    volumes:
+      - mssql-datos:/var/opt/mssql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - interna
+
+  api:
+    image: "${IMAGEN_API:?define IMAGEN_API en .env.prod}"
+    container_name: budget-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__BudgetCivilDatabase: "Server=mssql,1433;Database=${BD_NOMBRE:-BudgetCivilDb};User Id=sa;Password=${MSSQL_SA_PASSWORD};Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=False;Application Name=BudgetCivil.Api"
+      Jwt__Issuer: "${JWT_ISSUER:-BudgetCivil.Api}"
+      Jwt__Audience: "${JWT_AUDIENCE:-BudgetCivil.Client}"
+      Jwt__SigningKey: "${JWT_SIGNING_KEY:?define JWT_SIGNING_KEY en .env.prod}"
+      Jwt__ExpirationMinutes: "${JWT_EXPIRACION_MINUTOS:-120}"
+      AllowedHosts: "*"
+    depends_on:
+      mssql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - interna
+      - proxy
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: budget-caddy
+    environment:
+      DOMINIO: "${DOMINIO:-localhost}"
+      CORREO_TLS: "${CORREO_TLS:-}"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./dist:/srv:ro
+      - caddy-datos:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - proxy
+
+volumes:
+  mssql-datos:
+  caddy-datos:
+  caddy-config:
+
+networks:
+  interna:
+    internal: true
+  proxy:

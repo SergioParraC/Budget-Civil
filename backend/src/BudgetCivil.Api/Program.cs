@@ -6,11 +6,14 @@ using BudgetCivil.Application;
 using BudgetCivil.Application.Common.Startup;
 using BudgetCivil.Infrastructure;
 using BudgetCivil.Infrastructure.Catalogs;
+using BudgetCivil.Infrastructure.Persistence;
 using BudgetCivil.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -72,6 +75,15 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
+});
+
+// Caddy/cloudflared están delante de la API: confiar en X-Forwarded-For/Proto
+// para que el rate limit vea la IP real y UseHttpsRedirection no redirija.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
 builder.Services.AddApplicationServices();
@@ -386,6 +398,17 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
+// Paso explícito de despliegue: `docker compose run --rm --no-deps api --migrar`.
+// Aplica el esquema sin levantar el servidor HTTP; la migración sigue siendo un paso
+// deliberado del despliegue (D-40), no automática al arrancar.
+if (args.Contains("--migrar", StringComparer.OrdinalIgnoreCase))
+{
+    using var migrationScope = app.Services.CreateScope();
+    var dbContext = migrationScope.ServiceProvider.GetRequiredService<BudgetCivilDbContext>();
+    await dbContext.Database.MigrateAsync();
+    return;
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -398,6 +421,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Detrás de Caddy el esquema real llega en X-Forwarded-Proto. Sin esto,
+// UseHttpsRedirection no puede saber que la petición original era HTTPS.
+app.UseForwardedHeaders();
 
 // En desarrollo el cliente Angular consume la API por HTTP: redirigir a HTTPS rompe la
 // peticion (el navegador falla contra el certificado de desarrollo y `HttpClient` reporta

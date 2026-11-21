@@ -11,6 +11,23 @@ Backend del sistema **Budget Civil**, orientado a la gestion de usuarios, compan
 
 ---
 
+## Aplicativo publicado
+
+El aplicativo se encuentra publicado en un equipo personal por medio de Tailscale Funnel y se encuentra disponible en el siguiente enlace:
+
+- **URL de acceso**: [https://budget-civil.tailfa32bf.ts.net/login](https://budget-civil.tailfa32bf.ts.net/login)
+
+### Usuario de prueba (rol docente)
+
+Para la revision y evaluacion del proyecto por parte del docente se dispone del siguiente usuario de prueba con rol de Director de proyectos:
+
+| Campo | Valor |
+| --- | --- |
+| Usuario | `docente` |
+| Contraseña | `Password123-$` |
+
+---
+
 ## 2) Integrantes
 
 - Juan Pablo Ramirez Carmona
@@ -145,8 +162,9 @@ La configuracion base se encuentra en:
 
 ## 8) Informacion de despliegue
 
-- **Estado actual**: despliegue orientado a entorno local de desarrollo.
+- **Estado actual**: aplicativo publicado y accesible en [https://budget-civil.tailfa32bf.ts.net/login](https://budget-civil.tailfa32bf.ts.net/login).
 - **Objetivo de plataforma**: Linux Ubuntu 24.04 para despliegues del backend.
+- **Usuario de prueba**: `docente` / `Password123-$` (ver seccion "Aplicativo publicado").
 
 ---
 
